@@ -328,21 +328,21 @@ export function RegisterScreen() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <Input
-                    label={t.auth.talukaLabel}
-                    placeholder="Taluka"
-                    value={address.taluka}
-                    {...(errors.taluka ? { error: errors.taluka } : {})}
-                    onChange={(event) =>
-                      setAddress((prev) => ({ ...prev, taluka: event.target.value }))
-                    }
-                  />
-                  <Input
                     label={t.auth.districtLabel}
                     placeholder="District"
                     value={address.district}
                     {...(errors.district ? { error: errors.district } : {})}
                     onChange={(event) =>
                       setAddress((prev) => ({ ...prev, district: event.target.value }))
+                    }
+                  />
+                  <Input
+                    label={t.auth.talukaLabel}
+                    placeholder="Taluka"
+                    value={address.taluka}
+                    {...(errors.taluka ? { error: errors.taluka } : {})}
+                    onChange={(event) =>
+                      setAddress((prev) => ({ ...prev, taluka: event.target.value }))
                     }
                   />
                 </div>
