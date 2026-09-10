@@ -44,7 +44,7 @@ export const PROPOSAL_APPLICATION_TYPES: {
 ];
 
 export const PROPOSAL_LEVELS: { value: ProposalLevel; label: string }[] = [
-  { value: 'DISTRICT_LEVEL', label: 'District Level (District Mining Officer)' },
+  { value: 'DISTRICT_LEVEL', label: 'District Level (Revenue Officer)' },
   { value: 'SUB_DIVISIONAL_LEVEL', label: 'Sub-Divisional Level (SDO / Tehsildar)' },
   { value: 'STATE_LEVEL', label: 'State Level (Directorate of Geology & Mining)' },
 ];

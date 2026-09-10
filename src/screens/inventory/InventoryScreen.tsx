@@ -1,44 +1,27 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Warehouse } from 'lucide-react';
-import type { ID, InventoryBalance } from '@/domain';
+import { ArrowRight, Layers, ShieldCheck, Truck, Warehouse } from 'lucide-react';
+import type { ID, InventoryBalance, Mineral, MineralCategory } from '@/domain';
 import {
   computeAvailableQuantity,
+  formatMineralCategory,
   formatQuantity,
-  formatQuantityValue,
-  summarizeInventory,
   usesOrganizationContext,
 } from '@/rules';
 import {
   Chip,
   EmptyState,
   ErrorState,
-  ListGroup,
-  ListRow,
   LoadingState,
-  MetricTile,
-  SectionHeader,
+  StatusBadge,
   Surface,
 } from '@/design-system';
+
 import { OrganizationContextBar, ROUTES, Screen } from '@/navigation';
 import { inventoryRepository, mineralRepository, packageRepository, useAsync } from '@/data';
 import { useCurrentUser, useOperatingContext } from '@/state';
 import { useCopy } from '@/content';
 
-/**
- * INVENTORY — the simplest mental model in the product, kept simple.
- *
- *     Received − Consumed = Available
- *
- * Three numbers, always shown together. Available on its own invites the
- * question "out of how much?", and the answer is what tells a site manager
- * whether they are running a package efficiently or bleeding mineral.
- *
- * SCOPE: an Organization operating inside a package sees that package by
- * default, with one tap to widen to the whole organization — the context they
- * chose is honoured, not overridden, and not permanent. A Normal Consumer has
- * no hierarchy, so the switcher does not exist for them.
- */
 export function InventoryScreen() {
   const user = useCurrentUser();
   const context = useOperatingContext();
@@ -48,6 +31,7 @@ export function InventoryScreen() {
   const isOrganization = user ? usesOrganizationContext(user.userType) : false;
   const hasPackage = Boolean(context?.packageId);
   const [scopeToPackage, setScopeToPackage] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<MineralCategory | 'ALL'>('ALL');
   const packageScoped = isOrganization && hasPackage && scopeToPackage;
 
   const query = useAsync(async () => {
@@ -71,13 +55,27 @@ export function InventoryScreen() {
     return { balances, minerals, packages };
   }, [user?.id, context?.organizationId, context?.packageId, packageScoped]);
 
-  const balances = query.data?.balances ?? [];
-  const summary = balances.length > 0 ? summarizeInventory(balances) : null;
+  const rawBalances = query.data?.balances ?? [];
+  const minerals = query.data?.minerals ?? [];
 
-  const mineralName = (id: ID) =>
-    query.data?.minerals.find((mineral) => mineral.id === id)?.name ?? 'Mineral';
+  const getMineral = (id: ID): Mineral | undefined =>
+    minerals.find((m) => m.id === id);
+
+  const balances = rawBalances.filter((b) => {
+    if (selectedCategory === 'ALL') return true;
+    const mineral = getMineral(b.mineralId);
+    return mineral?.category === selectedCategory;
+  });
+
+  const availableCategories: MineralCategory[] = Array.from(
+    new Set(
+      rawBalances
+        .map((b) => getMineral(b.mineralId)?.category)
+        .filter((cat): cat is MineralCategory => Boolean(cat)),
+    ),
+  );
+
   const packageName = (balance: InventoryBalance) => {
-    // The scope union must be narrowed before its package fields exist.
     const scope = balance.scope;
     if (scope.kind !== 'PACKAGE') return undefined;
     return query.data?.packages.find((pkg) => pkg.id === scope.packageId)?.name;
@@ -94,7 +92,7 @@ export function InventoryScreen() {
 
       {query.data && (
         <div className="pb-8">
-          {/* Scope switcher — only where a hierarchy exists to scope by. */}
+          {/* Scope switcher — only where an organization hierarchy exists. */}
           {isOrganization && hasPackage && (
             <div className="no-scrollbar flex gap-2 overflow-x-auto border-b border-line bg-surface px-4 py-3">
               <Chip
@@ -110,67 +108,121 @@ export function InventoryScreen() {
             </div>
           )}
 
-          {balances.length === 0 ? (
+          {/* Sourcing Compliance Header Banner */}
+          <div className="border-b border-line bg-surface-sunken p-4">
+            <div className="flex items-center gap-2.5 text-xs text-ink-secondary">
+              <ShieldCheck size={16} className="text-emerald-600 shrink-0" />
+              <span>
+                Verified 100% legal sourcing under Maharashtra minor mineral regulations (e-TP).
+              </span>
+            </div>
+          </div>
+
+          {/* Category Filter Chips */}
+          {availableCategories.length > 1 && (
+            <div className="no-scrollbar flex gap-2 overflow-x-auto border-b border-line bg-surface px-4 py-2.5">
+              <Chip
+                label={t.inventory.allCategories}
+                active={selectedCategory === 'ALL'}
+                onClick={() => setSelectedCategory('ALL')}
+              />
+              {availableCategories.map((cat) => (
+                <Chip
+                  key={cat}
+                  label={formatMineralCategory(cat)}
+                  active={selectedCategory === cat}
+                  onClick={() => setSelectedCategory(cat)}
+                />
+              ))}
+            </div>
+          )}
+
+          {rawBalances.length === 0 ? (
             <EmptyState
-              icon={<Warehouse size={22} />}
+              icon={<Warehouse size={24} />}
               title={packageScoped ? t.inventory.noStockInScope : t.inventory.noStock}
               description={
                 packageScoped ? t.inventory.noStockInScopeBody : t.inventory.noStockBody
               }
             />
+          ) : balances.length === 0 ? (
+            <EmptyState
+              icon={<Layers size={22} />}
+              title="No minerals in this category"
+              description="Choose a different mineral category or view all minerals."
+            />
           ) : (
-            <>
-              {/* The whole model, in three numbers. */}
-              {summary && (
-                <Surface className="border-b border-line px-4 py-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <MetricTile
-                      label={t.inventory.received}
-                      value={formatQuantityValue(summary.received)}
-                      unit={summary.received.unit}
-                    />
-                    <MetricTile
-                      label={t.inventory.consumed}
-                      value={formatQuantityValue(summary.consumed)}
-                      unit={summary.consumed.unit}
-                    />
-                    <MetricTile
-                      label={t.inventory.available}
-                      value={formatQuantityValue(summary.available)}
-                      unit={summary.available.unit}
-                      tone="success"
-                    />
-                  </div>
-                </Surface>
-              )}
+            <div className="space-y-3 p-4">
+              {balances.map((balance) => {
+                const mineral = getMineral(balance.mineralId);
+                const available = computeAvailableQuantity(balance);
+                const isUtilized = balance.status === 'FULLY_UTILIZED' || available.value <= 0;
+                const pkg = packageName(balance);
 
-              <SectionHeader title="By mineral" />
-              <ListGroup className="border-y border-line">
-                {balances.map((balance) => {
-                  const available = computeAvailableQuantity(balance);
-                  const depleted = available.value <= 0;
+                return (
+                  <Surface
+                    key={balance.id}
+                    onClick={() => navigate(ROUTES.inventoryBalance(balance.id))}
+                    className="cursor-pointer rounded-xl border border-line p-4 transition hover:border-primary-300 hover:shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        {mineral && (
+                          <span className="text-[11px] font-semibold tracking-wide uppercase text-primary-700">
+                            {formatMineralCategory(mineral.category)}
+                          </span>
+                        )}
+                        <h3 className="text-body font-bold text-ink">
+                          {mineral?.name ?? 'Mineral'}
+                        </h3>
+                        {pkg && <p className="text-caption text-ink-muted">{pkg}</p>}
+                      </div>
 
-                  return (
-                    <ListRow
-                      key={balance.id}
-                      leading={<Warehouse size={17} />}
-                      leadingTone={depleted ? 'neutral' : 'primary'}
-                      title={mineralName(balance.mineralId)}
-                      {...(packageScoped ? {} : { subtitle: packageName(balance) })}
-                      detail={`${t.inventory.received} ${formatQuantity(balance.receivedQuantity)} · ${t.inventory.consumed} ${formatQuantity(balance.consumedQuantity)}`}
-                      meta={
-                        <span
-                          className={`tabular text-title ${depleted ? 'text-ink-muted' : 'text-ink'}`}
+                      <StatusBadge
+                        tone={isUtilized ? 'neutral' : 'success'}
+                        label={isUtilized ? t.inventory.statusUtilized : t.inventory.statusActive}
+                        dot
+                      />
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-surface-sunken p-3">
+                      <div>
+                        <p className="text-[11px] text-ink-secondary">{t.inventory.received}</p>
+                        <p className="tabular font-semibold text-ink">
+                          {formatQuantity(balance.receivedQuantity)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-ink-secondary">{t.inventory.available}</p>
+                        <p
+                          className={`tabular font-bold ${
+                            isUtilized ? 'text-ink-muted' : 'text-primary-700'
+                          }`}
                         >
                           {formatQuantity(available)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {balance.transferredQuantity && balance.transferredQuantity.value > 0 && (
+                      <div className="mt-2 flex items-center gap-1.5 text-[11px] text-amber-800">
+                        <Truck size={13} className="shrink-0" />
+                        <span>
+                          {formatQuantity(balance.transferredQuantity)} relocated to other sites
                         </span>
-                      }
-                      onClick={() => navigate(ROUTES.inventoryBalance(balance.id))}
-                    />
-                  );
-                })}
-              </ListGroup>
-            </>
+                      </div>
+                    )}
+
+                    <div className="mt-3 flex items-center justify-between border-t border-line pt-2 text-[11px] text-ink-muted">
+                      <span>e-TP Verified Stock</span>
+                      <span className="flex items-center gap-1 font-medium text-primary-600">
+                        View Sourcing Ledger <ArrowRight size={12} />
+                      </span>
+                    </div>
+                  </Surface>
+                );
+              })}
+            </div>
           )}
         </div>
       )}

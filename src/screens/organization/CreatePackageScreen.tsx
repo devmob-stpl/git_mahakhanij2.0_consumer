@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Boxes, Check, MapPin, UserCheck } from 'lucide-react';
+import { Boxes, Building2, Check, Landmark, MapPin, UserCheck } from 'lucide-react';
 import type { GeoPoint, SupervisorInfo } from '@/domain';
-import { Button, Input, Select, Surface } from '@/design-system';
+import { Button, Input, Select, Surface, cn } from '@/design-system';
 import { packageRepository, projectRepository, useAsync } from '@/data';
 import { useCurrentOrganization } from '@/state';
 import { ROUTES, Screen } from '@/navigation';
@@ -16,6 +16,9 @@ export function CreatePackageScreen() {
   const organization = useCurrentOrganization();
 
   const [name, setName] = useState('');
+  const [category, setCategory] = useState<'URBAN' | 'RURAL'>('RURAL');
+  const [city, setCity] = useState('');
+  const [village, setVillage] = useState('');
   const [line1, setLine1] = useState('');
   const [taluka, setTaluka] = useState('');
   const [district, setDistrict] = useState('');
@@ -54,7 +57,11 @@ export function CreatePackageScreen() {
     const errs: Record<string, string> = {};
     if (!name.trim()) errs.name = 'Enter the package name.';
     if (!line1.trim()) errs.line1 = 'Enter the package address.';
-    if (!taluka.trim()) errs.taluka = 'Enter the taluka.';
+    if (category === 'URBAN') {
+      if (!city.trim() && !taluka.trim()) errs.city = 'Enter the city or taluka.';
+    } else {
+      if (!taluka.trim()) errs.taluka = 'Enter the taluka.';
+    }
     if (!district.trim()) errs.district = 'Enter the district.';
     if (!pincode.trim()) errs.pincode = 'Enter the PIN code.';
 
@@ -71,12 +78,23 @@ export function CreatePackageScreen() {
       const project = await projectRepository.getById(projectId);
       if (!project) return;
 
+      const formattedTaluka =
+        category === 'URBAN'
+          ? city.trim()
+            ? taluka.trim()
+              ? `${city.trim()} (${taluka.trim()})`
+              : city.trim()
+            : taluka.trim()
+          : village.trim()
+            ? `${taluka.trim()}, ${village.trim()}`
+            : taluka.trim();
+
       await packageRepository.create(project.id, organization.id, {
         name: name.trim(),
         code: `PKG-${project.id.slice(-4).toUpperCase()}-${String(Date.now()).slice(-4)}`,
         siteAddress: {
           line1: line1.trim(),
-          taluka: taluka.trim(),
+          taluka: formattedTaluka,
           district: district.trim(),
           state: state.trim() || 'Maharashtra',
           pincode: pincode.trim(),
@@ -125,76 +143,162 @@ export function CreatePackageScreen() {
             {...(errors.name ? { error: errors.name } : {})}
           />
 
-          {/* Package Address with Location Icon inside rightSlot */}
-          <Input
-            label="Package address"
-            required
-            value={line1}
-            onChange={(event) => {
-              setLine1(event.target.value);
-              setErrors((prev) => ({ ...prev, line1: '' }));
-            }}
-            placeholder="Plot, building or street address"
-            {...(errors.line1 ? { error: errors.line1 } : {})}
-            rightSlot={
-              <button
-                type="button"
-                aria-label="Select location on map"
-                title="Select location on map"
-                onClick={() => setMapOpen(true)}
-                className="flex size-8 items-center justify-center rounded-lg text-primary-700 hover:bg-primary-100/70 transition-colors"
-              >
-                <MapPin size={18} />
-              </button>
-            }
-          />
+          {/* ------------------------------------------------------------- */}
+          {/* LOCATION & SITE JURISDICTION (Urban/Rural first, then Address) */}
+          {/* ------------------------------------------------------------- */}
+          <div className="pt-2 border-t border-line space-y-3.5">
+            <div className="flex items-center justify-between">
+              <span className="text-caption font-bold uppercase tracking-wider text-ink-muted">
+                Package Location & Jurisdiction
+              </span>
+            </div>
 
-          {/* Administrative Hierarchy */}
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Taluka"
-              required
-              value={taluka}
-              onChange={(event) => {
-                setTaluka(event.target.value);
-                setErrors((prev) => ({ ...prev, taluka: '' }));
-              }}
-              placeholder="Taluka"
-              {...(errors.taluka ? { error: errors.taluka } : {})}
-            />
-            <Input
-              label="District"
-              required
-              value={district}
-              onChange={(event) => {
-                setDistrict(event.target.value);
-                setErrors((prev) => ({ ...prev, district: '' }));
-              }}
-              placeholder="District"
-              {...(errors.district ? { error: errors.district } : {})}
-            />
-          </div>
+            {/* 1) Area Classification (Urban vs Rural) UPFRONT */}
+            <div>
+              <label className="mb-1.5 block text-caption font-semibold text-ink">
+                Area Classification
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCategory('URBAN')}
+                  className={cn(
+                    'flex h-11 items-center justify-center gap-2 rounded-xl border text-body-sm font-semibold transition-all cursor-pointer',
+                    category === 'URBAN'
+                      ? 'border-primary-600 bg-primary-50/70 text-primary-700 font-bold shadow-xs ring-1 ring-primary-300/40'
+                      : 'border-line bg-surface text-ink-muted hover:border-neutral-300',
+                  )}
+                >
+                  <Building2 size={16} />
+                  <span>Urban (City / PMC)</span>
+                </button>
 
-          <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCategory('RURAL')}
+                  className={cn(
+                    'flex h-11 items-center justify-center gap-2 rounded-xl border text-body-sm font-semibold transition-all cursor-pointer',
+                    category === 'RURAL'
+                      ? 'border-primary-600 bg-primary-50/70 text-primary-700 font-bold shadow-xs ring-1 ring-primary-300/40'
+                      : 'border-line bg-surface text-ink-muted hover:border-neutral-300',
+                  )}
+                >
+                  <Landmark size={16} />
+                  <span>Rural (Gram Panchayat)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 2) Administrative Hierarchy (District & Taluka / City / Village) */}
+            <div className="space-y-3">
+              <Input
+                label="District"
+                required
+                value={district}
+                onChange={(event) => {
+                  setDistrict(event.target.value);
+                  setErrors((prev) => ({ ...prev, district: '' }));
+                }}
+                placeholder="District"
+                {...(errors.district ? { error: errors.district } : {})}
+              />
+
+              {category === 'URBAN' ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    label="City / Corporation"
+                    placeholder="e.g. Pune City (PMC)"
+                    value={city}
+                    {...(errors.city ? { error: errors.city } : {})}
+                    onChange={(event) => {
+                      setCity(event.target.value);
+                      setErrors((prev) => ({ ...prev, city: '' }));
+                    }}
+                  />
+                  <Input
+                    label="Taluka / Zone (CTSO)"
+                    placeholder="e.g. Haveli"
+                    value={taluka}
+                    {...(errors.taluka ? { error: errors.taluka } : {})}
+                    onChange={(event) => {
+                      setTaluka(event.target.value);
+                      setErrors((prev) => ({ ...prev, taluka: '' }));
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    label="Taluka"
+                    required
+                    placeholder="e.g. Haveli / Daund"
+                    value={taluka}
+                    {...(errors.taluka ? { error: errors.taluka } : {})}
+                    onChange={(event) => {
+                      setTaluka(event.target.value);
+                      setErrors((prev) => ({ ...prev, taluka: '' }));
+                    }}
+                  />
+                  <Input
+                    label="Village / Gram Panchayat"
+                    placeholder="e.g. Wagholi / Kesnand"
+                    value={village}
+                    {...(errors.village ? { error: errors.village } : {})}
+                    onChange={(event) => {
+                      setVillage(event.target.value);
+                      setErrors((prev) => ({ ...prev, village: '' }));
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* 3) Package Address with Location Icon inside rightSlot */}
             <Input
-              label="State"
-              value={state}
-              onChange={(event) => setState(event.target.value)}
-              placeholder="Maharashtra"
-            />
-            <Input
-              label="PIN code"
+              label="Package site address / chainage"
               required
-              inputMode="numeric"
-              maxLength={6}
-              value={pincode}
+              value={line1}
               onChange={(event) => {
-                setPincode(event.target.value.replace(/\D/g, '').slice(0, 6));
-                setErrors((prev) => ({ ...prev, pincode: '' }));
+                setLine1(event.target.value);
+                setErrors((prev) => ({ ...prev, line1: '' }));
               }}
-              placeholder="400001"
-              {...(errors.pincode ? { error: errors.pincode } : {})}
+              placeholder="Plot, chainage (KM), building or road address"
+              {...(errors.line1 ? { error: errors.line1 } : {})}
+              rightSlot={
+                <button
+                  type="button"
+                  aria-label="Select location on map"
+                  title="Select location on map"
+                  onClick={() => setMapOpen(true)}
+                  className="flex size-8 items-center justify-center rounded-lg text-primary-700 hover:bg-primary-100/70 transition-colors cursor-pointer"
+                >
+                  <MapPin size={18} />
+                </button>
+              }
             />
+
+            {/* 4) PIN code & State */}
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="PIN code"
+                required
+                inputMode="numeric"
+                maxLength={6}
+                value={pincode}
+                onChange={(event) => {
+                  setPincode(event.target.value.replace(/\D/g, '').slice(0, 6));
+                  setErrors((prev) => ({ ...prev, pincode: '' }));
+                }}
+                placeholder="400001"
+                {...(errors.pincode ? { error: errors.pincode } : {})}
+              />
+              <Input
+                label="State"
+                value={state}
+                onChange={(event) => setState(event.target.value)}
+                placeholder="Maharashtra"
+              />
+            </div>
           </div>
 
           {/* Assign Supervisor Dropdown */}

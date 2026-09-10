@@ -1,7 +1,7 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, ErrorState, LoadingState, StepProgress, Surface } from '@/design-system';
 import { OrganizationContextBar, Screen } from '@/navigation';
-import { mineralRepository, useAsync } from '@/data';
+import { mineralRepository, projectRepository, useAsync } from '@/data';
 import { useCurrentOrganization, useCurrentUser, useOperatingContext } from '@/state';
 import { useCopy } from '@/content';
 import { useApplicationForm } from './useApplicationForm';
@@ -22,6 +22,15 @@ export function NewApplicationScreen() {
 
   const form = useApplicationForm({ user, organization, context, draftId });
   const minerals = useAsync(() => mineralRepository.listAll(), []);
+  const projects = useAsync(
+    () =>
+      organization
+        ? projectRepository.listByOrganization(organization.id)
+        : user
+        ? projectRepository.listForConsumer(user.id)
+        : projectRepository.listByOrganization('org-001'),
+    [organization?.id, user?.id],
+  );
 
   const isReview = form.step === 'REVIEW';
   const heading = HEADINGS[form.step];
@@ -85,6 +94,7 @@ export function NewApplicationScreen() {
                 errors={form.errors}
                 update={form.update}
                 minerals={minerals.data}
+                projects={projects.data ?? []}
               />
             )}
 

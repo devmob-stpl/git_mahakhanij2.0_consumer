@@ -1,6 +1,14 @@
 import { useNavigate } from 'react-router-dom';
-import { Building2, Plus } from 'lucide-react';
-import { Button, EmptyState, ErrorState, ListGroup, ListRow, LoadingState } from '@/design-system';
+import { Building2 } from 'lucide-react';
+import {
+  Button,
+  EmptyState,
+  ErrorState,
+  FloatingActionButton,
+  ListGroup,
+  ListRow,
+  LoadingState,
+} from '@/design-system';
 import { ROUTES, Screen } from '@/navigation';
 import { projectRepository, useAsync } from '@/data';
 import { useCurrentUser } from '@/state';
@@ -18,15 +26,11 @@ export function ConsumerProjectsScreen() {
     <Screen
       title="Projects"
       onBack
-      actions={
-        <Button
-          size="sm"
-          variant="secondary"
-          leftIcon={<Plus size={14} />}
+      floatingAction={
+        <FloatingActionButton
+          label="New project"
           onClick={() => navigate(ROUTES.consumerProjectRegistration)}
-        >
-          New project
-        </Button>
+        />
       }
     >
       {query.loading && <LoadingState variant="list" rows={4} />}

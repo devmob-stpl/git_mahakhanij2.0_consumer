@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Circle, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -12,6 +12,8 @@ export interface StockPointMapProps {
   onSelect: (stockPointId: string) => void;
   mineralName: (mineralId: string) => string;
   onViewDetails: (stockPointId: string) => void;
+  userLocation?: GeoPoint | null;
+  locateTrigger?: number;
 }
 
 function makePointIcon(color: string, index: number, selected: boolean) {
@@ -40,7 +42,7 @@ function makePointIcon(color: string, index: number, selected: boolean) {
   });
 }
 
-function makeOriginIcon() {
+function makeOriginIcon(isLiveLocation = false) {
   return L.divIcon({
     className: 'stock-point-origin-pin',
     html: `
@@ -48,9 +50,9 @@ function makeOriginIcon() {
         width: 18px;
         height: 18px;
         border-radius: 9999px;
-        background: #16a34a;
-        border: 3px solid rgba(22,163,74,0.18);
-        box-shadow: 0 0 0 5px rgba(34,197,94,0.12);
+        background: ${isLiveLocation ? '#0284c7' : '#16a34a'};
+        border: 3px solid ${isLiveLocation ? 'rgba(2,132,199,0.2)' : 'rgba(22,163,74,0.18)'};
+        box-shadow: 0 0 0 5px ${isLiveLocation ? 'rgba(14,165,233,0.2)' : 'rgba(34,197,94,0.12)'};
       "></div>
     `,
     iconSize: [18, 18],
@@ -62,12 +64,28 @@ function FitMapBounds({
   origin,
   results,
   selectedId,
+  userLocation,
+  locateTrigger,
 }: {
   origin: GeoPoint;
   results: StockPointSearchResult[];
   selectedId?: string | null;
+  userLocation?: GeoPoint | null;
+  locateTrigger?: number;
 }) {
   const map = useMap();
+  const prevTrigger = useRef(locateTrigger);
+
+  useEffect(() => {
+    if (locateTrigger && locateTrigger !== prevTrigger.current) {
+      prevTrigger.current = locateTrigger;
+      const target = userLocation ?? origin;
+      map.flyTo([target.latitude, target.longitude], 13, {
+        animate: true,
+        duration: 0.9,
+      });
+    }
+  }, [locateTrigger, userLocation, origin, map]);
 
   useEffect(() => {
     const points = results.map((result) => [result.stockPoint.geo.latitude, result.stockPoint.geo.longitude] as [number, number]);
@@ -104,8 +122,12 @@ export function StockPointMap({
   onSelect,
   mineralName,
   onViewDetails,
+  userLocation,
+  locateTrigger,
 }: StockPointMapProps) {
   const center: [number, number] = [origin.latitude, origin.longitude];
+  const activeOrigin = userLocation ?? origin;
+  const isCustomUserLoc = Boolean(userLocation);
 
   return (
     <div className="stock-point-map h-full w-full">
@@ -122,8 +144,11 @@ export function StockPointMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <Marker position={center} icon={makeOriginIcon()}>
-          <Popup>{originLabel}</Popup>
+        <Marker
+          position={[activeOrigin.latitude, activeOrigin.longitude]}
+          icon={makeOriginIcon(isCustomUserLoc)}
+        >
+          <Popup>{isCustomUserLoc ? 'Your Current Location' : originLabel}</Popup>
         </Marker>
 
         {results.map((result, index) => {
@@ -179,8 +204,22 @@ export function StockPointMap({
           );
         })}
 
-        <Circle center={center} radius={3000} pathOptions={{ color: '#22c55e', fillOpacity: 0.08, weight: 1 }} />
-        <FitMapBounds origin={origin} results={results} selectedId={selectedId} />
+        <Circle
+          center={[activeOrigin.latitude, activeOrigin.longitude]}
+          radius={3000}
+          pathOptions={{
+            color: isCustomUserLoc ? '#0284c7' : '#22c55e',
+            fillOpacity: 0.08,
+            weight: 1,
+          }}
+        />
+        <FitMapBounds
+          origin={origin}
+          results={results}
+          selectedId={selectedId}
+          userLocation={userLocation}
+          locateTrigger={locateTrigger}
+        />
       </MapContainer>
     </div>
   );

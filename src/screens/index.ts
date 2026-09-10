@@ -40,7 +40,12 @@ export {
 } from './enquiry';
 export { ConsumerActivityScreen } from './activity';
 export { ReceiveScreen, ReceiveDeliveryScreen } from './receiving';
-export { InventoryScreen, InventoryBalanceScreen } from './inventory';
+export {
+  InventoryScreen,
+  InventoryBalanceScreen,
+  TransferPermitScreen,
+  TransfersListScreen,
+} from './inventory';
 export { MineralScreen } from './MineralScreen';
 export { ConsumerProjectsScreen } from './consumer/ConsumerProjectsScreen';
 export { ConsumerProjectDetailsScreen } from './consumer/ConsumerProjectDetailsScreen';

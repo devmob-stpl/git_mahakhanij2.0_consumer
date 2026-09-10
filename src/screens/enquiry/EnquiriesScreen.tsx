@@ -50,7 +50,7 @@ export function EnquiriesScreen() {
     query.data?.minerals.find((mineral) => mineral.id === id)?.name ?? 'Mineral';
   const stockPointName = (id: ID) =>
     query.data?.stockPoints.find((result) => result.stockPoint.id === id)?.stockPoint.name ??
-    'Stock point';
+    'Mineral place';
 
   return (
     <Screen title={t.enquiry.listTitle} onBack>

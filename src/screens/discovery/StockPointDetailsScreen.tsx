@@ -35,13 +35,13 @@ export function StockPointDetailsScreen() {
   const t = useCopy();
 
   const query = useAsync(async () => {
-    if (!stockPointId) throw new Error('A stock point is required');
+    if (!stockPointId) throw new Error('A mineral place is required');
 
     const [stockPoint, minerals] = await Promise.all([
       stockPointRepository.getById(stockPointId),
       mineralRepository.listAll(),
     ]);
-    if (!stockPoint) throw new Error('Stock point not found');
+    if (!stockPoint) throw new Error('Mineral place not found');
 
     return { stockPoint, minerals };
   }, [stockPointId]);

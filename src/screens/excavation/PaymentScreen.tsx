@@ -8,6 +8,7 @@ import {
   Lock,
   Receipt,
   ShieldAlert,
+  Upload,
 } from 'lucide-react';
 import type { Money, Payment, PaymentPurpose, TemporaryExcavationApplication } from '@/domain';
 import {
@@ -26,6 +27,7 @@ import { ROUTES, Screen } from '@/navigation';
 import { paymentRepository, temporaryExcavationRepository, useAsync } from '@/data';
 
 type Stage = 'SUMMARY' | 'REDIRECTING' | 'SUCCESS' | 'FAILED';
+type PaymentMethodMode = 'ONLINE' | 'OFFLINE_CHALLAN';
 
 /** How long the simulated gateway hand-off is shown. */
 const REDIRECT_MS = 1800;
@@ -36,11 +38,20 @@ export function PaymentScreen() {
 
   const [stage, setStage] = useState<Stage>('SUMMARY');
   const [currentChannel, setCurrentChannel] = useState<'GRAS' | 'MAHAKHANIJ'>('GRAS');
+  const [paymentMethodMode, setPaymentMethodMode] = useState<PaymentMethodMode>('ONLINE');
   const [grasPaid, setGrasPaid] = useState(false);
   const [mahakhanijPaid, setMahakhanijPaid] = useState(false);
   const [payment, setPayment] = useState<Payment | null>(null);
   const [failNext, setFailNext] = useState(false);
   const [settled, setSettled] = useState<TemporaryExcavationApplication | null>(null);
+
+  // Offline Challan state
+  const [offlineGrn, setOfflineGrn] = useState('');
+  const [offlineCin, setOfflineCin] = useState('');
+  const [offlineBank, setOfflineBank] = useState('State Bank of India (Cyber Treasury)');
+  const [offlineDate, setOfflineDate] = useState(new Date().toISOString().split('T')[0]);
+  const [offlineFileName, setOfflineFileName] = useState('');
+  const [offlineSubmitting, setOfflineSubmitting] = useState(false);
 
   const paymentPurpose: PaymentPurpose =
     purpose === 'demand-note' ? 'DEMAND_NOTE' : 'APPLICATION_FEE';
@@ -356,20 +367,82 @@ Payment Status         : VERIFIED & SETTLED
         subtitle={application.applicationNumber || 'Application Fee Assessment'}
         onBack
         footer={
-          <button
-            type="button"
-            onClick={() => startPayment('GRAS', false)}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#15803d] py-3.5 px-4 text-body font-bold text-white shadow-md hover:bg-[#166534] active:scale-[0.99] transition-all cursor-pointer"
-          >
-            <span>₹</span>
-            <span>Pay application fee · {formatMoney(appFeeBreakdown.totalFee)}</span>
-          </button>
+          paymentMethodMode === 'ONLINE' ? (
+            <button
+              type="button"
+              onClick={() => startPayment('GRAS', false)}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#15803d] py-3.5 px-4 text-body font-bold text-white shadow-md hover:bg-[#166534] active:scale-[0.99] transition-all cursor-pointer"
+            >
+              <span>₹</span>
+              <span>Pay Online via GRAS · {formatMoney(appFeeBreakdown.totalFee)}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={offlineSubmitting || !offlineGrn}
+              onClick={async () => {
+                if (!applicationId) return;
+                setOfflineSubmitting(true);
+                try {
+                  const initiated = await paymentRepository.initiate({
+                    applicationId,
+                    purpose: 'APPLICATION_FEE',
+                  });
+                  const result = await paymentRepository.complete({
+                    paymentId: initiated.id,
+                    outcome: 'SUCCESS',
+                  });
+                  setSettled(result.application);
+                  setStage('SUCCESS');
+                } finally {
+                  setOfflineSubmitting(false);
+                }
+              }}
+              className={cn(
+                'flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 px-4 text-body font-bold text-white shadow-md transition-all',
+                !offlineGrn || offlineSubmitting
+                  ? 'bg-neutral-300 cursor-not-allowed text-neutral-500'
+                  : 'bg-[#1241a6] hover:bg-[#0f3484] active:scale-[0.99] cursor-pointer'
+              )}
+            >
+              <FileCheck size={18} />
+              <span>{offlineSubmitting ? 'Verifying Challan...' : `Verify & Submit Offline Challan (${formatMoney(appFeeBreakdown.totalFee)})`}</span>
+            </button>
+          )
         }
       >
         {query.loading && <LoadingState variant="list" rows={3} />}
         {query.error && <ErrorState onRetry={query.reload} />}
 
         <div className="px-4 py-5 pb-8 space-y-4 bg-white">
+          {/* Payment Method Switcher */}
+          <div className="grid grid-cols-2 gap-2 rounded-2xl bg-neutral-100 p-1 border border-neutral-200 text-caption font-semibold">
+            <button
+              type="button"
+              onClick={() => setPaymentMethodMode('ONLINE')}
+              className={cn(
+                'flex items-center justify-center gap-1.5 rounded-xl py-2 transition-all cursor-pointer',
+                paymentMethodMode === 'ONLINE'
+                  ? 'bg-white text-[#1241a6] shadow-xs'
+                  : 'text-neutral-600 hover:text-ink'
+              )}
+            >
+              <span>🌐 Online (NetBanking/UPI)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethodMode('OFFLINE_CHALLAN')}
+              className={cn(
+                'flex items-center justify-center gap-1.5 rounded-xl py-2 transition-all cursor-pointer',
+                paymentMethodMode === 'OFFLINE_CHALLAN'
+                  ? 'bg-white text-[#1241a6] shadow-xs'
+                  : 'text-neutral-600 hover:text-ink'
+              )}
+            >
+              <span>🏛️ Offline GRAS Challan</span>
+            </button>
+          </div>
+
           {/* Main Assessment Card Matching Reference 2 */}
           <div className="rounded-3xl border border-emerald-300 bg-[#f0fdf4] p-4.5 shadow-xs">
             <div className="flex items-center justify-between">
@@ -382,7 +455,7 @@ Payment Status         : VERIFIED & SETTLED
             </div>
 
             <p className="mt-1.5 text-caption text-emerald-800/90 leading-relaxed">
-              Pay the application fee to submit your excavation proposal. The proposal is forwarded to the mining officer as soon as payment succeeds.
+              Pay the application fee to submit your excavation proposal. The proposal is forwarded to the Revenue Officer as soon as payment succeeds.
             </p>
 
             {/* Inner White Breakdown Card */}
@@ -416,6 +489,92 @@ Payment Status         : VERIFIED & SETTLED
               </div>
             </div>
           </div>
+
+          {/* Offline Challan Details Input Box */}
+          {paymentMethodMode === 'OFFLINE_CHALLAN' && (
+            <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Receipt size={16} className="text-[#1241a6]" />
+                <h4 className="text-body-sm font-bold text-ink">Enter Bank / Treasury Challan Details</h4>
+              </div>
+
+              <div className="space-y-2.5 text-caption">
+                <div>
+                  <label className="block font-semibold text-ink-secondary mb-1">
+                    GRAS Challan GRN / Reference No. *
+                  </label>
+                  <input
+                    type="text"
+                    value={offlineGrn}
+                    onChange={(e) => setOfflineGrn(e.target.value.toUpperCase())}
+                    placeholder="e.g. MH000242672202627E"
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 font-mono text-body-sm text-ink uppercase focus:border-primary-600 focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block font-semibold text-ink-secondary mb-1">
+                      CIN (Challan ID)
+                    </label>
+                    <input
+                      type="text"
+                      value={offlineCin}
+                      onChange={(e) => setOfflineCin(e.target.value)}
+                      placeholder="e.g. 0200394202609038"
+                      className="w-full rounded-xl border border-line bg-white px-3 py-2 font-mono text-caption text-ink focus:border-primary-600 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-ink-secondary mb-1">
+                      Challan Date *
+                    </label>
+                    <input
+                      type="date"
+                      value={offlineDate}
+                      onChange={(e) => setOfflineDate(e.target.value)}
+                      className="w-full rounded-xl border border-line bg-white px-3 py-2 text-caption text-ink focus:border-primary-600 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-ink-secondary mb-1">
+                    Bank / Cyber Treasury Branch
+                  </label>
+                  <input
+                    type="text"
+                    value={offlineBank}
+                    onChange={(e) => setOfflineBank(e.target.value)}
+                    placeholder="e.g. SBI Cyber Treasury Branch"
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-caption text-ink focus:border-primary-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-ink-secondary mb-1">
+                    Upload Bank Stamped Challan Receipt (PDF / Image)
+                  </label>
+                  <label className="flex items-center justify-between rounded-xl border border-dashed border-neutral-300 bg-white p-3 cursor-pointer hover:bg-neutral-50 transition">
+                    <div className="flex items-center gap-2 text-neutral-500">
+                      <Upload size={16} />
+                      <span className="text-[12px]">{offlineFileName || 'Click to select challan receipt'}</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-[#1241a6] bg-blue-50 px-2 py-0.5 rounded">Browse</span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setOfflineFileName(e.target.files[0].name);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </Screen>
     );

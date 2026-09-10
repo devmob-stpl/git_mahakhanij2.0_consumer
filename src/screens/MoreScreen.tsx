@@ -10,9 +10,11 @@ import {
   RotateCcw,
   ShieldCheck,
   Shovel,
+  Truck,
   UserCheck,
   Warehouse,
 } from 'lucide-react';
+
 import {
   Button,
   ConfirmDialog,
@@ -130,6 +132,14 @@ export function MoreScreen() {
           onClick={() => navigate(ROUTES.inventory)}
           trailing={null}
         />
+        <ListRow
+          leading={<Truck size={17} />}
+          title="Mineral Transfers & e-TP"
+          subtitle="Surplus relocation, inter-site passes and returns"
+          onClick={() => navigate(ROUTES.transfers)}
+          trailing={null}
+        />
+
         {user.userType === 'NORMAL_CONSUMER' && (
           <ListRow
             leading={<Building2 size={17} />}
@@ -166,7 +176,7 @@ export function MoreScreen() {
           <ListRow
             leading={<Building2 size={17} />}
             title="Minerals"
-            subtitle="Explore mineral availability and nearby stock points"
+            subtitle="Explore mineral availability and nearby mineral places"
             onClick={() => navigate(ROUTES.mineral)}
             trailing={null}
           />

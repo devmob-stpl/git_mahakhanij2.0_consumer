@@ -46,6 +46,8 @@ import {
   RegisterSupervisorScreen,
   SupervisorsScreen,
   TemporaryExcavationScreen,
+  TransferPermitScreen,
+  TransfersListScreen,
   WelcomeScreen,
 } from '@/screens';
 import { PersonaPickerScreen } from '@/prototype/PersonaPickerScreen';
@@ -232,6 +234,9 @@ export function AppRouter() {
           <Route path={ROUTES.receiveDelivery()} element={<ReceiveDeliveryScreen />} />
           <Route path={ROUTES.inventory} element={<InventoryScreen />} />
           <Route path={ROUTES.inventoryBalance()} element={<InventoryBalanceScreen />} />
+          <Route path={ROUTES.transfers} element={<TransfersListScreen />} />
+          <Route path={ROUTES.transferPermit()} element={<TransferPermitScreen />} />
+          <Route path={ROUTES.transferDetails()} element={<TransferPermitScreen />} />
           <Route path={ROUTES.reports} element={<ConsumerReportsScreen />} />
 
           {/*

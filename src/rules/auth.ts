@@ -96,9 +96,26 @@ export function isValidPan(input: string): boolean {
   return PAN_PATTERN.test(normalizePan(input));
 }
 
+/** GSTIN: 2 digits state code + 10 char PAN + 1 entity code + 'Z' + 1 check digit */
+const GST_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+export const GST_LENGTH = 15;
+
+export function normalizeGst(input: string): string {
+  return input.replace(/[\s-]/g, '').toUpperCase();
+}
+
+export function isValidGst(input: string): boolean {
+  return GST_PATTERN.test(normalizeGst(input));
+}
+
+export function formatGst(input: string): string {
+  return normalizeGst(input).slice(0, GST_LENGTH);
+}
+
 export interface OrganizationRegistrationDetails {
   organizationName: string;
-  organizationType: 'BUILDER' | 'CONTRACTOR' | 'GOVERNMENT' | 'OTHER';
+  organizationType?: 'BUILDER' | 'CONTRACTOR' | 'GOVERNMENT' | 'OTHER';
+  gstNumber?: string;
   registrationNumber?: string;
 }
 
@@ -159,7 +176,10 @@ export function isRegistrationComplete(draft: Partial<RegistrationDraft>): boole
 
   if (draft.userType === 'ORGANIZATION') {
     const organization = draft.organization;
-    if (!organization?.organizationName.trim() || !organization.organizationType) {
+    if (!organization?.organizationName.trim()) {
+      return false;
+    }
+    if (organization.gstNumber && !isValidGst(organization.gstNumber)) {
       return false;
     }
   }

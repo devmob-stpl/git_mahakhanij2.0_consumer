@@ -37,4 +37,6 @@ export { Checkbox, type CheckboxProps } from './Checkbox';
 export { StepProgress, type StepProgressProps } from './StepProgress';
 export { BrandMark, type BrandMarkProps } from './BrandMark';
 export { DocumentUpload, type DocumentUploadProps, type UploadedFile } from './DocumentUpload';
+export { FloatingActionButton, type FloatingActionButtonProps } from './FloatingActionButton';
 export { OVERLAY_ROOT_ID, getOverlayRoot } from './overlayRoot';
+

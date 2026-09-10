@@ -21,6 +21,7 @@ export interface Project {
   code: string;
   projectType?: ProjectOwnershipType;
   department?: string;
+  officeName?: string;
   workOrderNumber?: string;
   category?: ProjectCategory;
   city?: string;

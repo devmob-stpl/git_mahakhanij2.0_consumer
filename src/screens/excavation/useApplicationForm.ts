@@ -19,6 +19,7 @@ import {
 import { temporaryExcavationRepository } from '@/data';
 import { ROUTES } from '@/navigation';
 import type { OperatingContext } from '@/state';
+import { useDevQuickFill } from '@/prototype';
 import type { AttachedDocument } from './DocumentChecklist';
 
 export interface UseApplicationFormOptions {
@@ -223,6 +224,110 @@ export function useApplicationForm({ user, organization, context, draftId }: Use
     }
   }
 
+  function quickFill() {
+    setDraft((prev) => ({
+      ...prev,
+      fullName: prev.fullName || user?.fullName || 'Rajesh Patil',
+      mobileNumber: prev.mobileNumber || user?.mobileNumber || '9822014576',
+      email: prev.email || 'rajesh.patil@infracon.co.in',
+      panNumber: prev.panNumber || 'ABCDE1234F',
+      aadhaarNumber: prev.aadhaarNumber || '453210984532',
+      gstNumber: prev.gstNumber || '27ABCDE1234F1Z5',
+      idProofType: 'AADHAAR',
+      idProofNumber: '453210984532',
+      alternatePhone: '9822014577',
+      registeredAddressLine: 'Survey No. 42/1, Wagholi Road',
+      registeredTaluka: 'Haveli',
+      registeredDistrict: 'Pune',
+      registeredPincode: '412207',
+
+      /* Proposal */
+      applicationType: 'QUARRY_TEMPORARY_PLOT',
+      leaseType: 'TEMPORARY',
+      proposalLevel: 'DISTRICT_LEVEL',
+      mineralId: prev.mineralId || 'mineral-sand-01',
+      excavationQuantityBrass: 250,
+      estimatedQuantity: 1125,
+      liftingPeriodDays: 60,
+      reasonForApplying: 'Excavation for infrastructure foundation and basement leveling',
+      excavationMethod: 'SEMI_MECHANISED',
+      depthInMetres: 3.5,
+      fromDate: new Date().toISOString().slice(0, 10),
+      toDate: new Date(Date.now() + 60 * 86400000).toISOString().slice(0, 10),
+      purpose: 'Basement and foundational earth extraction for construction development',
+      remarks: 'All safety standards and demarcation clearances will be maintained on site.',
+
+      /* Location */
+      category: 'RURAL',
+      plotLocationType: 'INTERIOR',
+      districtCode: 'PUNE',
+      districtName: 'Pune',
+      talukaCode: 'HAVELI',
+      talukaName: 'Haveli',
+      villageCode: 'WAGHOLI',
+      villageName: 'Wagholi',
+      surveyNumber: '42/1',
+      subDivisionNumber: '2A',
+      surveyEntries: [
+        {
+          id: 'survey-1',
+          surveyNumber: '42/1',
+          areaInHectares: 1.25,
+          sevenTwelveAttached: true,
+          ownerApprovalAttached: true,
+        },
+      ],
+      totalPlotAreaHectare: 1.25,
+      landType: 'PRIVATE',
+      areaInSqm: 12500,
+      addressLine: 'Gat No. 42/1, Wagholi-Kesnand Road, Wagholi',
+      pincode: '412207',
+      siteGeo: { latitude: 18.579, longitude: 73.981 },
+      demandNoteOffice: 'DMO_PUNE',
+      grasOfficeName: 'GRAS_PUNE',
+
+      declarationAccepted: true,
+    }));
+
+    // Auto-attach all standard required documents
+    const sampleDocs: AttachedDocument[] = [
+      {
+        kind: 'SITE_PLAN',
+        documentType: 'Site plan with demarcation',
+        fileName: 'site_plan_42_1_wagholi.pdf',
+        documentNumber: 'SP-2024-88',
+      },
+      {
+        kind: 'LAND_RECORD',
+        documentType: '7/12 Land Record Extract',
+        fileName: '7_12_extract_wagholi.pdf',
+        documentNumber: '712-42-1',
+      },
+      {
+        kind: 'LAND_OWNER_CONSENT',
+        documentType: 'Landowner Consent & NOC',
+        fileName: 'landowner_consent_affidavit.pdf',
+        documentNumber: 'NOC-2024-42',
+      },
+      {
+        kind: 'IDENTITY_PROOF',
+        documentType: 'Aadhaar Identity Proof',
+        fileName: 'applicant_aadhaar_card.pdf',
+        documentNumber: '453210984532',
+      },
+      {
+        kind: 'ENVIRONMENTAL_CLEARANCE',
+        documentType: 'Environmental Exemption Certificate',
+        fileName: 'environmental_clearance_certificate.pdf',
+        documentNumber: 'EC-MAH-2024-91',
+      },
+    ];
+    setDocuments(sampleDocs);
+    setErrors({});
+  }
+
+  useDevQuickFill(quickFill);
+
   return {
     draft,
     errors,
@@ -240,6 +345,7 @@ export function useApplicationForm({ user, organization, context, draftId }: Use
     back,
     goToStep,
     persist,
+    quickFill,
   };
 }
 

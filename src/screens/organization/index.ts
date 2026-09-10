@@ -15,4 +15,5 @@ export { CreatePackageScreen } from './CreatePackageScreen';
 export { PackageDetailsScreen } from './PackageDetailsScreen';
 export { RegisterSupervisorScreen } from './RegisterSupervisorScreen';
 export { SupervisorsScreen } from './SupervisorsScreen';
+export { ProjectActionFAB, type ProjectActionFABProps } from './ProjectActionFAB';
 export { useOrganizationOverview, type OrganizationOverview } from './useOrganizationOverview';

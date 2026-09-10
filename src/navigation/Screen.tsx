@@ -15,6 +15,8 @@ export interface ScreenProps {
   hideAppBar?: boolean;
   /** Sticky action area above the bottom navigation. One primary action. */
   footer?: ReactNode;
+  /** Floating action button anchored to bottom-right above main scroll area */
+  floatingAction?: ReactNode;
   children: ReactNode;
   className?: string;
 }
@@ -34,6 +36,7 @@ export function Screen({
   header,
   hideAppBar = false,
   footer,
+  floatingAction,
   children,
   className,
 }: ScreenProps) {
@@ -41,7 +44,7 @@ export function Screen({
   const handleBack = onBack === true ? () => navigate(-1) : onBack;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-canvas">
+    <div className="relative flex min-h-0 flex-1 flex-col bg-canvas overflow-hidden">
       {header ? (
         header
       ) : !hideAppBar ? (
@@ -54,9 +57,12 @@ export function Screen({
         />
       ) : null}
 
-      <main className={cn('no-scrollbar min-h-0 flex-1 overflow-y-auto', className)}>
-        {children}
-      </main>
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        <main className={cn('no-scrollbar min-h-0 flex-1 overflow-y-auto', className)}>
+          {children}
+        </main>
+        {floatingAction}
+      </div>
 
       {footer && (
         <div className="shrink-0 border-t border-line bg-surface px-4 py-3 shadow-e2">{footer}</div>

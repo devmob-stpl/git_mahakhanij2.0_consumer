@@ -15,11 +15,18 @@ export type InventoryScope =
   | { kind: 'CONSUMER'; userId: ID };
 
 /**
- * The inventory mental model is exactly:
+ * High-level status of the mineral batch on site.
+ * - ACTIVE_ON_SITE: Mineral is currently stored/active on site.
+ * - FULLY_UTILIZED: Work has concluded; mineral has been fully utilized in construction.
+ */
+export type InventoryBalanceStatus = 'ACTIVE_ON_SITE' | 'FULLY_UTILIZED';
+
+/**
+ * The inventory mental model is:
  *
- *     Received − Consumed = Available
+ *     Received − (Consumed + Transferred) = Available
  *
- * Nothing more. `availableQuantity` is DERIVED — always compute it via
+ * `availableQuantity` is DERIVED — always compute it via
  * `computeAvailableQuantity()` in @/rules/inventoryRules rather than trusting
  * a stored value, so the invariant can never drift.
  */
@@ -29,5 +36,7 @@ export interface InventoryBalance {
   mineralId: ID;
   receivedQuantity: Quantity;
   consumedQuantity: Quantity;
+  transferredQuantity?: Quantity;
+  status?: InventoryBalanceStatus;
   lastUpdatedAt: ISODateTime;
 }

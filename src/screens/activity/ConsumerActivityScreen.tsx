@@ -81,7 +81,7 @@ export function ConsumerActivityScreen() {
   const getMineralName = (id: string) =>
     minerals.find((m) => m.id === id)?.name ?? 'Mineral';
   const getStockPointName = (id: string) =>
-    stockPoints.find((sp) => sp.stockPoint.id === id)?.stockPoint.name ?? 'Stock Point';
+    stockPoints.find((sp) => sp.stockPoint.id === id)?.stockPoint.name ?? 'Mineral Place';
 
   const openDigiTpModal = (delivery: Delivery) => {
     setSelectedDigiTpDelivery(delivery);

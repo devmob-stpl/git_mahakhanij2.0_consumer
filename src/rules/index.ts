@@ -21,3 +21,5 @@ export * from './receiving';
 export * from './discrepancyRules';
 export * from './statusPresentation';
 export * from './geo';
+export * from './transferRules';
+

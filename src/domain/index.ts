@@ -27,3 +27,4 @@ export * from './inventory';
 export * from './consumption';
 export * from './temporaryExcavation';
 export * from './payment';
+export * from './transfer';

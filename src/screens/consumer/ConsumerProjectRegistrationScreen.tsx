@@ -6,6 +6,8 @@ import { mineralRepository, projectRepository, useAsync } from '@/data';
 import { useCurrentUser } from '@/state';
 import { ROUTES, Screen } from '@/navigation';
 
+import { useDevQuickFill } from '@/prototype';
+
 export function ConsumerProjectRegistrationScreen() {
   const navigate = useNavigate();
   const user = useCurrentUser();
@@ -22,6 +24,22 @@ export function ConsumerProjectRegistrationScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   const minerals = useAsync(() => mineralRepository.listAll(), []);
+
+  function handleQuickFill() {
+    setName('Hilltop Villa Construction Site');
+    setLine1('Gat No. 88/2, Paud Road, Bhugaon');
+    setTaluka('Mulshi');
+    setDistrict('Pune');
+    setState('Maharashtra');
+    setPincode('412115');
+    setLatitude('18.5085');
+    setLongitude('73.7423');
+    if (minerals.data && minerals.data.length > 0) {
+      setSelectedMaterials(minerals.data.slice(0, 3).map((m) => m.id));
+    }
+  }
+
+  useDevQuickFill(handleQuickFill);
 
   useEffect(() => {
     if (!minerals.data || minerals.data.length === 0) return;

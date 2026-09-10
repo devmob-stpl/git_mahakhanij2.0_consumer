@@ -1,9 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { Layers, MapPin, Plus } from 'lucide-react';
+import { Layers, MapPin } from 'lucide-react';
 import type { Package, Project } from '@/domain';
 import { statusPresentation } from '@/rules';
 import {
-  Button,
   EmptyState,
   ErrorState,
   ListGroup,
@@ -15,6 +14,7 @@ import { ROUTES, Screen } from '@/navigation';
 import { packageRepository, projectRepository, useAsync } from '@/data';
 import { useCurrentOrganization } from '@/state';
 import { useCopy } from '@/content';
+import { ProjectActionFAB } from './ProjectActionFAB';
 
 /**
  * ORGANIZATION ONLY — level 2 of the hierarchy.
@@ -25,7 +25,6 @@ import { useCopy } from '@/content';
  */
 export function ProjectsScreen() {
   const organization = useCurrentOrganization();
-  const navigate = useNavigate();
   const t = useCopy();
 
   const query = useAsync(async () => {
@@ -40,11 +39,7 @@ export function ProjectsScreen() {
   return (
     <Screen
       title={t.projects.title}
-      actions={
-        <Button size="sm" variant="secondary" leftIcon={<Plus size={14} />} onClick={() => navigate(ROUTES.createProject)}>
-          New project
-        </Button>
-      }
+      floatingAction={<ProjectActionFAB />}
     >
       {query.loading && <LoadingState variant="list" rows={4} />}
       {query.error && <ErrorState onRetry={query.reload} />}
@@ -53,6 +48,7 @@ export function ProjectsScreen() {
     </Screen>
   );
 }
+
 
 /** Split out so `data` narrows once instead of at every usage. */
 function ProjectList({ data }: { data: { projects: Project[]; packages: Package[] } }) {
@@ -92,15 +88,15 @@ function ProjectRow({
   packages: Package[];
   onOpen: () => void;
 }) {
-  const t = useCopy();
   const status = statusPresentation.project(project.status);
+  const activeCount = packages.filter((p) => p.status === 'ACTIVE').length;
 
   return (
     <ListRow
       leading={<Layers size={17} />}
       leadingTone={project.status === 'ACTIVE' ? 'primary' : 'neutral'}
       title={project.name}
-      subtitle={`${project.location.district} · ${t.projects.packageCount(packages.length)}`}
+      subtitle={`${project.location.taluka}, ${project.location.district} · ${activeCount}/${packages.length} active packages`}
       detail={project.code}
       meta={<StatusBadge label={status.label} tone={status.tone} size="sm" />}
       onClick={onOpen}

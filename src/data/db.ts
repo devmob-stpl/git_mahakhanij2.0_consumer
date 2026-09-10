@@ -12,6 +12,7 @@ import type {
   Payment,
   SupervisorInfo,
   TemporaryExcavationApplication,
+  MineralTransfer,
   User,
 } from '@/domain';
 import * as fixtures from './fixtures';
@@ -32,9 +33,11 @@ export interface Database {
   deliveries: Delivery[];
   inventoryBalances: InventoryBalance[];
   consumptionEntries: ConsumptionEntry[];
+  transfers: MineralTransfer[];
   temporaryExcavationApplications: TemporaryExcavationApplication[];
   payments: Payment[];
 }
+
 
 function seed(): Database {
   return structuredClone({
@@ -93,10 +96,12 @@ function seed(): Database {
     deliveries: fixtures.deliveries,
     inventoryBalances: fixtures.inventoryBalances,
     consumptionEntries: fixtures.consumptionEntries,
+    transfers: fixtures.transfers,
     temporaryExcavationApplications: fixtures.temporaryExcavationApplications,
     payments: fixtures.payments,
   });
 }
+
 
 export const db: Database = seed();
 

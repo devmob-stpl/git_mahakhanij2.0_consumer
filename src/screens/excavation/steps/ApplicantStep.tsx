@@ -57,32 +57,42 @@ export function ApplicantStep({ draft, errors, update }: StepProps) {
         onChange={(event) => update('email', event.target.value)}
       />
 
-      <Input
-        label="Applicant Address"
-        required
-        value={draft.registeredAddressLine}
-        {...(errors.registeredAddressLine ? { error: errors.registeredAddressLine } : {})}
-        onChange={(event) => update('registeredAddressLine', event.target.value)}
-      />
+      {/* Registered Address Section */}
+      <div className="pt-2 border-t border-line space-y-3">
+        <h3 className="text-caption font-bold uppercase tracking-wider text-ink-muted">
+          Applicant Registered Address
+        </h3>
 
-      <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            label="District"
+            required
+            value={draft.registeredDistrict}
+            placeholder="e.g. Pune / Ahmednagar"
+            {...(errors.registeredDistrict ? { error: errors.registeredDistrict } : {})}
+            onChange={(event) => update('registeredDistrict', event.target.value)}
+          />
+          <Input
+            label="Applicant Pincode"
+            required
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="411001"
+            value={draft.registeredPincode}
+            {...(errors.registeredPincode ? { error: errors.registeredPincode } : {})}
+            onChange={(event) =>
+              update('registeredPincode', event.target.value.replace(/\D/g, '').slice(0, 6))
+            }
+          />
+        </div>
+
         <Input
-          label="District"
+          label="Registered Street Address"
           required
-          value={draft.registeredDistrict}
-          {...(errors.registeredDistrict ? { error: errors.registeredDistrict } : {})}
-          onChange={(event) => update('registeredDistrict', event.target.value)}
-        />
-        <Input
-          label="Applicant Pincode"
-          required
-          inputMode="numeric"
-          maxLength={6}
-          value={draft.registeredPincode}
-          {...(errors.registeredPincode ? { error: errors.registeredPincode } : {})}
-          onChange={(event) =>
-            update('registeredPincode', event.target.value.replace(/\D/g, '').slice(0, 6))
-          }
+          placeholder="Plot / House No., Building, Area / Road"
+          value={draft.registeredAddressLine}
+          {...(errors.registeredAddressLine ? { error: errors.registeredAddressLine } : {})}
+          onChange={(event) => update('registeredAddressLine', event.target.value)}
         />
       </div>
 

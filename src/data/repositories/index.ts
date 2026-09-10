@@ -87,6 +87,7 @@ export const projectRepository = {
       code: string;
       projectType?: Project['projectType'];
       department?: string;
+      officeName?: string;
       workOrderNumber?: string;
       category?: Project['category'];
       city?: string;
@@ -107,6 +108,7 @@ export const projectRepository = {
         code: input.code.trim(),
         ...(input.projectType ? { projectType: input.projectType } : {}),
         ...(input.department?.trim() ? { department: input.department.trim() } : {}),
+        ...(input.officeName?.trim() ? { officeName: input.officeName.trim() } : {}),
         ...(input.workOrderNumber?.trim() ? { workOrderNumber: input.workOrderNumber.trim() } : {}),
         ...(input.category ? { category: input.category } : {}),
         ...(input.city?.trim() ? { city: input.city.trim() } : {}),
@@ -261,6 +263,7 @@ export interface StockPointQuery {
   /** Free-text match on name, code, taluka or district. */
   search?: string;
   mineralId?: ID;
+  mineralIds?: ID[];
   /** When supplied, results are ranked by distance from this point. */
   near?: GeoPoint;
   maxDistanceKm?: number;
@@ -279,7 +282,11 @@ export const stockPointRepository = {
       const term = query.search?.trim().toLowerCase();
 
       let results = db.stockPoints.filter((stockPoint) => {
-        if (query.mineralId) {
+        if (query.mineralIds && query.mineralIds.length > 0) {
+          const matching = stockPoint.minerals.filter((m) => query.mineralIds!.includes(m.mineralId));
+          if (matching.length === 0) return false;
+          if (query.availableOnly && matching.every((m) => m.availableQuantity.value <= 0)) return false;
+        } else if (query.mineralId) {
           const holding = stockPoint.minerals.find((m) => m.mineralId === query.mineralId);
           if (!holding) return false;
           if (query.availableOnly && holding.availableQuantity.value <= 0) return false;
@@ -288,11 +295,16 @@ export const stockPointRepository = {
         if (query.availableOnly && stockPoint.status === 'CLOSED') return false;
 
         if (term) {
+          const mineralNames = stockPoint.minerals
+            .map((m) => db.minerals.find((min) => min.id === m.mineralId)?.name ?? '')
+            .join(' ');
           const haystack = [
             stockPoint.name,
             stockPoint.code,
+            stockPoint.address.line1,
             stockPoint.address.taluka,
             stockPoint.address.district,
+            mineralNames,
           ]
             .join(' ')
             .toLowerCase();
@@ -491,7 +503,29 @@ export const inventoryRepository = {
 
   getById: (id: ID): Promise<InventoryBalance | null> =>
     request(() => db.inventoryBalances.find((balance) => balance.id === id) ?? null),
+
+  markAsUtilized: (id: ID): Promise<InventoryBalance> =>
+    request(() => {
+      const balance = db.inventoryBalances.find((b) => b.id === id);
+      if (!balance) throw new Error('Inventory balance not found');
+      balance.status = 'FULLY_UTILIZED';
+      balance.consumedQuantity = balance.receivedQuantity;
+      balance.lastUpdatedAt = new Date().toISOString();
+      return balance;
+    }),
+
+
+  reactivateStock: (id: ID): Promise<InventoryBalance> =>
+    request(() => {
+      const balance = db.inventoryBalances.find((b) => b.id === id);
+      if (!balance) throw new Error('Inventory balance not found');
+      balance.status = 'ACTIVE_ON_SITE';
+      balance.consumedQuantity = { value: 0, unit: balance.receivedQuantity.unit };
+      balance.lastUpdatedAt = new Date().toISOString();
+      return balance;
+    }),
 };
+
 
 export interface RecordConsumptionInput {
   inventoryBalanceId: ID;
@@ -678,3 +712,6 @@ function matches(
   if (query.packageId && record.packageId !== query.packageId) return false;
   return true;
 }
+
+export * from './transferRepository';
+

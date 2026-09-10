@@ -3,11 +3,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   AlertTriangle,
   ArrowRight,
-  Clock,
   Download,
   Edit3,
-  FileCheck,
   FileText,
+  FileX,
   IndianRupee,
   MapPin,
   Plus,
@@ -36,7 +35,7 @@ import { mineralRepository, temporaryExcavationRepository, useAsync } from '@/da
 import { useCurrentOrganization } from '@/state';
 import { useCopy } from '@/content';
 
-type FilterTab = 'ALL' | 'UNDER_REVIEW' | 'DEMAND_NOTE' | 'PERMIT_ISSUED' | 'ATTENTION';
+type FilterTab = 'ALL' | 'UNDER_REVIEW' | 'DEMAND_NOTE' | 'PERMIT_ISSUED' | 'REJECTED' | 'ATTENTION';
 
 export function TemporaryExcavationScreen() {
   const organization = useCurrentOrganization();
@@ -71,7 +70,7 @@ export function TemporaryExcavationScreen() {
   const isUnderReviewCategory = (app: TemporaryExcavationApplication) =>
     app.status === 'UNDER_REVIEW' || app.status === 'QUERY_RAISED' || app.status === 'DRAFT';
 
-  // Counts for Top 4 Summary Cards & Chips
+  // Counts for Top Summary Cards & Chips
   const totalCount = applications.length;
   const underReviewCount = applications.filter(isUnderReviewCategory).length;
   const demandNoteCount = applications.filter(
@@ -80,8 +79,11 @@ export function TemporaryExcavationScreen() {
   const permitIssuedCount = applications.filter(
     (a) => a.status === 'ORDER_ISSUED'
   ).length;
+  const rejectedCount = applications.filter(
+    (a) => a.status === 'REJECTED'
+  ).length;
   const attentionCount = applications.filter(
-    (app) => needsApplicantResponse(app) || awaitsDemandNotePayment(app)
+    (app) => needsApplicantResponse(app) || awaitsDemandNotePayment(app) || app.status === 'REJECTED'
   ).length;
 
   // Filtered List
@@ -90,7 +92,8 @@ export function TemporaryExcavationScreen() {
     if (activeTab === 'UNDER_REVIEW' && !isUnderReviewCategory(app)) return false;
     if (activeTab === 'DEMAND_NOTE' && app.status !== 'DEMAND_NOTE_ISSUED') return false;
     if (activeTab === 'PERMIT_ISSUED' && app.status !== 'ORDER_ISSUED') return false;
-    if (activeTab === 'ATTENTION' && !needsApplicantResponse(app) && !awaitsDemandNotePayment(app)) return false;
+    if (activeTab === 'REJECTED' && app.status !== 'REJECTED') return false;
+    if (activeTab === 'ATTENTION' && !needsApplicantResponse(app) && !awaitsDemandNotePayment(app) && app.status !== 'REJECTED') return false;
 
     // Search query
     if (searchQuery.trim()) {
@@ -129,152 +132,120 @@ export function TemporaryExcavationScreen() {
 
       {query.data && (
         <div className="space-y-4 bg-[#f8fafc] px-4 py-4 pb-12">
-          {/* 1. Top 4 Summary Cards */}
-          <div className="grid grid-cols-2 gap-2.5">
-            {/* Card 1: Total Applied */}
-            <div
-              onClick={() => setActiveTab('ALL')}
-              className={cn(
-                'cursor-pointer rounded-2xl border p-3.5 shadow-xs transition-all active:scale-95',
-                activeTab === 'ALL'
-                  ? 'border-[#134280] bg-[#eef5fd] ring-2 ring-[#134280]/20'
-                  : 'border-[#d6e5f8] bg-[#f8fafc] hover:bg-[#eef5fd]/60'
-              )}
-            >
-              <div className="flex items-center justify-between text-[#134280]">
-                <span className="text-caption font-semibold">Total Applied</span>
-                <FileText size={15} />
-              </div>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-[#134280]">
-                {String(totalCount).padStart(2, '0')}
-              </p>
-              <p className="mt-0.5 text-[11px] text-neutral-500">All submitted permits</p>
-            </div>
+          {/* 1. Compact Strategic Pipeline Dashboard (<85px height) */}
+          <div className="rounded-2xl border border-neutral-200/90 bg-white p-3 shadow-xs">
+            {/* Header: Total Applied & Action Needed */}
+            <div className="flex items-center justify-between border-b border-neutral-100 pb-2.5">
+              <button
+                type="button"
+                onClick={() => setActiveTab('ALL')}
+                className={cn(
+                  'flex items-center gap-2 rounded-xl px-2.5 py-1.5 transition-all cursor-pointer text-left',
+                  activeTab === 'ALL'
+                    ? 'bg-[#1241a6] text-white shadow-xs'
+                    : 'text-neutral-700 hover:bg-neutral-50 border border-neutral-200/60'
+                )}
+              >
+                <FileText size={14} className={activeTab === 'ALL' ? 'text-white' : 'text-[#1241a6]'} />
+                <span className="text-body-sm font-bold">
+                  All ({totalCount})
+                </span>
+              </button>
 
-            {/* Card 2: Pending Application */}
-            <div
-              onClick={() => setActiveTab('UNDER_REVIEW')}
-              className={cn(
-                'cursor-pointer rounded-2xl border p-3.5 shadow-xs transition-all active:scale-95',
-                activeTab === 'UNDER_REVIEW'
-                  ? 'border-[#b45309] bg-[#fef9e7] ring-2 ring-[#b45309]/20'
-                  : 'border-[#fce8b2] bg-[#fdfaf3] hover:bg-[#fef9e7]/60'
-              )}
-            >
-              <div className="flex items-center justify-between text-[#b45309]">
-                <span className="text-caption font-semibold">Pending Application</span>
-                <Clock size={15} />
-              </div>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-[#b45309]">
-                {String(underReviewCount).padStart(2, '0')}
-              </p>
-              <p className="mt-0.5 text-[11px] text-neutral-500">With Mining Officer</p>
-            </div>
-
-            {/* Card 3: Pending Demand Note */}
-            <div
-              onClick={() => setActiveTab('DEMAND_NOTE')}
-              className={cn(
-                'cursor-pointer rounded-2xl border p-3.5 shadow-xs transition-all active:scale-95',
-                activeTab === 'DEMAND_NOTE'
-                  ? 'border-[#0f766e] bg-[#f0fdfa] ring-2 ring-[#0f766e]/20'
-                  : 'border-[#99f6e4] bg-[#f0fdfa]/40 hover:bg-[#f0fdfa]'
-              )}
-            >
-              <div className="flex items-center justify-between text-[#0f766e]">
-                <span className="text-caption font-semibold">Demand Note Due</span>
-                <IndianRupee size={15} />
-              </div>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-[#0f766e]">
-                {String(demandNoteCount).padStart(2, '0')}
-              </p>
-              <p className="mt-0.5 text-[11px] text-neutral-500">Royalty payment due</p>
-            </div>
-
-            {/* Card 4: Permit Issued */}
-            <div
-              onClick={() => setActiveTab('PERMIT_ISSUED')}
-              className={cn(
-                'cursor-pointer rounded-2xl border p-3.5 shadow-xs transition-all active:scale-95',
-                activeTab === 'PERMIT_ISSUED'
-                  ? 'border-[#15803d] bg-[#dcfce7] ring-2 ring-[#15803d]/20'
-                  : 'border-[#bbf7d0] bg-[#f0fdf4] hover:bg-[#dcfce7]/60'
-              )}
-            >
-              <div className="flex items-center justify-between text-[#15803d]">
-                <span className="text-caption font-semibold">Permit Issued</span>
-                <FileCheck size={15} />
-              </div>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-[#15803d]">
-                {String(permitIssuedCount).padStart(2, '0')}
-              </p>
-              <p className="mt-0.5 text-[11px] text-neutral-500">Active & extracted</p>
-            </div>
-          </div>
-
-          {/* 2. Horizontal Filter Chips (No visible scrollbar) */}
-          <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto py-1 text-caption font-semibold">
-            <button
-              type="button"
-              onClick={() => setActiveTab('ALL')}
-              className={cn(
-                'shrink-0 rounded-full px-3.5 py-1.5 transition-all',
-                activeTab === 'ALL'
-                  ? 'bg-[#1241a6] text-white shadow-xs'
-                  : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50'
-              )}
-            >
-              All ({totalCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('UNDER_REVIEW')}
-              className={cn(
-                'shrink-0 rounded-full px-3.5 py-1.5 transition-all',
-                activeTab === 'UNDER_REVIEW'
-                  ? 'bg-[#1241a6] text-white shadow-xs'
-                  : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50'
-              )}
-            >
-              Pending Application ({underReviewCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('DEMAND_NOTE')}
-              className={cn(
-                'shrink-0 rounded-full px-3.5 py-1.5 transition-all',
-                activeTab === 'DEMAND_NOTE'
-                  ? 'bg-[#1241a6] text-white shadow-xs'
-                  : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50'
-              )}
-            >
-              Demand Note Due ({demandNoteCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('PERMIT_ISSUED')}
-              className={cn(
-                'shrink-0 rounded-full px-3.5 py-1.5 transition-all',
-                activeTab === 'PERMIT_ISSUED'
-                  ? 'bg-[#1241a6] text-white shadow-xs'
-                  : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50'
-              )}
-            >
-              Permits Issued ({permitIssuedCount})
-            </button>
+              {/* Action Needed Badge */}
               <button
                 type="button"
                 onClick={() => setActiveTab('ATTENTION')}
                 className={cn(
-                  'shrink-0 rounded-full px-3.5 py-1.5 transition-all flex items-center gap-1',
+                  'flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all cursor-pointer',
                   activeTab === 'ATTENTION'
-                    ? 'bg-[#b45309] text-white shadow-xs'
-                    : 'bg-amber-50 text-[#b45309] border border-amber-200 hover:bg-amber-100'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
                 )}
               >
                 <AlertTriangle size={12} />
                 <span>Action Needed ({attentionCount})</span>
               </button>
+            </div>
+
+            {/* Strategic 4-Stage Pipeline Grid */}
+            <div className="mt-2.5 grid grid-cols-4 gap-1.5">
+              {/* Stage 1: In Review */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('UNDER_REVIEW')}
+                className={cn(
+                  'flex flex-col items-center justify-center rounded-xl py-2 px-1 transition-all cursor-pointer border text-center',
+                  activeTab === 'UNDER_REVIEW'
+                    ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-500/25 shadow-xs'
+                    : 'border-amber-200/60 bg-amber-50/40 hover:bg-amber-50'
+                )}
+              >
+                <span className="text-body font-extrabold text-[#b45309] leading-tight">
+                  {String(underReviewCount).padStart(2, '0')}
+                </span>
+                <span className="mt-0.5 text-[10px] font-bold text-amber-900 leading-tight">
+                  In Review
+                </span>
+              </button>
+
+              {/* Stage 2: Payment Due */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('DEMAND_NOTE')}
+                className={cn(
+                  'flex flex-col items-center justify-center rounded-xl py-2 px-1 transition-all cursor-pointer border text-center',
+                  activeTab === 'DEMAND_NOTE'
+                    ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-500/25 shadow-xs'
+                    : 'border-teal-200/60 bg-teal-50/40 hover:bg-teal-50'
+                )}
+              >
+                <span className="text-body font-extrabold text-[#0f766e] leading-tight">
+                  {String(demandNoteCount).padStart(2, '0')}
+                </span>
+                <span className="mt-0.5 text-[10px] font-bold text-teal-900 leading-tight">
+                  Payment Due
+                </span>
+              </button>
+
+              {/* Stage 3: Approved / Permit Issued */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('PERMIT_ISSUED')}
+                className={cn(
+                  'flex flex-col items-center justify-center rounded-xl py-2 px-1 transition-all cursor-pointer border text-center',
+                  activeTab === 'PERMIT_ISSUED'
+                    ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-500/25 shadow-xs'
+                    : 'border-emerald-200/60 bg-emerald-50/40 hover:bg-emerald-50'
+                )}
+              >
+                <span className="text-body font-extrabold text-[#15803d] leading-tight">
+                  {String(permitIssuedCount).padStart(2, '0')}
+                </span>
+                <span className="mt-0.5 text-[10px] font-bold text-emerald-900 leading-tight">
+                  Permit Ready
+                </span>
+              </button>
+
+              {/* Stage 4: Rejected */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('REJECTED')}
+                className={cn(
+                  'flex flex-col items-center justify-center rounded-xl py-2 px-1 transition-all cursor-pointer border text-center',
+                  activeTab === 'REJECTED'
+                    ? 'border-red-500 bg-red-50 ring-2 ring-red-500/25 shadow-xs'
+                    : 'border-red-200/60 bg-red-50/40 hover:bg-red-50'
+                )}
+              >
+                <span className="text-body font-extrabold text-[#dc2626] leading-tight">
+                  {String(rejectedCount).padStart(2, '0')}
+                </span>
+                <span className="mt-0.5 text-[10px] font-bold text-red-900 leading-tight">
+                  Rejected
+                </span>
+              </button>
+            </div>
           </div>
 
           {/* 3. Search Bar */}
@@ -325,7 +296,7 @@ export function TemporaryExcavationScreen() {
 }
 
 /**
- * Modern Application Card with embedded multi-stage progress bar
+ * Modern Application Card with embedded multi-stage progress bar and clear status handling
  */
 function ApplicationCard({
   application,
@@ -353,7 +324,7 @@ function ApplicationCard({
   } else if (application.status === 'UNDER_REVIEW') {
     stageBrief = {
       title: 'Stage 2: Under Department Review',
-      description: 'Site boundary inspection and verification in progress by Mining Officer.',
+      description: 'Site boundary inspection and verification in progress by Revenue Officer.',
     };
   } else if (application.status === 'QUERY_RAISED') {
     stageBrief = {
@@ -370,18 +341,35 @@ function ApplicationCard({
       title: 'Stage 4: Permit Granted',
       description: 'Official excavation order issued. Transport permits & DigiTP authorized.',
     };
+  } else if (application.status === 'REJECTED') {
+    stageBrief = {
+      title: 'Application Rejected',
+      description: application.statusRemarks || 'Application proposal rejected by Revenue Officer due to site buffer restrictions or document discrepancies.',
+    };
   }
+
+  const isRejected = application.status === 'REJECTED';
 
   return (
     <div
       onClick={onClick}
-      className="cursor-pointer rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-xs transition-all hover:border-primary-400 hover:shadow-md active:scale-[0.99]"
+      className={cn(
+        'cursor-pointer rounded-2xl border p-4 shadow-xs transition-all active:scale-[0.99]',
+        isRejected
+          ? 'border-red-200 bg-white hover:border-red-400 hover:shadow-md'
+          : 'border-neutral-200/90 bg-white hover:border-primary-400 hover:shadow-md'
+      )}
     >
       {/* Header: App Number & Status Badge */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
-          <span className="flex size-6 items-center justify-center rounded-md bg-[#eef4fe] text-[#1241a6]">
-            <FileText size={14} />
+          <span
+            className={cn(
+              'flex size-6 items-center justify-center rounded-md',
+              isRejected ? 'bg-red-50 text-red-600' : 'bg-[#eef4fe] text-[#1241a6]'
+            )}
+          >
+            {isRejected ? <FileX size={14} /> : <FileText size={14} />}
           </span>
           <span className="font-mono text-body-sm font-bold text-ink">
             {application.applicationNumber}
@@ -414,21 +402,32 @@ function ApplicationCard({
         </div>
       </div>
 
-      {/* Concise Stage Brief Box */}
-      <div className={cn(
-        'mt-3 rounded-xl border p-2.5',
-        application.status === 'DRAFT'
-          ? 'border-amber-200 bg-amber-50/60'
-          : 'border-neutral-100 bg-[#f8fafc]'
-      )}>
+      {/* Concise Stage / Rejection Box */}
+      <div
+        className={cn(
+          'mt-3 rounded-xl border p-2.5',
+          isRejected
+            ? 'border-red-200 bg-[#fef2f2]/80'
+            : application.status === 'DRAFT'
+            ? 'border-amber-200 bg-amber-50/60'
+            : 'border-neutral-100 bg-[#f8fafc]'
+        )}
+      >
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-            Current Stage
+          <span
+            className={cn(
+              'text-[11px] font-bold uppercase tracking-wider',
+              isRejected ? 'text-red-700' : 'text-neutral-500'
+            )}
+          >
+            {isRejected ? 'Rejection Reason' : 'Current Stage'}
           </span>
           <span
             className={cn(
               'text-[11px] font-bold',
-              application.status === 'ORDER_ISSUED'
+              isRejected
+                ? 'text-red-700'
+                : application.status === 'ORDER_ISSUED'
                 ? 'text-emerald-700'
                 : application.status === 'DEMAND_NOTE_ISSUED'
                 ? 'text-emerald-700'
@@ -442,8 +441,13 @@ function ApplicationCard({
             {stageBrief.title}
           </span>
         </div>
-        <p className="mt-1 text-[12px] text-neutral-600 leading-snug">
-          {stageBrief.description}
+        <p
+          className={cn(
+            'mt-1 text-[12px] leading-snug',
+            isRejected ? 'text-red-900 font-medium' : 'text-neutral-600'
+          )}
+        >
+          {isRejected ? `"${stageBrief.description}"` : stageBrief.description}
         </p>
       </div>
 
@@ -454,7 +458,20 @@ function ApplicationCard({
         </span>
 
         <div className="flex items-center gap-1.5 flex-wrap">
-          {application.status === 'DRAFT' ? (
+          {isRejected ? (
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#dc2626] hover:bg-[#b91c1c] text-white px-3 py-1.5 text-[11px] font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`${ROUTES.newExcavationApplication}?draftId=${application.id}&resubmit=true`);
+              }}
+            >
+              <Edit3 size={12} className="text-white" />
+              <span className="text-white">Edit & Re-submit Proposal</span>
+              <ArrowRight size={12} className="text-white" />
+            </button>
+          ) : application.status === 'DRAFT' ? (
             <button
               type="button"
               className="inline-flex items-center gap-1.5 rounded-lg bg-[#1241a6] hover:bg-[#0f3484] text-white px-3 py-1.5 text-[11px] font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
@@ -501,3 +518,4 @@ function ApplicationCard({
     </div>
   );
 }
+

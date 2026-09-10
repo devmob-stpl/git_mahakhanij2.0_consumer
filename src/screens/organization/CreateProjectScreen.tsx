@@ -7,6 +7,7 @@ import { locationRepository, projectRepository, useAsync } from '@/data';
 import { useCurrentOrganization } from '@/state';
 import { ROUTES, Screen } from '@/navigation';
 import { LocationMapOverlay } from '../excavation/LocationMapOverlay';
+import { useDevQuickFill } from '@/prototype';
 
 const STATE_CENTRE: GeoPoint = { latitude: 19.7515, longitude: 75.7139 };
 
@@ -64,6 +65,7 @@ export function CreateProjectScreen() {
   const [projectType, setProjectType] = useState<ProjectOwnershipType>('PRIVATE');
   const [department, setDepartment] = useState('');
   const [customDepartment, setCustomDepartment] = useState('');
+  const [officeName, setOfficeName] = useState('');
   const [workOrderNo, setWorkOrderNo] = useState('');
   const [line1, setLine1] = useState('');
   const [districtCode, setDistrictCode] = useState('');
@@ -74,7 +76,7 @@ export function CreateProjectScreen() {
   const [city, setCity] = useState('');
   const [villageCode, setVillageCode] = useState('');
   const [villageName, setVillageName] = useState('');
-  const [pincode] = useState('411001');
+  const [pincode, setPincode] = useState('411001');
   const [siteGeo, setSiteGeo] = useState<GeoPoint | null>(null);
 
   const [mapOpen, setMapOpen] = useState(false);
@@ -106,6 +108,7 @@ export function CreateProjectScreen() {
     if (projectType === 'GOVERNMENT') {
       const activeDept = department === 'OTHER' ? customDepartment : department;
       if (!activeDept.trim()) errs.department = 'Select or enter the government department.';
+      if (!officeName.trim()) errs.officeName = 'Enter the issuing / division office name.';
     }
     if (!workOrderNo.trim()) errs.workOrderNo = 'Enter the work order / sanction order number.';
     if (!line1.trim()) errs.line1 = 'Enter the site address.';
@@ -133,11 +136,15 @@ export function CreateProjectScreen() {
           ? (department === 'OTHER' ? customDepartment.trim() : department.trim())
           : undefined;
 
+      const effectiveOffice =
+        projectType === 'GOVERNMENT' ? officeName.trim() : undefined;
+
       const project = await projectRepository.createForOrganization(organization.id, {
         name: name.trim(),
         code: `PROJ-${organization.id.slice(0, 4).toUpperCase()}-${String(Date.now()).slice(-4)}`,
         projectType,
         department: effectiveDept,
+        officeName: effectiveOffice,
         workOrderNumber: workOrderNo.trim(),
         category,
         city: category === 'URBAN' ? city.trim() : undefined,
@@ -157,6 +164,25 @@ export function CreateProjectScreen() {
       setSubmitting(false);
     }
   }
+
+  function handleQuickFill() {
+    setName('Maha-Metro Line 3 Interchange Site');
+    setProjectType('GOVERNMENT');
+    setDepartment('Maha-Metro / Railways');
+    setOfficeName('Pune Metro Rail Project Division (Shivajinagar)');
+    setWorkOrderNo('MMRCL/PUN/LINE3/2024-884');
+    setLine1('Plot No. 12, Civil Court Metro Interchange, Shivajinagar');
+    setDistrictCode('PUN');
+    setDistrictName('Pune');
+    setTalukaCode('HAV');
+    setTalukaName('Haveli');
+    setCategory('URBAN');
+    setCity('Pune City (PMC)');
+    setSiteGeo({ latitude: 18.5204, longitude: 73.8567 });
+    setErrors({});
+  }
+
+  useDevQuickFill(handleQuickFill);
 
   return (
     <Screen title="Create project" onBack>
@@ -257,6 +283,18 @@ export function CreateProjectScreen() {
                   onChange={(e) => setCustomDepartment(e.target.value)}
                 />
               )}
+
+              <Input
+                label="Office name"
+                required
+                placeholder="e.g. Pune Metro Project Division / PWD Executive Office"
+                value={officeName}
+                {...(errors.officeName ? { error: errors.officeName } : {})}
+                onChange={(e) => {
+                  setOfficeName(e.target.value);
+                  setErrors((prev) => ({ ...prev, officeName: '' }));
+                }}
+              />
             </div>
           )}
 
@@ -273,143 +311,188 @@ export function CreateProjectScreen() {
             }}
           />
 
-          {/* 5) Site Address Input with Location Icon on Right */}
-          <Input
-            label="Site address"
-            required
-            value={line1}
-            placeholder="Plot, building, road or street address"
-            {...(errors.line1 ? { error: errors.line1 } : {})}
-            onChange={(e) => {
-              setLine1(e.target.value);
-              setErrors((prev) => ({ ...prev, line1: '' }));
-            }}
-            rightSlot={
-              <button
-                type="button"
-                aria-label="Select location on map"
-                title="Select location on map"
-                onClick={() => setMapOpen(true)}
-                className="flex size-8 items-center justify-center rounded-lg text-primary-700 hover:bg-primary-100/70 transition-colors"
-              >
-                <MapPin size={18} />
-              </button>
-            }
-          />
-
-          {/* 6) District Dropdown */}
-          <Select
-            label="District"
-            required
-            placeholder="Select a district"
-            value={districtCode}
-            options={(districts.data ?? []).map((d) => ({ value: d.code, label: d.name }))}
-            {...(errors.districtCode ? { error: errors.districtCode } : {})}
-            onChange={(e) => {
-              const selected = districts.data?.find((d) => d.code === e.target.value);
-              setDistrictCode(selected?.code ?? '');
-              setDistrictName(selected?.name ?? '');
-              setTalukaCode('');
-              setTalukaName('');
-              setVillageCode('');
-              setVillageName('');
-              setCity('');
-              setErrors((prev) => ({ ...prev, districtCode: '' }));
-            }}
-          />
-
-          {/* 7) Taluka Dropdown */}
-          <Select
-            label="Taluka"
-            required
-            disabled={!districtCode}
-            placeholder={districtCode ? 'Select a taluka' : 'Select a district first'}
-            value={talukaCode}
-            options={(talukas.data ?? []).map((t) => ({ value: t.code, label: t.name }))}
-            {...(errors.talukaCode ? { error: errors.talukaCode } : {})}
-            onChange={(e) => {
-              const selected = talukas.data?.find((t) => t.code === e.target.value);
-              setTalukaCode(selected?.code ?? '');
-              setTalukaName(selected?.name ?? '');
-              setVillageCode('');
-              setVillageName('');
-              setCity('');
-              setErrors((prev) => ({ ...prev, talukaCode: '' }));
-            }}
-          />
-
-          {/* 8) Urban / Rural Selection */}
-          <div className="pt-1">
-            <label className="mb-1.5 block text-caption font-semibold text-ink">
-              Area Classification <span className="text-danger-500">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setCategory('URBAN');
-                  setVillageCode('');
-                  setVillageName('');
-                }}
-                className={cn(
-                  'flex h-11 items-center justify-center rounded-xl border text-body-sm font-semibold transition-all',
-                  category === 'URBAN'
-                    ? 'border-primary-600 bg-primary-50/70 text-primary-700 shadow-xs ring-1 ring-primary-300/40'
-                    : 'border-line bg-surface text-ink-muted hover:border-neutral-300',
-                )}
-              >
-                Urban
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setCategory('RURAL');
-                  setCity('');
-                }}
-                className={cn(
-                  'flex h-11 items-center justify-center rounded-xl border text-body-sm font-semibold transition-all',
-                  category === 'RURAL'
-                    ? 'border-primary-600 bg-primary-50/70 text-primary-700 shadow-xs ring-1 ring-primary-300/40'
-                    : 'border-line bg-surface text-ink-muted hover:border-neutral-300',
-                )}
-              >
-                Rural
-              </button>
+          {/* ------------------------------------------------------------- */}
+          {/* LOCATION & SITE JURISDICTION (Urban/Rural first, then Address) */}
+          {/* ------------------------------------------------------------- */}
+          <div className="pt-2 border-t border-line space-y-3.5">
+            <div className="flex items-center justify-between">
+              <span className="text-caption font-bold uppercase tracking-wider text-ink-muted">
+                Site Location & Jurisdiction
+              </span>
             </div>
 
-            {/* If Urban -> City dropdown */}
+            {/* 1) Area Classification (Urban vs Rural) UPFRONT */}
+            <div>
+              <label className="mb-1.5 block text-caption font-semibold text-ink">
+                Area Classification <span className="text-danger-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCategory('URBAN');
+                    setVillageCode('');
+                    setVillageName('');
+                  }}
+                  className={cn(
+                    'flex h-11 items-center justify-center gap-2 rounded-xl border text-body-sm font-semibold transition-all cursor-pointer',
+                    category === 'URBAN'
+                      ? 'border-primary-600 bg-primary-50/70 text-primary-700 shadow-xs ring-1 ring-primary-300/40 font-bold'
+                      : 'border-line bg-surface text-ink-muted hover:border-neutral-300',
+                  )}
+                >
+                  <Building2 size={16} />
+                  <span>Urban (City / PMC)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCategory('RURAL');
+                    setCity('');
+                  }}
+                  className={cn(
+                    'flex h-11 items-center justify-center gap-2 rounded-xl border text-body-sm font-semibold transition-all cursor-pointer',
+                    category === 'RURAL'
+                      ? 'border-primary-600 bg-primary-50/70 text-primary-700 shadow-xs ring-1 ring-primary-300/40 font-bold'
+                      : 'border-line bg-surface text-ink-muted hover:border-neutral-300',
+                  )}
+                >
+                  <Landmark size={16} />
+                  <span>Rural (Gram Panchayat)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 2) District Dropdown */}
+            <Select
+              label="District"
+              required
+              placeholder="Select a district"
+              value={districtCode}
+              options={(districts.data ?? []).map((d) => ({ value: d.code, label: d.name }))}
+              {...(errors.districtCode ? { error: errors.districtCode } : {})}
+              onChange={(e) => {
+                const selected = districts.data?.find((d) => d.code === e.target.value);
+                setDistrictCode(selected?.code ?? '');
+                setDistrictName(selected?.name ?? '');
+                setTalukaCode('');
+                setTalukaName('');
+                setVillageCode('');
+                setVillageName('');
+                setCity('');
+                setErrors((prev) => ({ ...prev, districtCode: '' }));
+              }}
+            />
+
+            {/* 3) Conditional Jurisdiction Fields */}
             {category === 'URBAN' ? (
-              <Select
-                label="City"
-                required
-                placeholder={districtCode ? 'Select city / municipal area' : 'Select district first'}
-                value={city}
-                options={cityOptions.map((c) => ({ value: c, label: c }))}
-                {...(errors.city ? { error: errors.city } : {})}
-                onChange={(e) => {
-                  setCity(e.target.value);
-                  setErrors((prev) => ({ ...prev, city: '' }));
-                }}
-              />
+              <div className="grid grid-cols-2 gap-3">
+                <Select
+                  label="City / Corporation"
+                  required
+                  placeholder={districtCode ? 'Select city' : 'Select district first'}
+                  value={city}
+                  options={cityOptions.map((c) => ({ value: c, label: c }))}
+                  {...(errors.city ? { error: errors.city } : {})}
+                  onChange={(e) => {
+                    setCity(e.target.value);
+                    setErrors((prev) => ({ ...prev, city: '' }));
+                  }}
+                />
+
+                <Select
+                  label="Taluka / Zone (CTSO)"
+                  required
+                  disabled={!districtCode}
+                  placeholder={districtCode ? 'Select taluka' : 'Select district first'}
+                  value={talukaCode}
+                  options={(talukas.data ?? []).map((t) => ({ value: t.code, label: t.name }))}
+                  {...(errors.talukaCode ? { error: errors.talukaCode } : {})}
+                  onChange={(e) => {
+                    const selected = talukas.data?.find((t) => t.code === e.target.value);
+                    setTalukaCode(selected?.code ?? '');
+                    setTalukaName(selected?.name ?? '');
+                    setErrors((prev) => ({ ...prev, talukaCode: '' }));
+                  }}
+                />
+              </div>
             ) : (
-              /* Else Rural -> Village dropdown */
-              <Select
-                label="Village"
-                required
-                disabled={!talukaCode}
-                placeholder={talukaCode ? 'Select a village' : 'Select a taluka first'}
-                value={villageCode}
-                options={(villages.data ?? []).map((v) => ({ value: v.code, label: v.name }))}
-                {...(errors.villageCode ? { error: errors.villageCode } : {})}
-                onChange={(e) => {
-                  const selected = villages.data?.find((v) => v.code === e.target.value);
-                  setVillageCode(selected?.code ?? '');
-                  setVillageName(selected?.name ?? '');
-                  setErrors((prev) => ({ ...prev, villageCode: '' }));
-                }}
-              />
+              <div className="grid grid-cols-2 gap-3">
+                <Select
+                  label="Taluka"
+                  required
+                  disabled={!districtCode}
+                  placeholder={districtCode ? 'Select taluka' : 'Select district first'}
+                  value={talukaCode}
+                  options={(talukas.data ?? []).map((t) => ({ value: t.code, label: t.name }))}
+                  {...(errors.talukaCode ? { error: errors.talukaCode } : {})}
+                  onChange={(e) => {
+                    const selected = talukas.data?.find((t) => t.code === e.target.value);
+                    setTalukaCode(selected?.code ?? '');
+                    setTalukaName(selected?.name ?? '');
+                    setVillageCode('');
+                    setVillageName('');
+                    setErrors((prev) => ({ ...prev, talukaCode: '' }));
+                  }}
+                />
+
+                <Select
+                  label="Village / Gram Panchayat"
+                  required
+                  disabled={!talukaCode}
+                  placeholder={talukaCode ? 'Select a village' : 'Select taluka first'}
+                  value={villageCode}
+                  options={(villages.data ?? []).map((v) => ({ value: v.code, label: v.name }))}
+                  {...(errors.villageCode ? { error: errors.villageCode } : {})}
+                  onChange={(e) => {
+                    const selected = villages.data?.find((v) => v.code === e.target.value);
+                    setVillageCode(selected?.code ?? '');
+                    setVillageName(selected?.name ?? '');
+                    setErrors((prev) => ({ ...prev, villageCode: '' }));
+                  }}
+                />
+              </div>
             )}
+
+            {/* 4) Specific Site Address Input with Location Map Pin Icon */}
+            <Input
+              label="Site address / Landmark"
+              required
+              value={line1}
+              placeholder="Plot No., Survey No., corridor chainage or street address"
+              {...(errors.line1 ? { error: errors.line1 } : {})}
+              onChange={(e) => {
+                setLine1(e.target.value);
+                setErrors((prev) => ({ ...prev, line1: '' }));
+              }}
+              rightSlot={
+                <button
+                  type="button"
+                  aria-label="Select location on map"
+                  title="Select location on map"
+                  onClick={() => setMapOpen(true)}
+                  className="flex size-8 items-center justify-center rounded-lg text-primary-700 hover:bg-primary-100/70 transition-colors cursor-pointer"
+                >
+                  <MapPin size={18} />
+                </button>
+              }
+            />
+
+            {/* 5) PIN Code */}
+            <Input
+              label="PIN code"
+              required
+              inputMode="numeric"
+              maxLength={6}
+              value={pincode}
+              onChange={(e) => {
+                setPincode(e.target.value.replace(/\D/g, '').slice(0, 6));
+                setErrors((prev) => ({ ...prev, pincode: '' }));
+              }}
+              placeholder="411001"
+              {...(errors.pincode ? { error: errors.pincode } : {})}
+            />
           </div>
         </Surface>
 

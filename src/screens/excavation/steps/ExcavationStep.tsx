@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { CheckCircle2, Upload } from 'lucide-react';
-import type { Mineral } from '@/domain';
+import type { Mineral, Project } from '@/domain';
 import { Input, Select, Textarea, cn } from '@/design-system';
 import {
   PROPOSAL_APPLICATION_TYPES,
@@ -10,6 +11,7 @@ import type { StepProps } from './ApplicantStep';
 
 export interface ExcavationStepProps extends StepProps {
   minerals: Mineral[];
+  projects?: Project[];
 }
 
 /**
@@ -18,6 +20,7 @@ export interface ExcavationStepProps extends StepProps {
  * Implements:
  * - Application Type (2 radio options)
  * - Conditional Project Details for 'Quarry For Project - Self Consumption'
+ * - Project selection from already registered projects dropdown
  * - Lease Type (Temporary)
  * - Proposal Level
  * - Mineral
@@ -25,7 +28,14 @@ export interface ExcavationStepProps extends StepProps {
  * - Lifting Period (Days)
  * - Reason For Applying
  */
-export function ExcavationStep({ draft, errors, update, minerals }: ExcavationStepProps) {
+export function ExcavationStep({ draft, errors, update, minerals, projects = [] }: ExcavationStepProps) {
+  const selectedProject = projects.find(
+    (p) => p.name === draft.projectName || p.code === draft.projectCode,
+  );
+  const [isCustomProject, setIsCustomProject] = useState(
+    () => Boolean(draft.projectName && !selectedProject),
+  );
+
   return (
     <div className="space-y-4">
       {/* 1. Application Type */}
@@ -196,14 +206,84 @@ export function ExcavationStep({ draft, errors, update, minerals }: ExcavationSt
               {...(errors.projectCode ? { error: errors.projectCode } : {})}
               onChange={(e) => update('projectCode', e.target.value)}
             />
-            <Input
-              label="Project Name: *"
-              placeholder="Project Name"
-              required
-              value={draft.projectName || ''}
-              {...(errors.projectName ? { error: errors.projectName } : {})}
-              onChange={(e) => update('projectName', e.target.value)}
-            />
+
+            {projects.length > 0 && !isCustomProject ? (
+              <Select
+                label="Project Name: *"
+                placeholder="Select Registered Project"
+                required
+                value={selectedProject?.id || ''}
+                options={[
+                  ...projects.map((p) => ({
+                    value: p.id,
+                    label: `${p.name} (${p.code})`,
+                  })),
+                  { value: '__custom__', label: '+ Enter Other / Custom Project' },
+                ]}
+                {...(errors.projectName ? { error: errors.projectName } : {})}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '__custom__') {
+                    setIsCustomProject(true);
+                    update('projectName', '');
+                    return;
+                  }
+                  const proj = projects.find((p) => p.id === val);
+                  if (proj) {
+                    update('projectName', proj.name);
+                    update('projectCode', proj.code);
+                    if (proj.location) {
+                      const addr = [proj.location.line1, proj.location.taluka, proj.location.district]
+                        .filter(Boolean)
+                        .join(', ');
+                      if (addr) update('projectAddress', addr);
+                    }
+                    if (proj.geo?.latitude) {
+                      update('projectLatitude', String(proj.geo.latitude));
+                    }
+                    if (proj.geo?.longitude) {
+                      update('projectLongitude', String(proj.geo.longitude));
+                    }
+                    if (proj.workOrderNumber) {
+                      update('workOrderNumber', proj.workOrderNumber);
+                    }
+                    if (proj.department) {
+                      update('departmentName', proj.department);
+                    }
+                    if (proj.officeName) {
+                      update('officeName', proj.officeName);
+                    }
+                  }
+                }}
+              />
+            ) : (
+              <div>
+                <Input
+                  label="Project Name: *"
+                  placeholder="Project Name"
+                  required
+                  value={draft.projectName || ''}
+                  {...(errors.projectName ? { error: errors.projectName } : {})}
+                  onChange={(e) => update('projectName', e.target.value)}
+                />
+                {projects.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCustomProject(false);
+                      if (projects[0]) {
+                        const proj = projects[0];
+                        update('projectName', proj.name);
+                        update('projectCode', proj.code);
+                      }
+                    }}
+                    className="mt-1 text-[11px] font-semibold text-primary-700 hover:underline cursor-pointer"
+                  >
+                    ← Choose from registered projects
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Address */}

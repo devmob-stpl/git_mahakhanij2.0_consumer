@@ -15,6 +15,8 @@ export interface Organization {
   type: OrganizationType;
   /** Mahakhanij master-entity registration reference. */
   registrationNumber: string;
+  /** 15-digit Goods and Services Tax Identification Number. */
+  gstNumber?: string;
   address: Address;
   primaryContact: Contact;
 }

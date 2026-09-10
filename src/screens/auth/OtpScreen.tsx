@@ -6,6 +6,7 @@ import { OTP_LENGTH, OTP_RESEND_SECONDS, formatMobileWithCode } from '@/rules';
 import { authRepository } from '@/data';
 import { useAuthFlowStore, useOrganizationContextStore, useSessionStore } from '@/state';
 import { useCopy } from '@/content';
+import { useDevQuickFill } from '@/prototype';
 import { AuthLayout } from './AuthLayout';
 
 /**
@@ -96,6 +97,14 @@ export function OtpScreen() {
     setError(null);
     setNotice(t.auth.resent);
   }
+
+  function handleQuickFill() {
+    setCode('123456');
+    setError(null);
+    void handleVerify('123456');
+  }
+
+  useDevQuickFill(handleQuickFill);
 
   if (!mobileNumber) return null;
 
@@ -190,9 +199,16 @@ export function OtpScreen() {
       )}
 
       {/* ==== PROTOTYPE ONLY — remove with src/prototype ==== */}
-      <p className="mt-8 rounded-md border border-dashed border-line-strong bg-surface px-3 py-2 text-caption text-ink-muted">
-        {t.prototype.otpHint}
-      </p>
+      <div className="mt-8 flex items-center justify-between rounded-xl border border-dashed border-amber-300 bg-amber-50/60 p-3">
+        <span className="text-caption text-amber-900 font-medium">{t.prototype.otpHint}</span>
+        <button
+          type="button"
+          onClick={handleQuickFill}
+          className="shrink-0 rounded-md bg-amber-200 px-2 py-1 text-caption font-bold text-amber-900 hover:bg-amber-300 active:scale-95 transition-all cursor-pointer"
+        >
+          Fill 123456
+        </button>
+      </div>
       {/* ==== end prototype block ==== */}
     </AuthLayout>
   );

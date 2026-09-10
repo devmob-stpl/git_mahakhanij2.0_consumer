@@ -52,7 +52,6 @@ export function ApplicationDetailsScreen() {
   const navigate = useNavigate();
   const t = useCopy();
   const [activeTab, setActiveTab] = useState<DetailTab>('STATUS');
-  const [downloading, setDownloading] = useState(false);
 
   const query = useAsync(async () => {
     if (!applicationId) throw new Error('An application is required');
@@ -100,7 +99,6 @@ export function ApplicationDetailsScreen() {
   // 1. Download Official Excavation Permit (PDF 3 Format: Ordnrno-04/08/2026-1)
   const handleDownloadPermit = () => {
     if (!application || !application.excavationOrder) return;
-    setDownloading(true);
     try {
       const content = `================================================================================
 महाराष्ट्र शासन — महसूल व वन विभाग
@@ -141,8 +139,8 @@ Tahsildar Ahmednagar, Ahilyanagar
 टीप: सदर आदेश महाखनिज संगणकीय प्रणालीद्वारे तयार केलेला असून स्वाक्षरीची आवश्यकता नाही.`;
 
       triggerDownload(content, `Permit_Order_${application.excavationOrder.orderNumber.replace(/[^a-zA-Z0-9_-]/g, '_')}.txt`);
-    } finally {
-      setTimeout(() => setDownloading(false), 500);
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -347,6 +345,30 @@ Status                 : Digitally Archived
             <IndianRupee size={17} className="text-white" />
             <span className="text-white">{t.excavation.payDemandNote} · {formatMoney(application.demandNote.totalAmount)}</span>
           </button>
+        ) : application && application.status === 'QUERY_RAISED' ? (
+          <button
+            type="button"
+            onClick={() =>
+              navigate(`${ROUTES.newExcavationApplication}?draftId=${application.id}&resubmit=true`)
+            }
+            className="w-full flex items-center justify-center gap-2 rounded-xl py-3.5 px-5 text-body font-bold text-white shadow-md transition-all active:scale-[0.98] cursor-pointer"
+            style={{ backgroundColor: '#d97706', color: '#ffffff' }}
+          >
+            <Edit3 size={17} className="text-white" />
+            <span className="text-white font-bold">Respond to Query & Update</span>
+          </button>
+        ) : application && application.status === 'REJECTED' ? (
+          <button
+            type="button"
+            onClick={() =>
+              navigate(`${ROUTES.newExcavationApplication}?draftId=${application.id}&resubmit=true`)
+            }
+            className="w-full flex items-center justify-center gap-2 rounded-xl py-3.5 px-5 text-body font-bold text-white shadow-md transition-all active:scale-[0.98] cursor-pointer"
+            style={{ backgroundColor: '#dc2626', color: '#ffffff' }}
+          >
+            <Edit3 size={17} className="text-white" />
+            <span className="text-white font-bold">Edit & Re-submit Proposal</span>
+          </button>
         ) : undefined
       }
     >
@@ -355,6 +377,182 @@ Status                 : Digitally Archived
 
       {query.data && application && (
         <div className="space-y-4 bg-[#f8fafc] px-4 py-4 pb-12">
+          {/* ========================================================
+              0. CRITICAL TOP ACTION BANNERS (100% ABOVE THE FOLD)
+              Shown immediately for high-priority user actions:
+              - Query Raised / Clarification
+              - Application Rejected
+              - Demand Note Payment Due
+              - Excavation Permit Granted
+             ======================================================== */}
+          {needsApplicantResponse(application) && (
+            <div
+              className="rounded-xl border p-3 shadow-xs space-y-2 animate-in fade-in duration-200"
+              style={{ backgroundColor: '#fffbeb', borderColor: '#fcd34d' }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="flex size-6 items-center justify-center rounded-lg shrink-0 shadow-2xs"
+                    style={{ backgroundColor: '#d97706', color: '#ffffff' }}
+                  >
+                    <AlertTriangle size={13} className="text-white" />
+                  </span>
+                  <h3 className="text-body-sm font-bold leading-none" style={{ color: '#78350f' }}>
+                    Clarification / Query Raised
+                  </h3>
+                </div>
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 uppercase tracking-wider"
+                  style={{ backgroundColor: '#fef3c7', color: '#92400e', borderColor: '#fcd34d' }}
+                >
+                  Action Required
+                </span>
+              </div>
+
+              {/* Specific Objection / Query Box */}
+              <div
+                className="rounded-lg p-2.5 border shadow-2xs space-y-0.5"
+                style={{ backgroundColor: '#ffffff', borderColor: '#fde68a' }}
+              >
+                <span className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: '#b45309' }}>
+                  Officer's Remarks & Objections:
+                </span>
+                <p className="text-caption font-semibold leading-snug" style={{ color: '#0f172a' }}>
+                  "{application.statusRemarks || 'Revised site plan required with clear demarcation of excavation boundary.'}"
+                </p>
+              </div>
+            </div>
+          )}
+
+          {application.status === 'REJECTED' && (
+            <div
+              className="rounded-xl border p-3 shadow-xs space-y-2 animate-in fade-in duration-200"
+              style={{ backgroundColor: '#fef2f2', borderColor: '#fca5a5' }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="flex size-6 items-center justify-center rounded-lg shrink-0 shadow-2xs"
+                    style={{ backgroundColor: '#dc2626', color: '#ffffff' }}
+                  >
+                    <AlertTriangle size={13} className="text-white" />
+                  </span>
+                  <h3 className="text-body-sm font-bold leading-none" style={{ color: '#7f1d1d' }}>
+                    Application Rejected
+                  </h3>
+                </div>
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 uppercase tracking-wider"
+                  style={{ backgroundColor: '#fee2e2', color: '#991b1b', borderColor: '#fca5a5' }}
+                >
+                  Rejected
+                </span>
+              </div>
+
+              {/* Specific Objection Box */}
+              <div
+                className="rounded-lg p-2.5 border shadow-2xs space-y-0.5"
+                style={{ backgroundColor: '#ffffff', borderColor: '#fecaca' }}
+              >
+                <span className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: '#b91c1c' }}>
+                  Rejection Reason / Objections:
+                </span>
+                <p className="text-caption font-semibold leading-snug" style={{ color: '#0f172a' }}>
+                  "{application.statusRemarks || 'Application proposal rejected due to missing boundary NOC or incomplete documentation.'}"
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Top Demand Note Payment Due Banner */}
+          {awaitsDemandNotePayment(application) && application.demandNote && (
+            <div
+              className="rounded-xl border p-3 shadow-xs space-y-2 animate-in fade-in duration-200"
+              style={{ backgroundColor: '#f0fdf4', borderColor: '#86efac' }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="flex size-6 items-center justify-center rounded-lg shrink-0 shadow-2xs"
+                    style={{ backgroundColor: '#15803d', color: '#ffffff' }}
+                  >
+                    <IndianRupee size={13} className="text-white" />
+                  </span>
+                  <h3 className="text-body-sm font-bold leading-none" style={{ color: '#14532d' }}>
+                    Demand Note Issued · Payment Due
+                  </h3>
+                </div>
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 uppercase tracking-wider"
+                  style={{ backgroundColor: '#dcfce7', color: '#166534', borderColor: '#86efac' }}
+                >
+                  Action Required
+                </span>
+              </div>
+
+              {/* Demand Note Summary Box */}
+              <div
+                className="rounded-lg p-2.5 border shadow-2xs space-y-1"
+                style={{ backgroundColor: '#ffffff', borderColor: '#bbf7d0' }}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-neutral-500 font-medium">
+                    Notice: {application.demandNote.demandNoteNumber || 'DM No. 936'}
+                  </span>
+                  <span className="tabular font-bold text-body-sm" style={{ color: '#15803d' }}>
+                    {formatMoney(application.demandNote.totalAmount)}
+                  </span>
+                </div>
+                <p className="text-caption text-neutral-600 font-medium leading-tight">
+                  Assessment includes mineral extraction royalty, DMF, and statutory district cess.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Top Excavation Permit Granted Banner */}
+          {hasExcavationOrder(application) && application.excavationOrder && (
+            <div
+              className="rounded-xl border p-3 shadow-xs space-y-2 animate-in fade-in duration-200"
+              style={{ backgroundColor: '#ecfdf5', borderColor: '#a7f3d0' }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="flex size-6 items-center justify-center rounded-lg shrink-0 shadow-2xs"
+                    style={{ backgroundColor: '#059669', color: '#ffffff' }}
+                  >
+                    <ScrollText size={13} className="text-white" />
+                  </span>
+                  <h3 className="text-body-sm font-bold leading-none" style={{ color: '#064e3b' }}>
+                    Excavation Permit Granted
+                  </h3>
+                </div>
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 uppercase tracking-wider"
+                  style={{ backgroundColor: '#d1fae5', color: '#065f46', borderColor: '#a7f3d0' }}
+                >
+                  Permit Active
+                </span>
+              </div>
+
+              <div
+                className="rounded-lg p-2.5 border shadow-2xs space-y-1"
+                style={{ backgroundColor: '#ffffff', borderColor: '#a7f3d0' }}
+              >
+                <div className="flex items-center justify-between text-caption">
+                  <span className="font-mono font-bold text-ink">
+                    Order: {application.excavationOrder.orderNumber}
+                  </span>
+                  <span className="text-neutral-500 font-medium">
+                    Valid until: {formatDate(application.excavationOrder.validUntil)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 1. Permanent Summary Header Card */}
           <div className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-xs">
             <div className="flex items-center justify-between">
@@ -483,265 +681,221 @@ Status                 : Digitally Archived
                   </button>
                 </div>
               ) : (
-                /* Visually Rich 4-Stage Milestone Journey Stepper for submitted applications */
-                <div className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-xs">
-                  <div className="flex items-center justify-between pb-3 mb-4 border-b border-neutral-100">
-                    <div>
-                      <h3 className="text-body-sm font-bold text-ink">Application Journey</h3>
-                      <p className="text-[11px] text-neutral-500">Government Review & Grant Lifecycle</p>
+                /* ========================================================
+                   TOP-TIER TRACKING EXPERIENCE (3-LAYER STATUS SYSTEM)
+                   ======================================================== */
+                <div className="rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-xs space-y-5">
+                  {/* Layer 1: Hero Status Header & Current State */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+                        Application Status
+                      </span>
+                      <span
+                        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold border"
+                        style={
+                          application.status === 'ORDER_ISSUED'
+                            ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#86efac' }
+                            : application.status === 'DEMAND_NOTE_ISSUED'
+                            ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#86efac' }
+                            : application.status === 'QUERY_RAISED'
+                            ? { backgroundColor: '#fef3c7', color: '#92400e', borderColor: '#fcd34d' }
+                            : { backgroundColor: '#eef4fe', color: '#1241a6', borderColor: '#bfd5fb' }
+                        }
+                      >
+                        <span
+                          className="size-1.5 rounded-full animate-pulse"
+                          style={{
+                            backgroundColor:
+                              application.status === 'QUERY_RAISED' ? '#d97706' : '#1a5fe8',
+                          }}
+                        />
+                        Step {currentStageIndex} of 4
+                      </span>
                     </div>
-                    <span
-                      className={cn(
-                        'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold shadow-xs',
-                        application.status === 'ORDER_ISSUED'
-                          ? 'bg-[#dcfce7] text-[#166534] border border-[#86efac]'
-                          : application.status === 'DEMAND_NOTE_ISSUED'
-                          ? 'bg-[#dcfce7] text-[#166534] border border-[#86efac]'
-                          : application.status === 'QUERY_RAISED'
-                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                          : 'bg-[#eef4fe] text-[#1241a6] border border-[#bfd5fb]'
-                      )}
+
+                    <h3 className="text-heading-sm font-bold text-ink">
+                      {currentStageIndex === 1
+                        ? 'Application Submitted'
+                        : currentStageIndex === 2
+                        ? application.status === 'QUERY_RAISED'
+                          ? 'Clarification Requested by Officer'
+                          : 'Under Department Review & Inspection'
+                        : currentStageIndex === 3
+                        ? 'Demand Note Issued · Payment Pending'
+                        : 'Permit Issued · Extraction Authorized'}
+                    </h3>
+                    <p className="text-[12px] text-neutral-500">
+                      {currentStageIndex === 1
+                        ? 'Application and GRAS fee verified successfully.'
+                        : currentStageIndex === 2
+                        ? application.status === 'QUERY_RAISED'
+                          ? 'Revenue Officer raised a query on your site plan. Please update and re-submit.'
+                          : 'Collectorate & Tahsildar are reviewing 7/12 extract and plot boundary demarcation.'
+                        : currentStageIndex === 3
+                        ? 'Royalty and statutory cess assessment completed. Clear demand note to generate permit.'
+                        : 'Extraction order granted with DigiTP transit pass generation privileges.'}
+                    </p>
+                  </div>
+
+                  {/* Connected Step Milestone Bar */}
+                  <div className="relative pt-1 pb-2">
+                    <div className="grid grid-cols-4 items-center text-center">
+                      {[
+                        { num: 1, label: 'Submitted' },
+                        { num: 2, label: 'Inspection' },
+                        { num: 3, label: 'Demand Note' },
+                        { num: 4, label: 'Permit' },
+                      ].map((step, idx) => {
+                        const isPast = currentStageIndex > step.num;
+                        const isCur = currentStageIndex === step.num;
+                        const isQuery = isCur && application.status === 'QUERY_RAISED';
+
+                        return (
+                          <div key={step.num} className="relative flex flex-col items-center group">
+                            {/* Connecting Line between nodes */}
+                            {idx > 0 && (
+                              <div
+                                className="absolute top-3.5 right-1/2 w-full h-1 -z-0 transition-all duration-300"
+                                style={{
+                                  backgroundColor: isPast || isCur ? '#16a34a' : '#e2e8f0',
+                                }}
+                              />
+                            )}
+
+                            {/* Node Circle */}
+                            <span
+                              className="relative z-10 flex size-7 items-center justify-center rounded-full text-[11px] font-bold transition-all shadow-xs"
+                              style={
+                                isPast
+                                  ? { backgroundColor: '#16a34a', color: '#ffffff' }
+                                  : isCur
+                                  ? isQuery
+                                    ? { backgroundColor: '#d97706', color: '#ffffff', outline: '3px solid #fde68a' }
+                                    : { backgroundColor: '#1241a6', color: '#ffffff', outline: '3px solid #bfd5fb' }
+                                  : { backgroundColor: '#ffffff', color: '#94a3b8', border: '2px solid #cbd5e1' }
+                              }
+                            >
+                              {isPast ? <CheckCircle2 size={14} /> : step.num}
+                            </span>
+
+                            {/* Label */}
+                            <span
+                              className={cn(
+                                'text-[11px] mt-1.5 font-bold transition-all',
+                                isPast
+                                  ? 'text-[#16a34a]'
+                                  : isCur
+                                  ? isQuery
+                                    ? 'text-[#b45309]'
+                                    : 'text-[#1241a6]'
+                                  : 'text-neutral-400'
+                              )}
+                            >
+                              {step.label}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Layer 2: Next Step Indicator Card */}
+                  {currentStageIndex < 4 && (
+                    <div
+                      className="rounded-xl p-3 border space-y-1"
+                      style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0' }}
                     >
-                      Stage {currentStageIndex} of 4: {
-                        currentStageIndex === 1
-                          ? 'Submission'
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+                          Next Upcoming Milestone
+                        </span>
+                        <span className="text-[11px] font-bold text-neutral-600">
+                          Stage {currentStageIndex + 1}
+                        </span>
+                      </div>
+                      <p className="text-[12px] font-semibold text-neutral-800">
+                        {currentStageIndex === 1
+                          ? 'Revenue Officer Site Inspection & Boundary Verification'
                           : currentStageIndex === 2
-                          ? 'Officer Review'
-                          : currentStageIndex === 3
-                          ? 'Demand Note'
-                          : 'Permit Granted'
+                          ? 'Demand Note & Statutory Royalty Calculation'
+                          : 'Excavation Order Issuance & DigiTP Movement Pass Activation'}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Layer 3: Activity & Event Log (Chronological Details) */}
+                  <div className="pt-2 border-t border-neutral-100 space-y-2.5">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 block">
+                      Activity Log
+                    </span>
+
+                    {/* Activity Feed (Latest First, Oldest Last) */}
+                    {(() => {
+                      const activities: { title: string; subtitle: string; date: string }[] = [];
+
+                      if (hasExcavationOrder(application) && application.excavationOrder) {
+                        activities.push({
+                          title: 'Excavation Permit Granted & Order Active',
+                          subtitle: `Order No: ${application.excavationOrder.orderNumber} · Valid till ${formatDate(application.excavationOrder.validUntil)}`,
+                          date: application.excavationOrder.issuedAt ? formatDate(application.excavationOrder.issuedAt) : formatDate(new Date().toISOString()),
+                        });
                       }
-                    </span>
-                  </div>
 
-                  <div className="relative pl-1 space-y-6">
-                    {/* Vertical Track Line */}
-                    <div className="absolute left-[19px] top-3 bottom-3 w-0.5 bg-neutral-200 -z-0" />
+                      if (application.demandNote) {
+                        activities.push({
+                          title: 'Demand Note Assessment Completed',
+                          subtitle: `Notice: ${application.demandNote.demandNoteNumber || 'DM No. 936'} · ${formatMoney(application.demandNote.totalAmount)}`,
+                          date: formatDate(application.demandNote.issuedAt),
+                        });
+                      }
 
-                    {/* Stage 1: Application Submission */}
-                    <div className="relative flex items-start gap-3.5 z-10">
-                      <span className="flex size-8 items-center justify-center rounded-full text-caption font-bold shrink-0 transition-all bg-[#1241a6] text-white ring-4 ring-[#eef4fe]">
-                        <CheckCircle2 size={16} />
-                      </span>
-                      <div className="min-w-0 flex-1 pt-0.5">
-                        <div className="flex items-center justify-between">
-                          <p className="text-body-sm font-bold text-ink">1. Application & Processing Fee</p>
-                          <span className="text-[11px] font-semibold text-neutral-400">
-                            {application.submittedAt ? formatDate(application.submittedAt) : 'Submitted'}
-                          </span>
+                      if (currentStageIndex >= 2) {
+                        activities.push({
+                          title:
+                            application.status === 'QUERY_RAISED'
+                              ? 'Query Raised by Revenue Officer'
+                              : 'Site Inspection Assigned to Revenue Officer',
+                          subtitle:
+                            application.status === 'QUERY_RAISED'
+                              ? 'Boundary demarcation clarification required.'
+                              : 'Verification of survey plot and 7/12 land records.',
+                          date: formatDate(application.statusUpdatedAt || new Date().toISOString()),
+                        });
+                      }
+
+                      activities.push({
+                        title: 'Application & GRAS Fee Submitted',
+                        subtitle: 'Receipt No: MH091123313123 · ₹520',
+                        date: application.submittedAt ? formatDate(application.submittedAt) : '23 Aug 2026',
+                      });
+
+                      return (
+                        <div className="space-y-1 text-[12px]">
+                          {activities.map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-start justify-between py-1.5 border-b border-neutral-100/70 last:border-0"
+                            >
+                              <div className="min-w-0 flex-1 pr-2">
+                                <div className="flex items-center gap-1.5">
+                                  <p className="font-semibold text-ink">{item.title}</p>
+                                  {idx === 0 && (
+                                    <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-[#eef4fe] text-[#1241a6]">
+                                      Latest
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-neutral-500 mt-0.5">{item.subtitle}</p>
+                              </div>
+                              <span className="text-[11px] text-neutral-400 font-medium shrink-0 pt-0.5">
+                                {item.date}
+                              </span>
+                            </div>
+                          ))}
                         </div>
-                        <p className="text-[12px] text-neutral-500 mt-0.5">
-                          Application fee of ₹520 paid & verified via GRAS (Receipt: MH091123313123).
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Stage 2: Department Review & Site Inspection */}
-                    <div className="relative flex items-start gap-3.5 z-10">
-                      <span
-                        className={cn(
-                          'flex size-8 items-center justify-center rounded-full text-caption font-bold shrink-0 transition-all',
-                          currentStageIndex > 2
-                            ? 'bg-[#1241a6] text-white ring-4 ring-[#eef4fe]'
-                            : currentStageIndex === 2
-                            ? application.status === 'QUERY_RAISED'
-                              ? 'bg-amber-500 text-white ring-4 ring-amber-100'
-                              : 'bg-[#1241a6] text-white ring-4 ring-[#eef4fe]'
-                            : 'bg-neutral-100 text-neutral-400 ring-2 ring-white'
-                        )}
-                      >
-                        {currentStageIndex > 2 ? <CheckCircle2 size={16} /> : '2'}
-                      </span>
-                      <div className="min-w-0 flex-1 pt-0.5">
-                        <div className="flex items-center justify-between">
-                          <p className="text-body-sm font-bold text-ink">2. Mining Officer Review & Inspection</p>
-                          {currentStageIndex === 2 && (
-                            <span className={cn(
-                              'text-[11px] font-bold px-2 py-0.5 rounded-full',
-                              application.status === 'QUERY_RAISED' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'
-                            )}>
-                              {application.status === 'QUERY_RAISED' ? 'Query Raised' : 'In Progress'}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[12px] text-neutral-500 mt-0.5">
-                          Collectorate & Mining Officer boundary demarcation, 7/12 extract and environmental compliance check.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Stage 3: Demand Note & Royalty Assessment */}
-                    <div className="relative flex items-start gap-3.5 z-10">
-                      <span
-                        className={cn(
-                          'flex size-8 items-center justify-center rounded-full text-caption font-bold shrink-0 transition-all',
-                          currentStageIndex > 3
-                            ? 'bg-[#15803d] text-white ring-4 ring-[#dcfce7]'
-                            : currentStageIndex === 3
-                            ? 'bg-[#15803d] text-white ring-4 ring-[#dcfce7]'
-                            : 'bg-neutral-100 text-neutral-400 ring-2 ring-white'
-                        )}
-                      >
-                        {currentStageIndex > 3 ? <CheckCircle2 size={16} /> : '3'}
-                      </span>
-                      <div className="min-w-0 flex-1 pt-0.5">
-                        <div className="flex items-center justify-between">
-                          <p className="text-body-sm font-bold text-ink">3. Demand Note & Royalty Assessment</p>
-                          {currentStageIndex === 3 && (
-                            <span className="text-[11px] font-bold bg-[#dcfce7] text-[#166534] px-2 py-0.5 rounded-full">
-                              Payment Due
-                            </span>
-                          )}
-                          {currentStageIndex > 3 && (
-                            <span className="text-[11px] font-bold text-[#15803d]">Settled</span>
-                          )}
-                        </div>
-                        <p className="text-[12px] text-neutral-500 mt-0.5">
-                          {application.demandNote
-                            ? `Royalty assessment completed (${formatMoney(application.demandNote.totalAmount)}). Notice: ${application.demandNote.demandNoteNumber || 'DM No. 936'}.`
-                            : 'Official assessment of mineral extraction royalty, DMF, and district cess.'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Stage 4: Excavation Order & Permit Issued */}
-                    <div className="relative flex items-start gap-3.5 z-10">
-                      <span
-                        className={cn(
-                          'flex size-8 items-center justify-center rounded-full text-caption font-bold shrink-0 transition-all',
-                          currentStageIndex === 4
-                            ? 'bg-[#15803d] text-white ring-4 ring-[#dcfce7]'
-                            : 'bg-neutral-100 text-neutral-400 ring-2 ring-white'
-                        )}
-                      >
-                        {currentStageIndex === 4 ? <CheckCircle2 size={16} /> : '4'}
-                      </span>
-                      <div className="min-w-0 flex-1 pt-0.5">
-                        <div className="flex items-center justify-between">
-                          <p className="text-body-sm font-bold text-ink">4. Extraction Order & Permit Issued</p>
-                          {currentStageIndex === 4 && (
-                            <span className="text-[11px] font-bold bg-[#dcfce7] text-[#166534] px-2 py-0.5 rounded-full">
-                              Permit Granted
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[12px] text-neutral-500 mt-0.5">
-                          {application.excavationOrder
-                            ? `Official Order: ${application.excavationOrder.orderNumber} issued. Movement passes (DigiTP) authorized.`
-                            : 'Official Government e-permit issued for extraction and electronic transit passes.'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Query Raised Banner */}
-              {needsApplicantResponse(application) && (
-                <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4">
-                  <div className="flex items-start gap-2.5">
-                    <AlertTriangle size={18} className="mt-0.5 text-amber-600 shrink-0" />
-                    <div>
-                      <h4 className="text-body-sm font-bold text-amber-900">{t.excavation.queryTitle}</h4>
-                      <p className="mt-1 text-caption text-amber-800 leading-relaxed">
-                        {application.statusRemarks || 'Please provide revised survey plan and updated boundary demarcation.'}
-                      </p>
-                      <p className="mt-2 text-[11px] font-medium text-amber-700">
-                        {t.excavation.responseNote}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Demand Note Payable Box */}
-              {awaitsDemandNotePayment(application) && application.demandNote && (
-                <div
-                  className="rounded-2xl border p-4 shadow-sm"
-                  style={{ backgroundColor: '#f0fdf4', borderColor: '#86efac' }}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-caption font-bold uppercase tracking-wider" style={{ color: '#166534' }}>
-                      Demand Note & Royalty Assessment
-                    </span>
-                    <span
-                      className="flex size-6 items-center justify-center rounded-full"
-                      style={{ backgroundColor: '#dcfce7', color: '#15803d' }}
-                    >
-                      <IndianRupee size={14} />
-                    </span>
-                  </div>
-                  <p className="mt-1 text-body-sm" style={{ color: '#15803d' }}>
-                    {t.excavation.demandNoteBody}
-                  </p>
-
-                  <div
-                    className="mt-3 rounded-xl bg-white p-3.5 space-y-2 text-caption border"
-                    style={{ borderColor: '#bbf7d0' }}
-                  >
-                    <div className="flex justify-between">
-                      <span className="text-neutral-500">Demand Note No:</span>
-                      <span className="font-mono font-bold text-ink">{application.demandNote.demandNoteNumber}</span>
-                    </div>
-                    {application.demandNote.breakdown.map((line, idx) => (
-                      <div key={idx} className="flex justify-between">
-                        <span className="text-neutral-500">{line.label}:</span>
-                        <span className="tabular font-medium text-ink">{formatMoney(line.amount)}</span>
-                      </div>
-                    ))}
-                    <div className="flex justify-between pt-2 border-t border-neutral-100 font-bold text-ink items-baseline">
-                      <span>Total Payable:</span>
-                      <span className="tabular font-bold text-base" style={{ color: '#15803d' }}>
-                        {formatMoney(application.demandNote.totalAmount)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Official Excavation Order Granted Banner */}
-              {hasExcavationOrder(application) && application.excavationOrder && (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
-                  <div className="flex items-center gap-2">
-                    <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-                      <ScrollText size={16} />
-                    </span>
-                    <div>
-                      <span className="text-[11px] font-bold uppercase text-emerald-800">
-                        Official Government Order
-                      </span>
-                      <p className="font-mono text-body-sm font-bold text-ink">
-                        {application.excavationOrder.orderNumber}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 space-y-1 rounded-xl bg-white p-3 text-caption border border-emerald-100">
-                    <div className="flex justify-between">
-                      <span className="text-neutral-500">Permitted Volume:</span>
-                      <span className="font-bold text-ink">{formatQuantity(application.excavationOrder.permittedQuantity)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-neutral-500">Valid From:</span>
-                      <span className="font-medium text-ink">{formatDate(application.excavationOrder.validFrom)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-neutral-500">Valid Until:</span>
-                      <span className="font-medium text-ink">{formatDate(application.excavationOrder.validUntil)}</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-3">
-                    <button
-                      type="button"
-                      disabled={downloading}
-                      onClick={handleDownloadPermit}
-                      className="w-full flex items-center justify-center gap-2 rounded-xl py-3 px-4 text-body-sm font-bold text-white shadow-xs transition-all active:scale-[0.99] cursor-pointer"
-                      style={{ backgroundColor: '#15803d', color: '#ffffff' }}
-                    >
-                      <Download size={16} className="text-white" />
-                      <span className="text-white">Download Excavation Permit Certificate</span>
-                    </button>
+                      );
+                    })()}
                   </div>
                 </div>
               )}

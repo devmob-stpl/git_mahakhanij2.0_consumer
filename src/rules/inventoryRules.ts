@@ -1,16 +1,46 @@
-import type { InventoryBalance, Quantity } from '@/domain';
+import type { InventoryBalance, MineralCategory, Quantity } from '@/domain';
 import { compareQuantity, formatQuantity, subtractQuantity } from './quantity';
 
 /**
- * INVENTORY — the mental model is exactly:
+ * INVENTORY SOURCING MODEL:
  *
- *     Received − Consumed = Available
- *
- * Nothing else. Do not add reserved/allocated/in-transit buckets without an
- * explicit product decision.
+ *   Active on Site = Total Sourced (Received) − Transferred Out
+ *   (or 0 if marked FULLY_UTILIZED)
  */
 export function computeAvailableQuantity(balance: InventoryBalance): Quantity {
-  return subtractQuantity(balance.receivedQuantity, balance.consumedQuantity);
+  if (balance.status === 'FULLY_UTILIZED') {
+    return { value: 0, unit: balance.receivedQuantity.unit };
+  }
+
+  if (balance.transferredQuantity) {
+    return subtractQuantity(balance.receivedQuantity, balance.transferredQuantity);
+  }
+
+  return balance.receivedQuantity;
+}
+
+export function isStockDepleted(balance: InventoryBalance): boolean {
+  if (balance.status === 'FULLY_UTILIZED') return true;
+  const available = computeAvailableQuantity(balance);
+  return available.value <= 0;
+}
+
+export function formatMineralCategory(category: MineralCategory): string {
+  switch (category) {
+    case 'SAND':
+      return 'Sand & Riverbed';
+    case 'STONE_AGGREGATE':
+      return 'Stone & Aggregates';
+    case 'GRAVEL':
+      return 'Gravel & Grit';
+    case 'MURUM':
+      return 'Murrum & Soil';
+    case 'BLACK_TRAP':
+      return 'Basalt & Hard Rock';
+    case 'OTHER':
+    default:
+      return 'Minor Minerals';
+  }
 }
 
 export interface ConsumptionCheck {
@@ -19,18 +49,6 @@ export interface ConsumptionCheck {
   reason?: string;
 }
 
-/**
- * THE consumption policy — deliberately isolated in one function.
- *
- * ASSUMPTION #4 (open question #6): the Project Context says consumption
- * "should respect applicable inventory validation" but that if the exact rule
- * is undefined, keep the implementation flexible rather than inventing rules.
- *
- * Current policy: block consumption that exceeds available quantity, with a
- * clear message. If the business instead allows negative balances, or a
- * tolerance, or a supervisor override, change it HERE — no screen contains
- * this rule.
- */
 export function canRecordConsumption(
   balance: InventoryBalance,
   requested: Quantity,
@@ -44,7 +62,7 @@ export function canRecordConsumption(
   if (compareQuantity(requested, available) > 0) {
     return {
       allowed: false,
-      reason: `Only ${formatQuantity(available)} is available.`,
+      reason: `Only ${formatQuantity(available)} is available on site.`,
     };
   }
 

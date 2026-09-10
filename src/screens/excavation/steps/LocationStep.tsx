@@ -237,7 +237,7 @@ export function LocationStep({ draft, errors, update, patch }: LocationStepProps
             leftIcon={<Plus size={16} />}
             onClick={handleFetch712}
           >
-            Add survey
+            Add survey no.
           </Button>
         </div>
 

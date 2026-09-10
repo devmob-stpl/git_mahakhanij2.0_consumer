@@ -6,6 +6,7 @@ import { ROUTES } from '@/navigation/routes';
 import { useCurrentUser, useOrganizationContextStore, useSessionStore } from '@/state';
 import { copy } from '@/content';
 import { PERSONAS } from './personas';
+import { triggerDevQuickFill } from './useDevFill';
 
 /**
  * PROTOTYPE ONLY — see ./personas.ts for removal instructions.
@@ -42,6 +43,14 @@ export function PrototypeBar() {
           {copy.prototype.banner}
         </span>
         <span className="min-w-0 flex-1 truncate text-caption text-neutral-300">{activeLabel}</span>
+        <button
+          type="button"
+          onClick={triggerDevQuickFill}
+          title="⚡ Quick fill demo content for the active screen"
+          className="flex shrink-0 items-center gap-1 rounded bg-amber-500/20 px-2 py-0.5 text-caption font-bold text-amber-300 hover:bg-amber-500/30 active:scale-95 transition-all border border-amber-500/40 cursor-pointer"
+        >
+          <span>⚡ Quick Fill</span>
+        </button>
         <button
           type="button"
           onClick={() => setOpen(true)}

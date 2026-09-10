@@ -80,7 +80,7 @@ export function validateEnquiry(
     return {
       valid,
       errors,
-      warning: `This stock point currently holds ${available.value} ${available.unit}. You can still enquire for more.`,
+      warning: `This mineral place currently holds ${available.value} ${available.unit}. You can still enquire for more.`,
     };
   }
 

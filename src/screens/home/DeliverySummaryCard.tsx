@@ -70,7 +70,7 @@ export function DeliverySummaryCard({ item }: { item: DeliveryItemSummary }) {
           <Store size={14} className="text-neutral-400 shrink-0" />
           <span className="text-[12px] truncate max-w-[200px] sm:max-w-[240px]">
             <span className="text-neutral-400 font-normal">From: </span>
-            <span className="font-medium text-ink">{item.purchasedFrom || 'Authorized Stock Point'}</span>
+            <span className="font-medium text-ink">{item.purchasedFrom || 'Authorized Mineral Place'}</span>
           </span>
         </div>
 

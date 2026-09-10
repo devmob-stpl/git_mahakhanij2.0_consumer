@@ -92,6 +92,7 @@ export const authRepository = {
         if (!details || !address) return { status: 'INVALID_OTP' } as const;
 
         const regNum =
+          details.gstNumber?.trim() ||
           details.registrationNumber?.trim() ||
           draft.kyc?.documentNumber?.trim() ||
           `MH/MK/ORG/${nextSequence('org')}`;
@@ -99,8 +100,9 @@ export const authRepository = {
         const organization: Organization = {
           id: `org-${nextSequence('org')}`,
           name: details.organizationName.trim(),
-          type: details.organizationType,
+          type: details.organizationType ?? 'OTHER',
           registrationNumber: regNum,
+          gstNumber: details.gstNumber?.trim(),
           address: {
             line1: address.addressLine.trim(),
             taluka: address.taluka.trim(),
