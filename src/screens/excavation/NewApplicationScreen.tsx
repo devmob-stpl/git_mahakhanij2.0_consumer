@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Button, ErrorState, LoadingState, StepProgress, Surface } from '@/design-system';
 import { OrganizationContextBar, Screen } from '@/navigation';
 import { mineralRepository, projectRepository, useAsync } from '@/data';
@@ -15,7 +15,6 @@ export function NewApplicationScreen() {
   const organization = useCurrentOrganization();
   const user = useCurrentUser();
   const context = useOperatingContext();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const draftId = searchParams.get('draftId');
   const t = useCopy();
@@ -39,9 +38,21 @@ export function NewApplicationScreen() {
     <Screen
       title={draftId ? 'Resume Application' : t.excavation.newApplication}
       onBack={() => {
-        if (!form.back()) navigate(-1);
+        if (!form.back()) {
+          form.saveAndExit();
+        }
       }}
       context={<OrganizationContextBar showChange={false} />}
+      actions={
+        <button
+          type="button"
+          disabled={form.submitting}
+          onClick={() => form.saveAndExit()}
+          className="text-[12px] font-bold text-primary-700 bg-primary-50 hover:bg-primary-100 px-3 py-1.5 rounded-lg border border-primary-200/60 transition-colors cursor-pointer disabled:opacity-50"
+        >
+          Save & Exit
+        </button>
+      }
       footer={
         isReview ? (
           <div className="space-y-2">
@@ -57,15 +68,25 @@ export function NewApplicationScreen() {
               variant="ghost"
               fullWidth
               disabled={form.submitting}
-              onClick={() => form.persist(false)}
+              onClick={() => form.saveAndExit()}
             >
               {t.excavation.saveDraft}
             </Button>
           </div>
         ) : (
-          <Button size="lg" fullWidth onClick={form.next}>
-            {t.actions.continue}
-          </Button>
+          <div className="space-y-2">
+            <Button size="lg" fullWidth onClick={form.next}>
+              {t.actions.continue}
+            </Button>
+            <button
+              type="button"
+              disabled={form.submitting}
+              onClick={() => form.saveAndExit()}
+              className="w-full text-center py-1.5 text-caption font-semibold text-neutral-500 hover:text-neutral-800 transition-colors cursor-pointer"
+            >
+              Save as draft and exit
+            </button>
+          </div>
         )
       }
     >
@@ -74,8 +95,13 @@ export function NewApplicationScreen() {
 
       {minerals.data && (
         <>
-          <div className="border-b border-line bg-surface px-4 py-3">
-            <StepProgress current={form.stepIndex + 1} total={form.totalSteps} />
+          <div className="border-b border-line bg-surface px-4 py-2.5 flex items-center justify-between">
+            <div className="flex-1 mr-4">
+              <StepProgress current={form.stepIndex + 1} total={form.totalSteps} />
+            </div>
+            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80 shrink-0">
+              {form.saveStatus === 'saving' ? 'Saving...' : 'Auto-saved ✓'}
+            </span>
           </div>
 
           <div className="px-4 py-5">

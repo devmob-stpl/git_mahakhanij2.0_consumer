@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type {
   ApplicationDocumentKind,
@@ -33,22 +33,51 @@ export interface UseApplicationFormOptions {
  * ALL OF THE FORM'S STATE, IN ONE PLACE AND OUT OF THE SCREEN.
  *
  * Supports creating new applications and resuming saved drafts seamlessly.
+ * Auto-saves continuously and remembers the exact step where the user exited.
  */
 export function useApplicationForm({ user, organization, context, draftId }: UseApplicationFormOptions) {
   const navigate = useNavigate();
+  const localStorageKey = `mahakhanij_temp_excavation_draft_${organization?.id || 'org-001'}`;
 
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(draftId || null);
   const [stepIndex, setStepIndex] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [documents, setDocuments] = useState<AttachedDocument[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'idle'>('saved');
+  const [lastSavedAt, setLastSavedAt] = useState<Date>(new Date());
 
   const [draft, setDraft] = useState<ApplicationDraft>(() => initialDraft(user, organization));
+  const isInitialMount = useRef(true);
 
+  // 1. If draftId is passed, load existing draft from repository
   useEffect(() => {
-    if (!draftId) return;
+    if (!draftId) {
+      // If no explicit draftId, check if there's a stored draft in localStorage
+      try {
+        const savedJson = localStorage.getItem(localStorageKey);
+        if (savedJson) {
+          const parsed = JSON.parse(savedJson);
+          if (parsed?.draft) {
+            setDraft(parsed.draft);
+            if (Array.isArray(parsed.documents)) setDocuments(parsed.documents);
+            if (typeof parsed.stepIndex === 'number' && parsed.stepIndex >= 0 && parsed.stepIndex < APPLICATION_STEPS.length) {
+              setStepIndex(parsed.stepIndex);
+            }
+            if (parsed.draftId) setActiveDraftId(parsed.draftId);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to parse localStorage draft', e);
+      }
+      return;
+    }
+
     let cancelled = false;
     void temporaryExcavationRepository.getById(draftId).then((existing) => {
       if (cancelled || !existing) return;
+
+      setActiveDraftId(existing.id);
 
       setDraft((prev) => ({
         ...prev,
@@ -110,20 +139,85 @@ export function useApplicationForm({ user, organization, context, draftId }: Use
         );
       }
 
-      // Resume from the exact step:
-      // If missing mandatory documents -> jump to Step 3 (DOCUMENTS)
-      // If all mandatory docs attached -> jump to Step 4 (REVIEW)
-      const missingMandatory = missingRequiredDocuments(existing.documents.map((d) => d.kind));
-      if (missingMandatory.length === 0 && existing.documents.length > 0) {
-        setStepIndex(4); // REVIEW
+      // Resume from the EXACT step where user left off
+      if (
+        typeof existing.lastStepIndex === 'number' &&
+        existing.lastStepIndex >= 0 &&
+        existing.lastStepIndex < APPLICATION_STEPS.length
+      ) {
+        setStepIndex(existing.lastStepIndex);
       } else {
-        setStepIndex(3); // DOCUMENTS
+        const missingMandatory = missingRequiredDocuments(existing.documents.map((d) => d.kind));
+        if (missingMandatory.length === 0 && existing.documents.length > 0) {
+          setStepIndex(4); // REVIEW
+        } else {
+          setStepIndex(3); // DOCUMENTS
+        }
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [draftId]);
+  }, [draftId, localStorageKey]);
+
+  // 2. Continuous Auto-Save to localStorage and background sync to repository
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    setSaveStatus('saving');
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          localStorageKey,
+          JSON.stringify({
+            draftId: activeDraftId,
+            draft,
+            documents,
+            stepIndex,
+            savedAt: new Date().toISOString(),
+          })
+        );
+        setSaveStatus('saved');
+        setLastSavedAt(new Date());
+
+        // Background sync to in-memory repository
+        if (organization) {
+          const ready = toCreateInput(draft, false);
+          if (ready) {
+            temporaryExcavationRepository
+              .saveDraft({
+                ...(activeDraftId ? { id: activeDraftId } : {}),
+                organizationId: organization.id,
+                ...(context?.projectId ? { projectId: context.projectId } : {}),
+                ...(context?.packageId ? { packageId: context.packageId } : {}),
+                ...ready,
+                lastStepIndex: stepIndex,
+                documents: documents.map((d) => ({
+                  kind: d.kind,
+                  fileName: d.fileName,
+                  documentType: d.documentType,
+                  ...(d.documentNumber ? { documentNumber: d.documentNumber } : {}),
+                })),
+              })
+              .then((saved) => {
+                if (!activeDraftId && saved?.id) {
+                  setActiveDraftId(saved.id);
+                }
+              })
+              .catch(() => {});
+          }
+        }
+      } catch (err) {
+        console.error('Auto-save error', err);
+        setSaveStatus('idle');
+      }
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [draft, documents, stepIndex, activeDraftId, organization?.id, localStorageKey]);
 
   const step: ApplicationStep = APPLICATION_STEPS[stepIndex] ?? 'APPLICANT';
   const attachedKinds = useMemo(
@@ -184,6 +278,67 @@ export function useApplicationForm({ user, organization, context, draftId }: Use
   }
 
   /**
+   * Explicitly save draft with the current step index and return to temporary excavation list.
+   */
+  async function saveAndExit(): Promise<void> {
+    setSubmitting(true);
+    try {
+      if (organization) {
+        const ready = toCreateInput(draft, false);
+        if (ready) {
+          const saved = await temporaryExcavationRepository.saveDraft({
+            ...(activeDraftId ? { id: activeDraftId } : {}),
+            organizationId: organization.id,
+            ...(context?.projectId ? { projectId: context.projectId } : {}),
+            ...(context?.packageId ? { packageId: context.packageId } : {}),
+            ...ready,
+            lastStepIndex: stepIndex,
+            documents: documents.map((d) => ({
+              kind: d.kind,
+              fileName: d.fileName,
+              documentType: d.documentType,
+              ...(d.documentNumber ? { documentNumber: d.documentNumber } : {}),
+            })),
+          });
+          if (!activeDraftId && saved?.id) {
+            setActiveDraftId(saved.id);
+          }
+        }
+      }
+      localStorage.setItem(
+        localStorageKey,
+        JSON.stringify({
+          draftId: activeDraftId,
+          draft,
+          documents,
+          stepIndex,
+          savedAt: new Date().toISOString(),
+        })
+      );
+    } catch (e) {
+      console.error('Failed to save draft on exit', e);
+    } finally {
+      setSubmitting(false);
+      navigate(ROUTES.temporaryExcavation);
+    }
+  }
+
+  /**
+   * Discard current draft and return to temporary excavation list.
+   */
+  async function discardDraft(): Promise<void> {
+    try {
+      localStorage.removeItem(localStorageKey);
+      if (activeDraftId) {
+        await temporaryExcavationRepository.deleteDraft(activeDraftId);
+      }
+    } catch (e) {
+      console.error('Failed to discard draft', e);
+    }
+    navigate(ROUTES.temporaryExcavation);
+  }
+
+  /**
    * Creates the application as a DRAFT and, when paying, hands off to payment.
    */
   async function persist(goToPayment: boolean): Promise<void> {
@@ -205,6 +360,7 @@ export function useApplicationForm({ user, organization, context, draftId }: Use
         ...(context?.projectId ? { projectId: context.projectId } : {}),
         ...(context?.packageId ? { packageId: context.packageId } : {}),
         ...ready,
+        lastStepIndex: stepIndex,
         documents: documents.map((document) => ({
           kind: document.kind,
           fileName: document.fileName,
@@ -212,6 +368,16 @@ export function useApplicationForm({ user, organization, context, draftId }: Use
           ...(document.documentNumber ? { documentNumber: document.documentNumber } : {}),
         })),
       });
+
+      // Clear local storage draft and active draft record on successful submission
+      try {
+        localStorage.removeItem(localStorageKey);
+        if (activeDraftId && activeDraftId !== application.id) {
+          await temporaryExcavationRepository.deleteDraft(activeDraftId);
+        }
+      } catch (e) {
+        // ignore
+      }
 
       navigate(
         goToPayment
@@ -337,6 +503,9 @@ export function useApplicationForm({ user, organization, context, draftId }: Use
     stepIndex,
     totalSteps: APPLICATION_STEPS.length,
     submitting,
+    saveStatus,
+    lastSavedAt,
+    activeDraftId,
     update,
     patch,
     attach,
@@ -345,6 +514,8 @@ export function useApplicationForm({ user, organization, context, draftId }: Use
     back,
     goToStep,
     persist,
+    saveAndExit,
+    discardDraft,
     quickFill,
   };
 }

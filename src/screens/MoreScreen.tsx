@@ -8,7 +8,6 @@ import {
   LogOut,
   Package as PackageIcon,
   RotateCcw,
-  ShieldCheck,
   Shovel,
   Truck,
   UserCheck,
@@ -86,22 +85,19 @@ export function MoreScreen() {
         </div>
       </button>
 
-      <SectionHeader title="Account & Identity" />
-      <ListGroup className="border-y border-line">
-        <ListRow
-          leading={<ShieldCheck size={18} className="text-emerald-700" />}
-          title="My Profile & KYC Verification"
-          subtitle="Update personal info, address, company registration and KYC"
-          onClick={() => navigate(ROUTES.profile)}
-          trailing={null}
-        />
-      </ListGroup>
-
       {/* ORGANIZATION MANAGEMENT ON TOP (For Organization users) */}
       {(canSeeExcavation || canSeeOrganization) && (
         <>
           <SectionHeader title="Organization Management" />
           <ListGroup className="border-y border-line">
+            {canSeeExcavation && (
+              <ListRow
+                leading={<Shovel size={17} />}
+                title="Temporary Excavation Application"
+                subtitle="Applications and status"
+                onClick={() => navigate(ROUTES.temporaryExcavation)}
+              />
+            )}
             {canSeeOrganization && (
               <ListRow
                 leading={<UserCheck size={17} />}
@@ -109,14 +105,6 @@ export function MoreScreen() {
                 subtitle={`${supervisors.data?.length ?? 6} registered supervisors`}
                 onClick={() => navigate(ROUTES.supervisors)}
                 trailing={null}
-              />
-            )}
-            {canSeeExcavation && (
-              <ListRow
-                leading={<Shovel size={17} />}
-                title="Temporary Excavation"
-                subtitle="Applications and status"
-                onClick={() => navigate(ROUTES.temporaryExcavation)}
               />
             )}
           </ListGroup>

@@ -49,6 +49,41 @@ const applicant: ApplicantDetails = {
  */
 export const temporaryExcavationApplications: TemporaryExcavationApplication[] = [
   {
+    id: 'tea-draft-01',
+    applicationNumber: 'TEA/2026/DRAFT-001402',
+    organizationId: 'org-001',
+    applicant,
+    projectId: 'proj-001',
+    packageId: 'pkg-001',
+    mineralId: 'min-sand',
+    estimatedQuantity: q(400),
+    excavationQuantityBrass: 400,
+    excavationMethod: 'SEMI_MECHANISED',
+    applicationFee: { amount: 1000, currency: 'INR' },
+    purpose: 'Commercial plot excavation and foundation material leveling.',
+    siteAddress: {
+      line1: 'Gat No. 42/1B, Wagholi-Kesnand Road',
+      taluka: 'Haveli',
+      district: 'Pune',
+      state: 'Maharashtra',
+      pincode: '412207',
+    },
+    siteGeo: { latitude: 18.579, longitude: 73.981 },
+    village: 'Wagholi',
+    surveyNumber: '42/1B',
+    landType: 'PRIVATE',
+    areaInSqm: 4000,
+    depthInMetres: 3,
+    fromDate: dateDaysAhead(10),
+    toDate: dateDaysAhead(70),
+    status: 'DRAFT',
+    lastStepIndex: 2, // Exited at Step 3 (Location)
+    statusUpdatedAt: daysAgo(1),
+    documents: [
+      { id: 'doc-d1', fileName: 'applicant-pan.pdf', kind: 'PAN_CARD', documentType: 'PAN Card Document', uploadedAt: daysAgo(1) },
+    ],
+  },
+  {
     id: 'tea-001',
     applicationNumber: 'TEA/2026/001284',
     organizationId: 'org-001',

@@ -620,7 +620,8 @@ export interface CreateApplicationInput {
   toDate?: ISODate;
   /** Absent when the application was saved as a draft without declaring. */
   declarationAccepted: boolean;
-  documents: { kind: ApplicationDocumentKind; fileName: string; documentType: string }[];
+  lastStepIndex?: number;
+  documents: { kind: ApplicationDocumentKind; fileName: string; documentType: string; documentNumber?: string }[];
 }
 
 export const temporaryExcavationRepository = {
@@ -664,12 +665,14 @@ export const temporaryExcavationRepository = {
         ...(input.declarationAccepted ? { declarationAcceptedAt: now } : {}),
         applicationFee: computeApplicationFee(input.estimatedQuantity?.value ?? 100),
         status: 'DRAFT',
+        lastStepIndex: input.lastStepIndex ?? 0,
         statusUpdatedAt: now,
         documents: input.documents.map((document, index) => ({
           id: `doc-${Date.now()}-${index}`,
           kind: document.kind,
           fileName: document.fileName,
           documentType: document.documentType,
+          ...(document.documentNumber ? { documentNumber: document.documentNumber } : {}),
           uploadedAt: now,
         })),
       };
@@ -678,6 +681,104 @@ export const temporaryExcavationRepository = {
       return application;
     }),
 
+  /**
+   * Saves or updates an in-progress draft application, preserving the exact step index.
+   */
+  saveDraft: (
+    input: CreateApplicationInput & { id?: ID }
+  ): Promise<TemporaryExcavationApplication> =>
+    request(() => {
+      const now = new Date().toISOString();
+      const existingIndex = input.id
+        ? db.temporaryExcavationApplications.findIndex((a) => a.id === input.id)
+        : -1;
+
+      if (existingIndex >= 0) {
+        const existing = db.temporaryExcavationApplications[existingIndex];
+        const updated: TemporaryExcavationApplication = {
+          ...existing,
+          applicant: input.applicant,
+          mineralId: input.mineralId,
+          estimatedQuantity: input.estimatedQuantity,
+          excavationMethod: input.excavationMethod,
+          purpose: input.purpose,
+          ...(input.remarks ? { remarks: input.remarks } : {}),
+          siteAddress: input.siteAddress,
+          siteGeo: input.siteGeo,
+          village: input.village,
+          surveyNumber: input.surveyNumber,
+          ...(input.subDivisionNumber ? { subDivisionNumber: input.subDivisionNumber } : {}),
+          landType: input.landType,
+          areaInSqm: input.areaInSqm,
+          depthInMetres: input.depthInMetres ?? 0,
+          fromDate: input.fromDate ?? '',
+          toDate: input.toDate ?? '',
+          lastStepIndex: input.lastStepIndex ?? existing.lastStepIndex ?? 0,
+          statusUpdatedAt: now,
+          documents: input.documents.map((doc, idx) => ({
+            id: `doc-${Date.now()}-${idx}`,
+            kind: doc.kind,
+            fileName: doc.fileName,
+            documentType: doc.documentType,
+            ...(doc.documentNumber ? { documentNumber: doc.documentNumber } : {}),
+            uploadedAt: now,
+          })),
+        };
+        db.temporaryExcavationApplications[existingIndex] = updated;
+        return updated;
+      }
+
+      // If new draft
+      const sequence = String(db.temporaryExcavationApplications.length + 1401).padStart(6, '0');
+      const draftApp: TemporaryExcavationApplication = {
+        id: input.id || `tea-draft-${Date.now()}`,
+        applicationNumber: `TEA/2026/DRAFT-${sequence}`,
+        organizationId: input.organizationId,
+        ...(input.projectId ? { projectId: input.projectId } : {}),
+        ...(input.packageId ? { packageId: input.packageId } : {}),
+        applicant: input.applicant,
+        mineralId: input.mineralId,
+        estimatedQuantity: input.estimatedQuantity,
+        excavationMethod: input.excavationMethod,
+        purpose: input.purpose,
+        ...(input.remarks ? { remarks: input.remarks } : {}),
+        siteAddress: input.siteAddress,
+        siteGeo: input.siteGeo,
+        village: input.village,
+        surveyNumber: input.surveyNumber,
+        ...(input.subDivisionNumber ? { subDivisionNumber: input.subDivisionNumber } : {}),
+        landType: input.landType,
+        areaInSqm: input.areaInSqm,
+        depthInMetres: input.depthInMetres ?? 0,
+        fromDate: input.fromDate ?? '',
+        toDate: input.toDate ?? '',
+        applicationFee: computeApplicationFee(input.estimatedQuantity?.value ?? 100),
+        status: 'DRAFT',
+        lastStepIndex: input.lastStepIndex ?? 0,
+        statusUpdatedAt: now,
+        documents: input.documents.map((doc, idx) => ({
+          id: `doc-${Date.now()}-${idx}`,
+          kind: doc.kind,
+          fileName: doc.fileName,
+          documentType: doc.documentType,
+          ...(doc.documentNumber ? { documentNumber: doc.documentNumber } : {}),
+          uploadedAt: now,
+        })),
+      };
+      db.temporaryExcavationApplications.unshift(draftApp);
+      return draftApp;
+    }),
+
+  /**
+   * Deletes a draft application
+   */
+  deleteDraft: (id: ID): Promise<void> =>
+    request(() => {
+      const idx = db.temporaryExcavationApplications.findIndex((a) => a.id === id);
+      if (idx >= 0) {
+        db.temporaryExcavationApplications.splice(idx, 1);
+      }
+    }),
 
   /**
    * ORGANIZATION-ONLY. Callers must already hold the TEMPORARY_EXCAVATION

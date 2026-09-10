@@ -273,5 +273,7 @@ export interface TemporaryExcavationApplication {
   statusUpdatedAt: ISODateTime;
   /** Populated when status is QUERY_RAISED or REJECTED. */
   statusRemarks?: string;
+  /** When saved as draft, records the step index where user exited (0: APPLICANT, 1: EXCAVATION, 2: LOCATION, 3: DOCUMENTS, 4: REVIEW) */
+  lastStepIndex?: number;
   documents: ApplicationDocument[];
 }
