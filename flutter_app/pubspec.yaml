@@ -1,0 +1,47 @@
+name: mahakhanij_consumer
+description: "Mahakhanij Consumer App 2.0 - Official Digital Minor Mineral Gateway for Maharashtra"
+publish_to: "none"
+version: 2.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ">=2.4.0 <3.0.0"
+
+  # Routing & Navigation
+  go_router: ">=12.0.0 <15.0.0"
+
+  # Networking & REST API
+  dio: ">=5.0.0 <6.0.0"
+
+  # Local Persistence & Draft Auto-save
+  shared_preferences: ">=2.1.0 <3.0.0"
+  flutter_secure_storage: ">=8.0.0 <10.0.0"
+
+  # Typography & Icons
+  google_fonts: ">=5.0.0 <7.0.0"
+  cupertino_icons: ">=1.0.6 <2.0.0"
+
+  # QR Code & Scanning
+  qr_flutter: ">=4.0.0 <5.0.0"
+  mobile_scanner: ">=3.5.0 <6.0.0"
+
+  # Utilities
+  intl: ">=0.18.0 <1.0.0"
+  uuid: ">=3.0.0 <5.0.0"
+  url_launcher: ">=6.1.0 <7.0.0"
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ">=2.0.0 <5.0.0"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
