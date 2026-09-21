@@ -1,1 +1,0 @@
-export { ConsumerActivityScreen } from './ConsumerActivityScreen';
