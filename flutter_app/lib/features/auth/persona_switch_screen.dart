@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/config/app_config.dart';
 import '../../core/constants/app_colors.dart';
 import '../../domain/user.dart';
 import '../../shared/widgets/app_scaffold.dart';
@@ -26,7 +27,12 @@ class PersonaSwitchScreen extends ConsumerWidget {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
-          final users = snapshot.data!;
+          final users = (snapshot.data ?? []).where((u) {
+            if (!AppConfig.enableOrganizationFlow && u.userType == UserType.organization) {
+              return false;
+            }
+            return true;
+          }).toList();
 
           return ListView.separated(
             padding: const EdgeInsets.all(16),

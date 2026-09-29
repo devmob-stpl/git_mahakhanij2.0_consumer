@@ -31,8 +31,11 @@ class DioClient {
           }
           return handler.next(options);
         },
-        onError: (DioException error, handler) {
-          // Standard error handling
+        onError: (DioException error, handler) async {
+          if (error.response?.statusCode == 401 || error.response?.statusCode == 403) {
+            await _secureStorage.delete(key: 'auth_user');
+            await _secureStorage.delete(key: 'auth_token');
+          }
           return handler.next(error);
         },
       ),

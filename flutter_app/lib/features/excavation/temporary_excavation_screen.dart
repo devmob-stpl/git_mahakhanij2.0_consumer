@@ -224,7 +224,7 @@ class TemporaryExcavationScreen extends ConsumerWidget {
                 height: 48,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1D4ED8),
+                    backgroundColor: const Color(0xFF2563EB),
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -277,7 +277,7 @@ class TemporaryExcavationScreen extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.description_outlined, size: 18, color: Color(0xFF1D4ED8)),
+                    const Icon(Icons.description_outlined, size: 18, color: Color(0xFF2563EB)),
                     const SizedBox(width: 8),
                     Text(
                       app.applicationNumber,
@@ -340,7 +340,7 @@ class TemporaryExcavationScreen extends ConsumerWidget {
                 children: [
                   const Text(
                     'CURRENT STAGE    Draft Saved',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF1D4ED8)),
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF2563EB)),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -357,7 +357,7 @@ class TemporaryExcavationScreen extends ConsumerWidget {
                 const Text('Updated: Recently', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
                 TextButton(
                   onPressed: () => context.push('/excavation/new', extra: app),
-                  child: const Text('Resume Application →', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1D4ED8))),
+                  child: const Text('Resume Application →', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF2563EB))),
                 ),
               ],
             ),
@@ -545,10 +545,10 @@ class TemporaryExcavationScreen extends ConsumerWidget {
       case TemporaryExcavationStatus.submitted:
         statusText = 'Submitted';
         statusBgColor = const Color(0xFFEFF6FF);
-        statusTextColor = const Color(0xFF1D4ED8);
+        statusTextColor = const Color(0xFF2563EB);
         stageHeader = 'CURRENT STAGE';
         stageTitle = 'Stage 1: Application Submitted';
-        stageTitleColor = const Color(0xFF1D4ED8);
+        stageTitleColor = const Color(0xFF2563EB);
         stageDescription = app.purpose.isNotEmpty
             ? app.purpose
             : 'Application fee of ₹520 paid. Ready for departmental review.';
@@ -561,10 +561,10 @@ class TemporaryExcavationScreen extends ConsumerWidget {
             children: const [
               Text(
                 'View Details',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1D4ED8)),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF2563EB)),
               ),
               SizedBox(width: 4),
-              Icon(Icons.arrow_forward, size: 16, color: Color(0xFF1D4ED8)),
+              Icon(Icons.arrow_forward, size: 16, color: Color(0xFF2563EB)),
             ],
           ),
         );
@@ -574,10 +574,10 @@ class TemporaryExcavationScreen extends ConsumerWidget {
       default:
         statusText = 'Under review';
         statusBgColor = const Color(0xFFEFF6FF);
-        statusTextColor = const Color(0xFF1D4ED8);
+        statusTextColor = const Color(0xFF2563EB);
         stageHeader = 'CURRENT STAGE';
         stageTitle = 'Stage 2: Under Department Review';
-        stageTitleColor = const Color(0xFF1D4ED8);
+        stageTitleColor = const Color(0xFF2563EB);
         stageDescription = app.purpose.isNotEmpty
             ? app.purpose
             : 'Site boundary inspection and verification in progress by Revenue Officer.';
@@ -590,10 +590,10 @@ class TemporaryExcavationScreen extends ConsumerWidget {
             children: const [
               Text(
                 'View Details',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1D4ED8)),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF2563EB)),
               ),
               SizedBox(width: 4),
-              Icon(Icons.arrow_forward, size: 16, color: Color(0xFF1D4ED8)),
+              Icon(Icons.arrow_forward, size: 16, color: Color(0xFF2563EB)),
             ],
           ),
         );
@@ -618,7 +618,7 @@ class TemporaryExcavationScreen extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.description_outlined, size: 18, color: Color(0xFF1D4ED8)),
+                  const Icon(Icons.description_outlined, size: 18, color: Color(0xFF2563EB)),
                   const SizedBox(width: 8),
                   Text(
                     app.applicationNumber,
@@ -774,7 +774,7 @@ class TemporaryExcavationScreen extends ConsumerWidget {
               child: Icon(
                 icon,
                 size: 20,
-                color: isActive ? const Color(0xFF1241A6) : const Color(0xFF64748B),
+                color: isActive ? const Color(0xFF2563EB) : const Color(0xFF64748B),
               ),
             ),
             const SizedBox(height: 2),
@@ -783,7 +783,7 @@ class TemporaryExcavationScreen extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                color: isActive ? const Color(0xFF1241A6) : const Color(0xFF64748B),
+                color: isActive ? const Color(0xFF2563EB) : const Color(0xFF64748B),
               ),
             ),
           ],

@@ -9,6 +9,7 @@ import '../../domain/organization.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
+import '../../shared/widgets/location_dropdown_section.dart';
 import '../../providers/operating_context_provider.dart';
 
 class CreatePackageScreen extends ConsumerStatefulWidget {
@@ -157,82 +158,20 @@ class _CreatePackageScreenState extends ConsumerState<CreatePackageScreen> {
             ),
             const SizedBox(height: 14),
 
-            // Jurisdiction Area Classification
-            const Text('Area Classification', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink)),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () => setState(() => _category = 'RURAL'),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
-                        color: _category == 'RURAL' ? const Color(0xFFEFF6FF) : Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: _category == 'RURAL' ? AppColors.primary700 : AppColors.line),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.landscape_outlined, size: 18, color: _category == 'RURAL' ? AppColors.primary700 : AppColors.inkSecondary),
-                          const SizedBox(width: 6),
-                          Text('Rural (Gram Panchayat)', style: TextStyle(fontSize: 12, fontWeight: _category == 'RURAL' ? FontWeight.w700 : FontWeight.w500, color: _category == 'RURAL' ? AppColors.primary700 : AppColors.ink)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: InkWell(
-                    onTap: () => setState(() => _category = 'URBAN'),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
-                        color: _category == 'URBAN' ? const Color(0xFFEFF6FF) : Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: _category == 'URBAN' ? AppColors.primary700 : AppColors.line),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.location_city, size: 18, color: _category == 'URBAN' ? AppColors.primary700 : AppColors.inkSecondary),
-                          const SizedBox(width: 6),
-                          Text('Urban (Municipal Corp)', style: TextStyle(fontSize: 12, fontWeight: _category == 'URBAN' ? FontWeight.w700 : FontWeight.w500, color: _category == 'URBAN' ? AppColors.primary700 : AppColors.ink)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-
-            AppTextField(
-              label: 'District *',
-              controller: _districtController,
-            ),
-            const SizedBox(height: 14),
-
-            Row(
-              children: [
-                Expanded(
-                  child: AppTextField(
-                    label: _category == 'URBAN' ? 'City / Corporation' : 'Taluka *',
-                    controller: _talukaController,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: AppTextField(
-                    label: _category == 'URBAN' ? 'Zone / Division' : 'Village Name',
-                    controller: _cityController,
-                  ),
-                ),
-              ],
+            LocationDropdownSection(
+              initialCategory: _category,
+              initialDistrict: _districtController.text,
+              initialTaluka: _talukaController.text,
+              initialVillageCity: _cityController.text,
+              showCategorySelector: true,
+              onChanged: (data) {
+                setState(() {
+                  _category = data.category;
+                  _districtController.text = data.districtName;
+                  _talukaController.text = data.talukaName;
+                  _cityController.text = data.villageCityName;
+                });
+              },
             ),
             const SizedBox(height: 14),
 

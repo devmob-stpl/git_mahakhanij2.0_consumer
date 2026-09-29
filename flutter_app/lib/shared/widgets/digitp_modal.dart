@@ -1,29 +1,53 @@
 import 'package:flutter/material.dart';
+import '../../core/utils/date_formatter.dart';
+import '../../domain/consumer_digitp_models.dart';
 
 void showDigiTpPassModal(
   BuildContext context, {
-  String digiTpNumber = 'ETP/2026/MH/0431188',
-  String vehicleNumber = 'MH-04-GG-1234',
-  String driverName = 'Suresh Patil',
-  String driverMobile = '9820117453',
-  String ownerName = 'A K',
-  String ownerMobile = '6434234234',
-  String plotName = 'Titwala Trap Quarry',
-  String destination = 'Package A — Km 12 to Km 28',
-  String distance = '10.0KM',
-  String createdAt = '30/07/2026 02:33 PM',
-  String validity = '09/09/2026, 07:10 am',
+  ConsumerDigiTpItem? item,
+  String? digiTpNumber,
+  String? vehicleNumber,
+  String? driverName,
+  String? driverMobile,
+  String? ownerName,
+  String? ownerMobile,
+  String? plotName,
+  String? destination,
+  String? distance,
+  String? createdAt,
+  String? validity,
 }) {
+  final invoiceNoStr = item?.invoiceNo ?? digiTpNumber ?? 'N/A';
+  final vehicleNoStr = item?.vehicleNo ?? vehicleNumber ?? 'N/A';
+  final driverNameStr = item?.driverName ?? driverName ?? 'N/A';
+  final driverMobStr = item?.driverMobNo ?? driverMobile ?? 'N/A';
+  final ownerNameStr = item?.ownerName ?? ownerName ?? 'N/A';
+  final ownerMobStr = item?.ownerMobileNo ?? ownerMobile ?? 'N/A';
+  final plotNameStr = item?.plotName ?? item?.projectName ?? plotName ?? 'N/A';
+  final destStr = item?.destination ?? destination ?? 'N/A';
+  final distanceStr = item?.distance != null ? '${item!.distance} KM' : (distance ?? 'N/A');
+  final createdAtStr = AppDateFormatter.formatDateTime(item?.timeStamp ?? item?.validityFrom ?? createdAt);
+  final validityStr = AppDateFormatter.formatDateTime(item?.validityUpto ?? validity);
+  final materialStr = item?.materialType;
+  final qtyStr = item?.quantity != null ? '${item!.quantity} ${item.mineralUnit ?? "Brass"}' : null;
+  final statusStr = item?.invoiceStatus ?? (item?.invoiceStatusId == 2 ? 'Delivered' : (item?.invoiceStatusId == 1 ? 'In Transit' : null));
+  final receiveDateRaw = item?.receiveApprovedDate;
+  final receiveDateStr = receiveDateRaw != null && receiveDateRaw.isNotEmpty ? AppDateFormatter.formatDateTime(receiveDateRaw) : null;
+
+
   showDialog(
     context: context,
     builder: (dialogCtx) {
       return Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        backgroundColor: Colors.white,
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,15 +60,11 @@ void showDigiTpPassModal(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(10),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFEFF6FF),
-                            shape: BoxShape.circle,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
-                            Icons.assignment_turned_in_outlined,
-                            color: Color(0xFF1D4ED8),
-                            size: 20,
-                          ),
+                          child: const Icon(Icons.assignment_outlined, color: Color(0xFF2563EB), size: 22),
                         ),
                         const SizedBox(width: 12),
                         Column(
@@ -56,7 +76,7 @@ void showDigiTpPassModal(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.5,
-                                color: Color(0xFF1D4ED8),
+                                color: Color(0xFF2563EB),
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -69,10 +89,10 @@ void showDigiTpPassModal(
                                     style: TextStyle(fontWeight: FontWeight.w500),
                                   ),
                                   TextSpan(
-                                    text: digiTpNumber,
+                                    text: invoiceNoStr,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w800,
-                                      color: Color(0xFF1D4ED8),
+                                      color: Color(0xFF2563EB),
                                     ),
                                   ),
                                 ],
@@ -90,30 +110,42 @@ void showDigiTpPassModal(
                 ),
                 const SizedBox(height: 16),
 
-                // 2. Details Table
+                // 2. Dynamic Details Table
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   child: Column(
                     children: [
-                      _buildTableRow('Vehicle Number', vehicleNumber),
+                      _buildTableRow('Vehicle Number', vehicleNoStr),
                       const Divider(height: 16, color: Color(0xFFF1F5F9)),
-                      _buildTableRow('Vehicle Driver Name', driverName),
+                      _buildTableRow('Vehicle Driver Name', driverNameStr),
                       const Divider(height: 16, color: Color(0xFFF1F5F9)),
-                      _buildTableRow('Driver Mobile Number', driverMobile),
+                      _buildTableRow('Driver Mobile Number', driverMobStr),
                       const Divider(height: 16, color: Color(0xFFF1F5F9)),
-                      _buildTableRow('Owner Name', ownerName),
+                      _buildTableRow('Owner Name', ownerNameStr),
                       const Divider(height: 16, color: Color(0xFFF1F5F9)),
-                      _buildTableRow('Owner Mobile Number', ownerMobile),
+                      _buildTableRow('Owner Mobile Number', ownerMobStr),
                       const Divider(height: 16, color: Color(0xFFF1F5F9)),
-                      _buildTableRow('Plot Name', plotName),
+                      _buildTableRow('Plot / Project Name', plotNameStr),
                       const Divider(height: 16, color: Color(0xFFF1F5F9)),
-                      _buildTableRow('Destination', destination),
+                      if (materialStr != null || qtyStr != null) ...[
+                        _buildTableRow('Material & Quantity', '${materialStr ?? "Mineral"} (${qtyStr ?? ""})'),
+                        const Divider(height: 16, color: Color(0xFFF1F5F9)),
+                      ],
+                      _buildTableRow('Destination', destStr),
                       const Divider(height: 16, color: Color(0xFFF1F5F9)),
-                      _buildTableRow('Distance (Km)', distance),
+                      _buildTableRow('Distance (Km)', distanceStr),
                       const Divider(height: 16, color: Color(0xFFF1F5F9)),
-                      _buildTableRow('Created date and time of DigiTP', createdAt),
+                      if (statusStr != null) ...[
+                        _buildTableRow('Invoice Status', statusStr),
+                        const Divider(height: 16, color: Color(0xFFF1F5F9)),
+                      ],
+                      _buildTableRow('Created date and time of DigiTP', createdAtStr),
                       const Divider(height: 16, color: Color(0xFFF1F5F9)),
-                      _buildTableRow('DigiTP validity date and time', validity, isLast: true),
+                      _buildTableRow('DigiTP validity date and time', validityStr, isLast: receiveDateStr == null),
+                      if (receiveDateStr != null && receiveDateStr.isNotEmpty) ...[
+                        const Divider(height: 16, color: Color(0xFFF1F5F9)),
+                        _buildTableRow('Receive Approved Date', receiveDateStr, isLast: true),
+                      ],
                     ],
                   ),
                 ),
@@ -154,7 +186,7 @@ void showDigiTpPassModal(
                         height: 46,
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1D4ED8),
+                            backgroundColor: const Color(0xFF2563EB),
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -163,7 +195,7 @@ void showDigiTpPassModal(
                             Navigator.pop(dialogCtx);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Downloading $digiTpNumber.pdf...'),
+                                content: Text('Downloading DigiTP_$invoiceNoStr.pdf...'),
                                 backgroundColor: const Color(0xFF16A34A),
                               ),
                             );
@@ -191,7 +223,7 @@ void showDigiTpPassModal(
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF1D4ED8),
+                              color: Color(0xFF2563EB),
                             ),
                           ),
                         ),
@@ -223,13 +255,15 @@ Widget _buildTableRow(String label, String value, {bool isLast = false}) {
         ),
       ),
       const SizedBox(width: 10),
-      Text(
-        value,
-        textAlign: TextAlign.right,
-        style: const TextStyle(
-          fontSize: 12.5,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF0F172A),
+      Flexible(
+        child: Text(
+          value,
+          textAlign: TextAlign.right,
+          style: const TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF0F172A),
+          ),
         ),
       ),
     ],

@@ -2,28 +2,80 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
-import '../../domain/user.dart';
-import '../../rules/access_control.dart';
 import '../../shared/widgets/app_scaffold.dart';
-import '../../shared/widgets/app_badge.dart';
 import '../../providers/session_provider.dart';
-import '../../providers/operating_context_provider.dart';
 
-class MoreScreen extends ConsumerWidget {
+class MoreScreen extends ConsumerStatefulWidget {
   const MoreScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MoreScreen> createState() => _MoreScreenState();
+}
+
+class _MoreScreenState extends ConsumerState<MoreScreen> {
+  bool _isLoggingOut = false;
+
+  Future<void> _handleLogout() async {
+    setState(() {
+      _isLoggingOut = true;
+    });
+
+    try {
+      final response = await ref.read(sessionProvider.notifier).logout();
+
+      if (!mounted) return;
+
+      if (response.isSuccess) {
+        final successMsg = (response.responseData != null && response.responseData.toString().trim().isNotEmpty)
+            ? response.responseData.toString().trim()
+            : response.statusMessage;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(successMsg),
+            backgroundColor: AppColors.success600,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        context.go('/login');
+      } else {
+        setState(() {
+          _isLoggingOut = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.statusMessage.isNotEmpty
+                ? response.statusMessage
+                : 'Logout failed. Please try again.'),
+            backgroundColor: AppColors.danger600,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoggingOut = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Network/API error during logout: ${e.toString()}'),
+          backgroundColor: AppColors.danger600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final sessionState = ref.watch(sessionProvider);
     final user = sessionState.currentUser;
-    final opState = ref.watch(operatingContextProvider);
 
     if (user == null) {
       return const Center(child: Text('Not signed in'));
     }
-
-    final canExcavate = AccessControl.userCan(user, Capability.temporaryExcavation);
-    final isOrg = user.userType == UserType.organization;
 
     return AppScaffold(
       title: 'More',
@@ -32,7 +84,7 @@ class MoreScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Profile Card (Clickable to open Profile & KYC)
+            // 1. Top Profile Header Card (Clickable to open Profile & KYC)
             InkWell(
               onTap: () => context.push('/profile'),
               child: Container(
@@ -41,15 +93,15 @@ class MoreScreen extends ConsumerWidget {
                 child: Row(
                   children: [
                     Container(
-                      width: 48,
-                      height: 48,
+                      width: 52,
+                      height: 52,
                       decoration: BoxDecoration(
                         color: AppColors.primary50,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: AppColors.primary200),
+                        borderRadius: BorderRadius.circular(26),
+                        border: Border.all(color: AppColors.primary200, width: 1.5),
                       ),
                       child: const Center(
-                        child: Icon(Icons.person, color: AppColors.primary700, size: 26),
+                        child: Icon(Icons.person_outline, color: AppColors.primary700, size: 28),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -59,29 +111,26 @@ class MoreScreen extends ConsumerWidget {
                         children: [
                           Row(
                             children: [
-                              Text(
-                                user.fullName,
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
+                              Flexible(
+                                child: Text(
+                                  user.fullName,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.ink,
+                                  ),
+                                ),
                               ),
                               const SizedBox(width: 8),
-                              AppBadge(
-                                label: isOrg ? 'Organization' : 'Individual',
-                                variant: isOrg ? AppBadgeVariant.primary : AppBadgeVariant.neutral,
-                              ),
                             ],
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 3),
                           Text(
                             '+91 ${user.mobileNumber}',
                             style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary),
                           ),
-                          if (opState.organization != null && isOrg) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              opState.organization!.legalName,
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary700),
-                            ),
-                          ],
                         ],
                       ),
                     ),
@@ -93,8 +142,16 @@ class MoreScreen extends ConsumerWidget {
                         border: Border.all(color: AppColors.primary200),
                       ),
                       child: const Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('Edit & KYC', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary700)),
+                          Text(
+                            'Profile & KYC',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary700,
+                            ),
+                          ),
                           SizedBox(width: 4),
                           Icon(Icons.chevron_right, size: 14, color: AppColors.primary700),
                         ],
@@ -104,103 +161,72 @@ class MoreScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            const Divider(height: 1),
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
-            // Organization Management
-            if (isOrg) ...[
-              _buildSectionHeader('Organization Management'),
-              if (canExcavate)
-                _buildMenuItem(
-                  icon: Icons.landslide_outlined,
-                  title: 'Temporary Excavation Application',
-                  subtitle: 'Applications and status',
-                  onTap: () => context.push('/excavation'),
-                ),
-              _buildMenuItem(
-                icon: Icons.badge_outlined,
-                title: 'Supervisors',
-                subtitle: '6 registered supervisors',
-                onTap: () => context.push('/organization/supervisors'),
-              ),
-              _buildMenuItem(
-                icon: Icons.business_outlined,
-                title: 'Projects',
-                subtitle: 'Manage projects and packages',
-                onTap: () => context.push('/organization/projects'),
-              ),
-            ],
+            // 2. Consumer Services
+            _buildSectionHeader('CONSUMER SERVICES'),
 
-            _buildSectionHeader('Operations'),
             _buildMenuItem(
-              icon: Icons.warehouse_outlined,
-              title: 'Inventory',
-              subtitle: 'Received, consumed and available quantity',
-              onTap: () => context.push('/inventory'),
+              icon: Icons.assignment_turned_in_outlined,
+              title: 'DigiTP Passes',
+              subtitle: 'View all issued e-TP permits and delivery status',
+              onTap: () => context.go('/activity'),
             ),
             _buildMenuItem(
-              icon: Icons.swap_calls_outlined,
-              title: 'Mineral Transfers & e-TP',
-              subtitle: 'Surplus relocation, inter-site passes and returns',
-              onTap: () => context.push('/transfers'),
-            ),
-            if (!isOrg)
-              _buildMenuItem(
-                icon: Icons.home_work_outlined,
-                title: 'Projects',
-                subtitle: 'Create and manage your registered sites',
-                onTap: () => context.push('/consumer/projects'),
-              ),
-            _buildMenuItem(
-              icon: Icons.assignment_outlined,
-              title: 'Enquiries',
-              subtitle: 'Mineral quote requests you have raised',
-              onTap: () => context.push('/enquiries'),
-            ),
-            _buildMenuItem(
-              icon: Icons.bar_chart_outlined,
-              title: 'Report',
-              subtitle: 'DigiTP transit pass logs and compliance records',
-              onTap: () => context.push('/reports'),
+              icon: Icons.local_shipping_outlined,
+              title: 'In-Transit Vehicles',
+              subtitle: 'Track live movement of vehicles delivering mineral to site',
+              onTap: () => context.push('/deliveries/in-transit'),
             ),
             _buildMenuItem(
               icon: Icons.qr_code_scanner,
-              title: 'Receive mineral',
-              subtitle: 'Scan incoming truck QR and confirm receipt',
-              onTap: () => context.push('/receiving'),
-            ),
-            _buildMenuItem(
-              icon: Icons.explore_outlined,
-              title: 'Find mineral place',
-              subtitle: 'Find quarries and stockyards',
-              onTap: () => context.push('/minerals/stock-points'),
+              title: 'Receive Material',
+              subtitle: 'Scan driver QR code to acknowledge and receive mineral',
+              onTap: () => context.push('/receive'),
             ),
 
-            _buildSectionHeader('Session'),
-            _buildMenuItem(
-              icon: Icons.swap_horiz,
-              title: 'Switch persona',
-              subtitle: 'Switch between Consumer, Organization, and Supervisor',
-              onTap: () => context.push('/persona-switch'),
-            ),
+            const SizedBox(height: 28),
 
-            const SizedBox(height: 20),
+            // 4. Sign Out Action Button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: OutlinedButton.icon(
+              child: OutlinedButton(
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.danger600,
                   side: const BorderSide(color: AppColors.danger200),
-                  minimumSize: const Size(double.infinity, 44),
+                  minimumSize: const Size(double.infinity, 46),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                icon: const Icon(Icons.logout, size: 18),
-                label: const Text('Sign out'),
-                onPressed: () {
-                  ref.read(sessionProvider.notifier).logout();
-                  context.go('/welcome');
-                },
+                onPressed: _isLoggingOut ? null : _handleLogout,
+                child: _isLoggingOut
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.danger600,
+                        ),
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.logout, size: 18, color: AppColors.danger600),
+                          SizedBox(width: 8),
+                          Text(
+                            'Sign Out',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.danger600,
+                            ),
+                          ),
+                        ],
+                      ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -210,14 +236,14 @@ class MoreScreen extends ConsumerWidget {
   Widget _buildSectionHeader(String title) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
       color: AppColors.canvas,
       child: Text(
-        title.toUpperCase(),
+        title,
         style: const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: Color(0xFF737373),
+          color: Color(0xFF64748B),
           letterSpacing: 0.8,
         ),
       ),
@@ -235,20 +261,21 @@ class MoreScreen extends ConsumerWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: const BoxDecoration(
             border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
           ),
           child: Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.canvas,
-                  borderRadius: BorderRadius.circular(8),
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
-                child: Icon(icon, color: AppColors.inkSecondary, size: 20),
+                child: Icon(icon, color: const Color(0xFF1E293B), size: 20),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -257,12 +284,19 @@ class MoreScreen extends ConsumerWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.inkSecondary,
+                      ),
                     ),
                   ],
                 ),

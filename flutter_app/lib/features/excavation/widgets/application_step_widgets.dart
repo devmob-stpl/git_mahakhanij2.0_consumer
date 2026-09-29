@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../domain/location_models.dart';
+import '../../../data/repositories/location_repository.dart';
 import '../../../domain/temporary_excavation.dart';
 import '../../../rules/excavation_rules.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
+import '../../../shared/widgets/location_dropdown_section.dart';
+
 
 /* ---------------------------------------------------------------------------
  * STEP 1 · WHO IS APPLYING? (APPLICANT & IDENTITY DETAILS)
@@ -153,11 +158,43 @@ class ApplicantStepWidget extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppTextField(
-                    label: 'District',
-                    isRequired: true,
-                    controller: districtController,
-                    onChanged: (_) => onChanged(),
+                  const Text('District *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
+                  const SizedBox(height: 6),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final repo = ref.watch(locationRepositoryProvider);
+                      return FutureBuilder<List<DistrictModel>>(
+                        future: repo.getDistricts(),
+                        builder: (context, snapshot) {
+                          final list = snapshot.data ?? [];
+                          DistrictModel? selected;
+                          if (list.isNotEmpty) {
+                            selected = list.firstWhere(
+                              (d) => d.district.toLowerCase() == districtController.text.toLowerCase(),
+                              orElse: () => list.first,
+                            );
+                            if (districtController.text.isEmpty) {
+                              districtController.text = selected.district;
+                            }
+                          }
+                          return DropdownButtonFormField<DistrictModel>(
+                            value: selected,
+                            isExpanded: true,
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            items: list.map((d) => DropdownMenuItem(value: d, child: Text(d.district, style: const TextStyle(fontSize: 13)))).toList(),
+                            onChanged: (newDist) {
+                              if (newDist != null) {
+                                districtController.text = newDist.district;
+                                onChanged();
+                              }
+                            },
+                          );
+                        },
+                      );
+                    },
                   ),
                   if (errors.containsKey('district'))
                     Padding(
@@ -838,22 +875,6 @@ class LocationStepWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentPlotLoc = ExcavationRules.plotLocations.any((loc) => loc.value == plotLocationController.text)
-        ? plotLocationController.text
-        : ExcavationRules.plotLocations.first.value;
-
-    final currentDistrict = ExcavationRules.districts.any((d) => d.value == districtController.text)
-        ? districtController.text
-        : ExcavationRules.districts.first.value;
-
-    final currentTaluka = ExcavationRules.talukas.any((t) => t.value == talukaController.text)
-        ? talukaController.text
-        : ExcavationRules.talukas.first.value;
-
-    final currentVillage = ExcavationRules.villages.any((v) => v.value == villageController.text)
-        ? villageController.text
-        : ExcavationRules.villages.first.value;
-
     final currentDemandOffice = ExcavationRules.demandNoteOffices.any((off) => off.value == demandNoteOffice)
         ? demandNoteOffice
         : ExcavationRules.demandNoteOffices.first.value;
@@ -885,188 +906,22 @@ class LocationStepWidget extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-
-        // 2. Category Toggle (Rural vs Urban)
-        Row(
-          children: const [
-            Text('Category', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.ink)),
-            Text(' *', style: TextStyle(color: AppColors.danger600, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: ExcavationRules.locationCategories.map((cat) {
-            final isSelected = category == cat.value;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  onCategoryChanged(cat.value);
-                  onChanged();
-                },
-                child: Container(
-                  height: 44,
-                  margin: EdgeInsets.only(
-                    right: cat.value == 'RURAL' ? 6 : 0,
-                    left: cat.value == 'URBAN' ? 6 : 0,
-                  ),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFFEEF4FE) : AppColors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected ? AppColors.primary500 : AppColors.line,
-                      width: isSelected ? 1.5 : 1,
-                    ),
-                  ),
-                  child: Text(
-                    cat.label,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected ? AppColors.primary700 : AppColors.inkSecondary,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 14),
-
-        // 3. Plot Location Dropdown (Desktop Prototype Parity)
-        Row(
-          children: const [
-            Text('Plot Location', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.ink)),
-            Text(' *', style: TextStyle(color: AppColors.danger600, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        const SizedBox(height: 6),
-        DropdownButtonFormField<String>(
-          value: currentPlotLoc,
-          isExpanded: true,
-          decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.line)),
-          ),
-          items: ExcavationRules.plotLocations.map((loc) {
-            return DropdownMenuItem(
-              value: loc.value,
-              child: Text(loc.label, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis),
-            );
-          }).toList(),
-          onChanged: (val) {
-            if (val != null) {
-              plotLocationController.text = val;
-              onChanged();
+        // Dynamic District, Taluka & Village/City Dropdown Section via APIs
+        LocationDropdownSection(
+          initialCategory: category,
+          initialDistrict: districtController.text,
+          initialTaluka: talukaController.text,
+          initialVillageCity: villageController.text,
+          showCategorySelector: true,
+          onChanged: (data) {
+            districtController.text = data.districtName;
+            talukaController.text = data.talukaName;
+            villageController.text = data.villageCityName;
+            if (data.category != category) {
+              onCategoryChanged(data.category);
             }
+            onChanged();
           },
-        ),
-        const SizedBox(height: 14),
-
-        // 4. District Dropdown
-        Row(
-          children: const [
-            Text('District', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.ink)),
-            Text(' *', style: TextStyle(color: AppColors.danger600, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        const SizedBox(height: 6),
-        DropdownButtonFormField<String>(
-          value: currentDistrict,
-          isExpanded: true,
-          decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.line)),
-          ),
-          items: ExcavationRules.districts.map((d) {
-            return DropdownMenuItem(
-              value: d.value,
-              child: Text(d.label, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis),
-            );
-          }).toList(),
-          onChanged: (val) {
-            if (val != null) {
-              districtController.text = val;
-              onChanged();
-            }
-          },
-        ),
-        const SizedBox(height: 14),
-
-        // 5. Taluka / CTSO & Village / City (2-column dropdown layout)
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: const [
-                      Text('Taluka / CTSO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.ink)),
-                      Text(' *', style: TextStyle(color: AppColors.danger600, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  DropdownButtonFormField<String>(
-                    value: currentTaluka,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.line)),
-                    ),
-                    items: ExcavationRules.talukas.map((t) {
-                      return DropdownMenuItem(
-                        value: t.value,
-                        child: Text(t.label, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        talukaController.text = val;
-                        onChanged();
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: const [
-                      Text('Village / City', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.ink)),
-                      Text(' *', style: TextStyle(color: AppColors.danger600, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  DropdownButtonFormField<String>(
-                    value: currentVillage,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.line)),
-                    ),
-                    items: ExcavationRules.villages.map((v) {
-                      return DropdownMenuItem(
-                        value: v.value,
-                        child: Text(v.label, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        villageController.text = val;
-                        onChanged();
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
         const SizedBox(height: 16),
 

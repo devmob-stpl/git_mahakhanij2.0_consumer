@@ -9,6 +9,9 @@ class AppConfig {
   /// Toggle this to false when connecting to the live Government backend API
   static const bool useMockData = true;
 
+  /// Toggle to control visibility of Organization flow (set to false to hide organization screens, options, and navigation).
+  static const bool enableOrganizationFlow = false;
+
   /// Base API URL for Maharashtra Minor Mineral portal backend
   static const String apiBaseUrl = 'https://api.mahakhanij.gov.in/api/v1';
 

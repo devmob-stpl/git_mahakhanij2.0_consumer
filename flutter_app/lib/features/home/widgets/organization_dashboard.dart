@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../providers/session_provider.dart';
+import '../../../shared/widgets/digitp_modal.dart';
 import 'home_header.dart';
 import 'delivery_summary_card.dart';
 
@@ -19,36 +20,40 @@ class OrganizationDashboard extends ConsumerWidget {
         id: 'del-org-1',
         code: 'DTP-2024-8842',
         digiTpNumber: 'DTP-2024-8842',
+        vehicleNo: 'MH40CT2800',
         purchasedFrom: 'Shree Ganesh Stone Quarry',
         status: 'IN_TRANSIT',
         destination: 'NH-48 Road Widening Site',
         mineralName: 'Basalt Stone',
         quantity: '500 Brass',
-        onClick: () => context.push('/deliveries/del-001/live-tracking'),
+        onTrackVehicle: () => context.push('/deliveries/MH40CT2800/live-tracking?vehicleNo=MH40CT2800'),
       ),
       DeliveryItemSummary(
         id: 'del-org-2',
         code: 'DTP-2024-7931',
         digiTpNumber: 'DTP-2024-7931',
+        vehicleNo: 'MH12AB1112',
         purchasedFrom: 'Krishna River Sand Depo',
         status: 'PASS_ISSUED',
         destination: 'Coastal Highway Bridge Site',
         mineralName: 'River Sand',
         quantity: '200 Brass',
-        onClick: () => context.push('/activity'),
+        onViewDigiTp: () => showDigiTpPassModal(context, digiTpNumber: 'DTP-2024-7931', vehicleNumber: 'MH12AB1112'),
       ),
       DeliveryItemSummary(
         id: 'del-org-3',
         code: 'DTP-2024-6420',
         digiTpNumber: 'DTP-2024-6420',
+        vehicleNo: 'MH15BN4402',
         purchasedFrom: 'Sahyadri Aggregate Hub',
         status: 'RECEIVED',
         destination: 'NH-48 Road Widening Site',
         mineralName: 'Stone Aggregate',
         quantity: '150 Brass',
-        onClick: () => context.push('/activity'),
+        onViewDigiTp: () => showDigiTpPassModal(context, digiTpNumber: 'DTP-2024-6420', vehicleNumber: 'MH15BN4402'),
       ),
     ];
+
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -60,11 +65,18 @@ class OrganizationDashboard extends ConsumerWidget {
             onNotificationClick: () => _showAttentionSheet(context),
           ),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            child: RefreshIndicator(
+              color: AppColors.primary700,
+              onRefresh: () async {
+                await Future.delayed(const Duration(milliseconds: 800));
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+
                   // 1. Stat Cards (3x2 grid = 6 cards)
                   GridView.count(
                     crossAxisCount: 3,
@@ -81,7 +93,7 @@ class OrganizationDashboard extends ConsumerWidget {
                         bgColor: const Color(0xFFEEF5FD),
                         borderColor: const Color(0xFFD6E5F8),
                         textColor: const Color(0xFF134280),
-                        onTap: () => context.push('/organization/projects'),
+                        onTap: () => context.go('/organization/projects'),
                       ),
                       // Pending Application
                       _buildStatCard(
@@ -108,7 +120,7 @@ class OrganizationDashboard extends ConsumerWidget {
                         bgColor: const Color(0xFFEEF5FD),
                         borderColor: const Color(0xFFD6E5F8),
                         textColor: const Color(0xFF134280),
-                        onTap: () => context.push('/activity'),
+                        onTap: () => context.go('/activity'),
                       ),
                       // In Transit
                       _buildStatCard(
@@ -151,13 +163,14 @@ class OrganizationDashboard extends ConsumerWidget {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: const Color(0xFFE5E7EB)),
-                      boxShadow: [
+                      boxShadow: const [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
+                          color: Color(0x05000000),
                           blurRadius: 4,
-                          offset: const Offset(0, 1),
+                          offset: Offset(0, 1),
                         ),
                       ],
+
                     ),
                     child: Column(
                       children: [
@@ -174,11 +187,6 @@ class OrganizationDashboard extends ConsumerWidget {
                               icon: Icons.description_outlined,
                               title: 'Apply for\nPermits',
                               onTap: () => context.push('/excavation/new'),
-                            ),
-                            _buildQuickServiceItem(
-                              icon: Icons.search,
-                              title: 'Find Mineral\nPlaces',
-                              onTap: () => context.push('/minerals/stock-points'),
                             ),
                             _buildQuickServiceItem(
                               icon: Icons.person_add_alt_1_outlined,
@@ -229,7 +237,7 @@ class OrganizationDashboard extends ConsumerWidget {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => context.push('/activity'),
+                        onTap: () => context.go('/activity'),
                         child: const Row(
                           children: [
                             Text(
@@ -264,10 +272,14 @@ class OrganizationDashboard extends ConsumerWidget {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
+
+
+
 
   Widget _buildStatCard({
     required String count,
@@ -334,7 +346,7 @@ class OrganizationDashboard extends ConsumerWidget {
                 color: Color(0xFFEEF4FE),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: const Color(0xFF1241A6), size: 22),
+              child: Icon(icon, color: const Color(0xFF2563EB), size: 22),
             ),
             const SizedBox(height: 6),
             Text(
@@ -385,19 +397,19 @@ class OrganizationDashboard extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFFFDE68A)),
                   ),
-                  child: Row(
+                  child: const Row(
                     children: [
-                      const Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706), size: 20),
-                      const SizedBox(width: 10),
+                      Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706), size: 20),
+                      SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Demand Note Payment Due',
                               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink),
                             ),
-                            const Text(
+                            Text(
                               'DN-PLG-2024-0312 for ₹1,48,000 is awaiting statutory payment.',
                               style: TextStyle(fontSize: 12, color: Color(0xFF78350F)),
                             ),
@@ -406,6 +418,7 @@ class OrganizationDashboard extends ConsumerWidget {
                       ),
                     ],
                   ),
+
                 ),
               ],
             ),

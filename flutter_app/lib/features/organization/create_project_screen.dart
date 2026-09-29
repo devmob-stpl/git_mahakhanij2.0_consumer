@@ -7,8 +7,13 @@ import '../../domain/project.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
+import '../../shared/widgets/location_dropdown_section.dart';
 import '../../providers/operating_context_provider.dart';
 import '../../providers/session_provider.dart';
+import '../../data/repositories/consumer_project_repository.dart';
+import '../../providers/consumer_projects_provider.dart';
+import '../../shared/widgets/map_location_picker_modal.dart';
+
 
 const List<Map<String, String>> kGovtDepartments = [
   {'value': 'Public Works Department (PWD)', 'label': 'Public Works Department (PWD)'},
@@ -78,10 +83,17 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   String _projectType = 'PRIVATE'; // 'PRIVATE' | 'GOVERNMENT'
   String _department = 'Public Works Department (PWD)';
   String _category = 'RURAL'; // 'URBAN' | 'RURAL'
-  String _district = 'Pune';
-  String _taluka = 'Haveli';
-  String _city = 'Pune City (PMC)';
-  String _village = 'Wagholi';
+  String _district = '';
+  String _taluka = '';
+  String _city = '';
+  String _village = '';
+
+  int? _districtId;
+  int? _talukaId;
+  int? _censusId;
+
+  double? _latitude;
+  double? _longitude;
 
   bool _submitting = false;
 
@@ -150,65 +162,96 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     setState(() => _submitting = true);
     final opNotifier = ref.read(operatingContextProvider.notifier);
     final orgRepo = ref.read(organizationRepositoryProvider);
+    final consumerProjectRepo = ref.read(consumerProjectRepositoryProvider);
     final user = ref.read(sessionProvider).currentUser;
 
-    final effectiveDept = _projectType == 'GOVERNMENT'
-        ? (_department == 'OTHER' ? _customDepartmentController.text.trim() : _department)
-        : null;
+    final userId = user?.id != null ? (int.tryParse(user!.id) ?? 44434) : 44434;
 
-    final newProj = Project(
-      id: 'proj-${DateTime.now().millisecondsSinceEpoch}',
-      organizationId: user?.organizationId ?? 'org-001',
-      name: _nameController.text.trim(),
-      code: 'PROJ-ORG-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
-      description: _projectType == 'GOVERNMENT' ? 'Govt Project ($effectiveDept) · WO: ${_workOrderNoController.text.trim()}' : 'Private Infrastructure Project',
-      projectType: _projectType,
-      department: effectiveDept,
-      officeName: _projectType == 'GOVERNMENT' ? _officeNameController.text.trim() : null,
-      workOrderNumber: _workOrderNoController.text.trim(),
-      category: _category,
-      city: _category == 'URBAN' ? _city : null,
-      village: _category == 'RURAL' ? _village : null,
-      status: 'ACTIVE',
-      startDate: DateTime.now().toIso8601String().split('T')[0],
-      location: Address(
-        line1: _line1Controller.text.trim(),
-        village: _category == 'RURAL' ? _village : _city,
-        taluka: _taluka,
-        district: _district,
-        state: 'Maharashtra',
-        pincode: _pincodeController.text.trim(),
-      ),
-      geo: const GeoPoint(latitude: 18.5204, longitude: 73.8567),
-    );
+    final bool isTown = _category == 'URBAN';
+    final Map<String, dynamic> payload = {
+      'id': 0,
+      'projectCode': _workOrderNoController.text.trim(),
+      'projectName': _nameController.text.trim(),
+      'projectAddress': _line1Controller.text.trim(),
+      'latitude': _latitude ?? 0.0,
+      'longitude': _longitude ?? 0.0,
+      'stateId': 1,
+      'divisionId': 0,
+      'districtId': _districtId ?? 0,
+      'talukaId': _talukaId ?? 0,
+      'censusId': _censusId ?? 0,
+      'projectType': _projectType == 'GOVERNMENT' ? 1 : 0,
+      'isTown': isTown,
+      'consumerId': userId,
+    };
 
-    await orgRepo.createProject(newProj);
-    opNotifier.selectProject(newProj);
 
-    if (mounted) {
+
+    final response = await consumerProjectRepo.saveUpdateProject(payload);
+
+    if (!mounted) return;
+
+    if (response.isSuccess) {
+      final effectiveDept = _projectType == 'GOVERNMENT'
+          ? (_department == 'OTHER' ? _customDepartmentController.text.trim() : _department)
+          : null;
+
+      final newProj = Project(
+        id: 'proj-${DateTime.now().millisecondsSinceEpoch}',
+        organizationId: user?.organizationId ?? 'org-001',
+        name: _nameController.text.trim(),
+        code: _workOrderNoController.text.trim(),
+        description: _projectType == 'GOVERNMENT' ? 'Govt Project ($effectiveDept) · WO: ${_workOrderNoController.text.trim()}' : 'Private Infrastructure Project',
+        projectType: _projectType,
+        department: effectiveDept,
+        officeName: _projectType == 'GOVERNMENT' ? _officeNameController.text.trim() : null,
+        workOrderNumber: _workOrderNoController.text.trim(),
+        category: _category,
+        city: _category == 'URBAN' ? _city : null,
+        village: _category == 'RURAL' ? _village : null,
+        status: 'ACTIVE',
+        startDate: DateTime.now().toIso8601String().split('T')[0],
+        location: Address(
+          line1: _line1Controller.text.trim(),
+          village: _category == 'RURAL' ? _village : _city,
+          taluka: _taluka,
+          district: _district,
+          state: 'Maharashtra',
+          pincode: _pincodeController.text.trim(),
+        ),
+        geo: (_latitude != null && _longitude != null)
+            ? GeoPoint(latitude: _latitude!, longitude: _longitude!)
+            : const GeoPoint(latitude: 18.5204, longitude: 73.8567),
+      );
+
+      await orgRepo.createProject(newProj);
+      opNotifier.selectProject(newProj);
+      ref.read(consumerProjectsProvider.notifier).refresh();
+
       setState(() => _submitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Project registered successfully!')),
+        SnackBar(
+          content: Text(response.statusMessage.isNotEmpty ? response.statusMessage : 'Project registered successfully!'),
+          backgroundColor: Colors.green,
+        ),
       );
       context.pop();
+    } else {
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response.statusMessage.isNotEmpty ? response.statusMessage : 'Failed to register project.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final cityOptions = kUrbanCitiesByDistrict[_district] ?? kDefaultUrbanCities;
-    final talukaOptions = kTalukasByDistrict[_district] ?? ['Haveli', 'City Taluka'];
-    final villageOptions = kVillagesByTaluka[_taluka] ?? ['Central Village', 'Station Gram Panchayat', 'Wagholi'];
-
     return AppScaffold(
       title: 'Create project',
       showBackButton: true,
-      actions: [
-        TextButton(
-          onPressed: _handleQuickFill,
-          child: const Text('Quick Fill', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary700)),
-        ),
-      ],
       bottomActionButton: AppButton(
         label: 'Create project',
         isLoading: _submitting,
@@ -439,195 +482,28 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Area Classification: Urban vs Rural
-                  const Text('Area Classification *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: InkWell(
-                          onTap: () => setState(() => _category = 'URBAN'),
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: _category == 'URBAN' ? const Color(0xFFEFF6FF) : Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _category == 'URBAN' ? AppColors.primary700 : AppColors.line,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.location_city, size: 16, color: _category == 'URBAN' ? AppColors.primary700 : AppColors.inkSecondary),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Urban (City / PMC)',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: _category == 'URBAN' ? FontWeight.w700 : FontWeight.w600,
-                                    color: _category == 'URBAN' ? AppColors.primary700 : AppColors.inkSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: InkWell(
-                          onTap: () => setState(() => _category = 'RURAL'),
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: _category == 'RURAL' ? const Color(0xFFEFF6FF) : Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _category == 'RURAL' ? AppColors.primary700 : AppColors.line,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.landscape_outlined, size: 16, color: _category == 'RURAL' ? AppColors.primary700 : AppColors.inkSecondary),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Rural (Gram Panchayat)',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: _category == 'RURAL' ? FontWeight.w700 : FontWeight.w600,
-                                    color: _category == 'RURAL' ? AppColors.primary700 : AppColors.inkSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-
-                  // District Dropdown
-                  const Text('District *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
-                  const SizedBox(height: 6),
-                  DropdownButtonFormField<String>(
-                    value: _district,
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'Pune', child: Text('Pune')),
-                      DropdownMenuItem(value: 'Mumbai City', child: Text('Mumbai City')),
-                      DropdownMenuItem(value: 'Mumbai Suburban', child: Text('Mumbai Suburban')),
-                      DropdownMenuItem(value: 'Thane', child: Text('Thane')),
-                      DropdownMenuItem(value: 'Nagpur', child: Text('Nagpur')),
-                      DropdownMenuItem(value: 'Nashik', child: Text('Nashik')),
-                      DropdownMenuItem(value: 'Chhatrapati Sambhajinagar', child: Text('Chhatrapati Sambhajinagar')),
-                      DropdownMenuItem(value: 'Ahilyanagar', child: Text('Ahilyanagar')),
-                    ],
-                    onChanged: (v) {
-                      if (v != null) {
-                        setState(() {
-                          _district = v;
-                          _taluka = (kTalukasByDistrict[v] ?? ['Central Taluka']).first;
-                          _city = (kUrbanCitiesByDistrict[v] ?? kDefaultUrbanCities).first;
-                          _village = (kVillagesByTaluka[_taluka] ?? ['Central Village']).first;
-                        });
-                      }
+                  LocationDropdownSection(
+                    initialCategory: _category,
+                    initialDistrict: _district,
+                    initialTaluka: _taluka,
+                    initialVillageCity: _category == 'URBAN' ? _city : _village,
+                    showCategorySelector: true,
+                    onChanged: (data) {
+                      setState(() {
+                        _district = data.districtName;
+                        _taluka = data.talukaName;
+                        _category = data.category;
+                        _districtId = data.district?.id;
+                        _talukaId = data.taluka?.id;
+                        _censusId = data.villageCity?.id;
+                        if (data.category == 'URBAN') {
+                          _city = data.villageCityName;
+                        } else {
+                          _village = data.villageCityName;
+                        }
+                      });
                     },
                   ),
-                  const SizedBox(height: 14),
-
-                  // Conditional Jurisdiction Fields
-                  if (_category == 'URBAN') ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('City / Corporation *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
-                              const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
-                                value: cityOptions.contains(_city) ? _city : cityOptions.first,
-                                isExpanded: true,
-                                decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
-                                items: cityOptions.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 12)))).toList(),
-                                onChanged: (v) => setState(() => _city = v ?? cityOptions.first),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Taluka / Zone (CTSO) *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
-                              const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
-                                value: talukaOptions.contains(_taluka) ? _taluka : talukaOptions.first,
-                                isExpanded: true,
-                                decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
-                                items: talukaOptions.map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 12)))).toList(),
-                                onChanged: (v) => setState(() => _taluka = v ?? talukaOptions.first),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ] else ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Taluka *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
-                              const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
-                                value: talukaOptions.contains(_taluka) ? _taluka : talukaOptions.first,
-                                isExpanded: true,
-                                decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
-                                items: talukaOptions.map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 12)))).toList(),
-                                onChanged: (v) {
-                                  if (v != null) {
-                                    setState(() {
-                                      _taluka = v;
-                                      _village = (kVillagesByTaluka[v] ?? ['Central Village']).first;
-                                    });
-                                  }
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Village / Gram Panchayat *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
-                              const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
-                                value: villageOptions.contains(_village) ? _village : villageOptions.first,
-                                isExpanded: true,
-                                decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
-                                items: villageOptions.map((v) => DropdownMenuItem(value: v, child: Text(v, style: const TextStyle(fontSize: 12)))).toList(),
-                                onChanged: (v) => setState(() => _village = v ?? villageOptions.first),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                   const SizedBox(height: 14),
 
                   // Site Address with Location Map Pin Icon
@@ -636,14 +512,33 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                     controller: _line1Controller,
                     hint: 'Plot No., Survey No., corridor chainage or street address',
                     suffixIcon: IconButton(
-                      icon: const Icon(Icons.location_on_outlined, color: AppColors.primary700, size: 20),
-                      onPressed: () {
-                        setState(() {
-                          _line1Controller.text = 'Project Site (18.52043, 73.85674) - Metro Corridor';
-                        });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Site coordinates captured from GPS location.')),
+                      icon: const Icon(Icons.map_outlined, color: AppColors.primary700, size: 22),
+                      tooltip: 'Select on Google Maps',
+                      onPressed: () async {
+                        final result = await MapLocationPickerModal.show(
+                          context,
+                          initialLat: _latitude ?? 18.520430,
+                          initialLng: _longitude ?? 73.856740,
+                          initialAddress: _line1Controller.text.trim(),
+                          district: _district,
+                          taluka: _taluka,
+                          village: _category == 'URBAN' ? _city : _village,
                         );
+
+                        if (result != null) {
+                          if (!context.mounted) return;
+                          setState(() {
+                            _latitude = result.latitude;
+                            _longitude = result.longitude;
+                            _line1Controller.text = result.address;
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Coordinates selected: (${result.latitude.toStringAsFixed(5)}, ${result.longitude.toStringAsFixed(5)})'),
+                            ),
+                          );
+                        }
+
                       },
                     ),
                   ),

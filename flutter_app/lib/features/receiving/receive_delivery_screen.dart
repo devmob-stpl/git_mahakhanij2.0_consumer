@@ -507,11 +507,11 @@ class _ReceiveDeliveryScreenState extends ConsumerState<ReceiveDeliveryScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Updated Site Inventory', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF1241A6))),
-                              Text('$_updatedSiteBalance $unit', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1241A6))),
+                              const Text('Updated Site Inventory', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF2563EB))),
+                              Text('$_updatedSiteBalance $unit', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF2563EB))),
                             ],
                           ),
-                          const Text('Available Now', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1241A6))),
+                          const Text('Available Now', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF2563EB))),
                         ],
                       ),
                     ),
@@ -581,7 +581,7 @@ class _ReceiveDeliveryScreenState extends ConsumerState<ReceiveDeliveryScreen> {
                               color: const Color(0xFFEEF4FE),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(Icons.local_shipping, size: 18, color: Color(0xFF1241A6)),
+                            child: const Icon(Icons.local_shipping, size: 18, color: Color(0xFF2563EB)),
                           ),
                           const SizedBox(width: 10),
                           Column(

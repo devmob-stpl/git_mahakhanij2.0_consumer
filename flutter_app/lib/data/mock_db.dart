@@ -31,16 +31,6 @@ class MockDb {
   void _initData() {
     users = [
       const User(
-        id: 'user-org-001',
-        fullName: 'Rohit Sanghavi',
-        mobileNumber: '9822014576',
-        email: 'rohit.s@sanghaviinfra.in',
-        userType: UserType.organization,
-        organizationId: 'org-001',
-        designation: 'Project Procurement Lead',
-        createdAt: '2023-01-15T10:00:00Z',
-      ),
-      const User(
         id: 'user-con-001',
         fullName: 'Aniket Deshmukh',
         mobileNumber: '9730845120',
@@ -55,6 +45,16 @@ class MockDb {
         ),
         deliveryGeo: GeoPoint(latitude: 19.9975, longitude: 73.7898),
         createdAt: '2023-06-10T10:00:00Z',
+      ),
+      const User(
+        id: 'user-org-001',
+        fullName: 'Rohit Sanghavi',
+        mobileNumber: '9822014576',
+        email: 'rohit.s@sanghaviinfra.in',
+        userType: UserType.organization,
+        organizationId: 'org-001',
+        designation: 'Project Procurement Lead',
+        createdAt: '2023-01-15T10:00:00Z',
       ),
       const User(
         id: 'user-sup-001',

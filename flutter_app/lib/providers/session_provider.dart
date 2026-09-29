@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/user.dart';
+import '../domain/auth_api_models.dart';
 import '../data/repositories/auth_repository.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -48,22 +49,58 @@ class SessionNotifier extends StateNotifier<SessionState> {
 
   Future<void> switchPersona(User user) async {
     state = state.copyWith(currentUser: user);
+    await _authRepository.saveSession(user);
   }
 
-  Future<bool> login(String mobile, String otp) async {
+  Future<VerifyCodeApiResponse> loginWithVerificationCode(String mobile, String code) async {
     state = state.copyWith(isLoading: true);
     try {
-      final user = await _authRepository.verifyOtp(mobile, otp);
-      state = SessionState(currentUser: user, isLoading: false);
-      return user != null;
+      final response = await _authRepository.verifyMobileCode(mobileNumber: mobile, key: code);
+      if (response.isSuccess) {
+        final user = await _authRepository.getCurrentUser();
+        state = SessionState(currentUser: user, isLoading: false);
+      } else {
+        state = state.copyWith(isLoading: false, error: response.statusMessage);
+      }
+      return response;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-      return false;
+      final errResponse = VerifyCodeApiResponse(
+        statusCode: '409',
+        statusMessage: 'Login Failed with MobileNo: $mobile',
+      );
+      state = state.copyWith(isLoading: false, error: errResponse.statusMessage);
+      return errResponse;
     }
   }
 
-  void logout() {
-    state = const SessionState(currentUser: null);
+  Future<bool> login(String mobile, String otp) async {
+    final response = await loginWithVerificationCode(mobile, otp);
+    return response.isSuccess;
+  }
+
+  Future<LogoutApiResponse> logout() async {
+    final currentUser = state.currentUser;
+    final userId = (currentUser?.id != null && currentUser!.id.isNotEmpty)
+        ? currentUser.id
+        : '0';
+
+    state = state.copyWith(isLoading: true);
+    try {
+      final response = await _authRepository.logoutUser(userId);
+      if (response.isSuccess) {
+        state = const SessionState(currentUser: null, isLoading: false);
+      } else {
+        state = state.copyWith(isLoading: false, error: response.statusMessage);
+      }
+      return response;
+    } catch (e) {
+      await _authRepository.clearSession();
+      state = const SessionState(currentUser: null, isLoading: false);
+      return LogoutApiResponse(
+        statusCode: '500',
+        statusMessage: 'Logout error: ${e.toString()}',
+      );
+    }
   }
 }
 

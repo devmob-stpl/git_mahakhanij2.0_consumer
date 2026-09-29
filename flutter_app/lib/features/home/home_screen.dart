@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/config/app_config.dart';
 import '../../domain/user.dart';
 import '../../providers/session_provider.dart';
 import 'widgets/organization_dashboard.dart';
@@ -14,8 +15,7 @@ class HomeScreen extends ConsumerWidget {
     final sessionState = ref.watch(sessionProvider);
     final user = sessionState.currentUser;
 
-    if (user == null) {
-      // Fallback to consumer dashboard if not signed in yet
+    if (!AppConfig.enableOrganizationFlow || user == null) {
       return const ConsumerDashboard();
     }
 

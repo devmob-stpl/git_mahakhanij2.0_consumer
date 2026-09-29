@@ -2,17 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/constants/app_colors.dart';
+import '../../domain/scan_result.dart';
 import '../../shared/widgets/app_button.dart';
 
 class DigitpScanScreen extends StatefulWidget {
   final String? simulatedPayload;
-  final Function(String)? onScanComplete;
   final String? error;
 
   const DigitpScanScreen({
     super.key,
     this.simulatedPayload,
-    this.onScanComplete,
     this.error,
   });
 
@@ -23,27 +22,70 @@ class DigitpScanScreen extends StatefulWidget {
 class _DigitpScanScreenState extends State<DigitpScanScreen> {
   final MobileScannerController _controller = MobileScannerController();
   final TextEditingController _manualController = TextEditingController();
-  bool _hasScanned = false;
+  bool _isProcessingScan = false;
   bool _showManualInput = false;
 
-  void _onDetect(BarcodeCapture capture) {
-    if (_hasScanned) return;
-    final List<Barcode> barcodes = capture.barcodes;
-    for (final barcode in barcodes) {
-      if (barcode.rawValue != null) {
-        _hasScanned = true;
-        _submitValue(barcode.rawValue!);
-        break;
+  Future<void> _onDetect(BarcodeCapture capture) async {
+    if (_isProcessingScan) {
+      return;
+    }
+
+    for (final barcode in capture.barcodes) {
+      final rawValue = barcode.rawValue?.trim();
+
+      if (rawValue == null || rawValue.isEmpty) {
+        continue;
       }
+
+      _isProcessingScan = true;
+
+      final isQrCode = barcode.format == BarcodeFormat.qrCode;
+
+      final scanResult = ScanResult(
+        rawContent: rawValue,
+        format: barcode.format.name,
+        isQrCode: isQrCode,
+      );
+
+      debugPrint('========== SCAN ==========');
+      debugPrint('Format: ${barcode.format.name}');
+      debugPrint('Is QR: $isQrCode');
+      debugPrint('Raw Content: $rawValue');
+      debugPrint('Raw Length: ${rawValue.length}');
+      debugPrint('==========================');
+
+      try {
+        _controller.stop();
+      } catch (e) {
+        debugPrint('Error stopping mobile scanner: $e');
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      debugPrint('Popping ScanResult to caller: $scanResult');
+      Navigator.of(context).pop(scanResult);
+      return;
     }
   }
 
-  void _submitValue(String value) {
-    if (widget.onScanComplete != null) {
-      widget.onScanComplete!(value);
-    } else {
-      context.pop(value);
-    }
+  void _submitManualValue(String value) {
+    if (_isProcessingScan) return;
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return;
+
+    _isProcessingScan = true;
+
+    final result = ScanResult(
+      rawContent: trimmed,
+      format: 'qrCode',
+      isQrCode: false,
+    );
+
+    if (!mounted) return;
+    debugPrint('Popping Manual ScanResult to caller: $result');
+    Navigator.of(context).pop(result);
   }
 
   @override
@@ -57,7 +99,7 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Scan DigiTP QR Code'),
+        title: const Text('Scan DigiTP QR Code / Barcode'),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
       ),
@@ -76,10 +118,10 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 220,
-                  height: 220,
+                  width: 230,
+                  height: 230,
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withAlpha(51),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: AppColors.primary500, width: 2.5),
                   ),
@@ -91,7 +133,7 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 32),
                   child: Text(
-                    'Point camera at the driver\'s QR code or printed DigiTP pass',
+                    'Point camera at the driver\'s QR code or barcode',
                     style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
                     textAlign: TextAlign.center,
                   ),
@@ -143,12 +185,12 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   AppButton(
-                    label: 'Simulate QR Scan (Test Pass)',
+                    label: 'Simulate Test Scan (Invoice 491)',
                     fullWidth: true,
                     size: AppButtonSize.medium,
                     icon: const Icon(Icons.qr_code, size: 18),
                     onPressed: () {
-                      _submitValue(widget.simulatedPayload ?? 'MHKNJ:ETP:2026:MH:0436610');
+                      _submitManualValue(widget.simulatedPayload ?? '491');
                     },
                   ),
                   const SizedBox(height: 10),
@@ -158,20 +200,20 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
                       controller: _manualController,
                       keyboardType: TextInputType.text,
                       decoration: const InputDecoration(
-                        labelText: 'Enter e-TP Number or 6-Digit OTP',
-                        hintText: 'e.g. 0436610 or ETP/2026/MH/0436610',
+                        labelText: 'Enter Invoice Number',
+                        hintText: 'e.g. 491',
                         isDense: true,
                       ),
                     ),
                     const SizedBox(height: 10),
                     AppButton(
-                      label: 'Verify Permit',
+                      label: 'Verify Invoice',
                       fullWidth: true,
                       size: AppButtonSize.medium,
                       variant: AppButtonVariant.secondary,
                       onPressed: () {
                         if (_manualController.text.trim().isNotEmpty) {
-                          _submitValue(_manualController.text.trim());
+                          _submitManualValue(_manualController.text.trim());
                         }
                       },
                     ),
@@ -179,7 +221,7 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
                     TextButton(
                       onPressed: () => setState(() => _showManualInput = true),
                       child: const Text(
-                        'Enter e-TP number manually',
+                        'Enter invoice number manually',
                         style: TextStyle(color: AppColors.primary700, fontWeight: FontWeight.w600, fontSize: 13),
                       ),
                     ),

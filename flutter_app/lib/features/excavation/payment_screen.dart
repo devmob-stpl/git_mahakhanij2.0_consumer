@@ -174,7 +174,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: _selectedTab == 0 ? FontWeight.w700 : FontWeight.w600,
-                                    color: _selectedTab == 0 ? const Color(0xFF1D4ED8) : const Color(0xFF475569),
+                                    color: _selectedTab == 0 ? const Color(0xFF2563EB) : const Color(0xFF475569),
                                   ),
                                 ),
                               ),
@@ -203,7 +203,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: _selectedTab == 1 ? FontWeight.w700 : FontWeight.w600,
-                                    color: _selectedTab == 1 ? const Color(0xFF1D4ED8) : const Color(0xFF475569),
+                                    color: _selectedTab == 1 ? const Color(0xFF2563EB) : const Color(0xFF475569),
                                   ),
                                 ),
                               ),
@@ -330,7 +330,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   child: const Icon(
                                     Icons.credit_card_outlined,
                                     size: 18,
-                                    color: Color(0xFF1D4ED8),
+                                    color: Color(0xFF2563EB),
                                   ),
                                 ),
                                 const SizedBox(width: 10),
@@ -474,7 +474,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w700,
-                                        color: Color(0xFF1D4ED8),
+                                        color: Color(0xFF2563EB),
                                       ),
                                     ),
                                   ],
@@ -644,7 +644,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF1D4ED8),
+                        color: Color(0xFF2563EB),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -685,7 +685,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1D4ED8),
+                                  color: Color(0xFF2563EB),
                                 ),
                               ),
                             ],
@@ -744,7 +744,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         children: [
                           Row(
                             children: const [
-                              Icon(Icons.description_outlined, size: 18, color: Color(0xFF1D4ED8)),
+                              Icon(Icons.description_outlined, size: 18, color: Color(0xFF2563EB)),
                               SizedBox(width: 8),
                               Text(
                                 'OFFICIAL GOVERNMENT RECEIPTS & PASSES',
@@ -773,7 +773,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               ),
                               child: Row(
                                 children: const [
-                                  Icon(Icons.credit_card_outlined, size: 18, color: Color(0xFF1D4ED8)),
+                                  Icon(Icons.credit_card_outlined, size: 18, color: Color(0xFF2563EB)),
                                   SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
@@ -781,11 +781,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w700,
-                                        color: Color(0xFF1D4ED8),
+                                        color: Color(0xFF2563EB),
                                       ),
                                     ),
                                   ),
-                                  Icon(Icons.download_outlined, size: 18, color: Color(0xFF1D4ED8)),
+                                  Icon(Icons.download_outlined, size: 18, color: Color(0xFF2563EB)),
                                 ],
                               ),
                             ),
@@ -801,7 +801,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       height: 48,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1D4ED8),
+                          backgroundColor: const Color(0xFF2563EB),
                           foregroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -936,7 +936,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               child: Icon(
                 icon,
                 size: 20,
-                color: isActive ? const Color(0xFF1241A6) : const Color(0xFF64748B),
+                color: isActive ? const Color(0xFF2563EB) : const Color(0xFF64748B),
               ),
             ),
             const SizedBox(height: 2),
@@ -945,7 +945,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                color: isActive ? const Color(0xFF1241A6) : const Color(0xFF64748B),
+                color: isActive ? const Color(0xFF2563EB) : const Color(0xFF64748B),
               ),
             ),
           ],

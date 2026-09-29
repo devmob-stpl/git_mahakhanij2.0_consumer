@@ -4,13 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../shared/widgets/app_button.dart';
-import '../../shared/widgets/prototype_bar.dart';
 import '../../providers/session_provider.dart';
 
 class OtpScreen extends ConsumerStatefulWidget {
   final String mobileNumber;
+  final Map<String, dynamic>? signUpData;
 
-  const OtpScreen({super.key, required this.mobileNumber});
+  const OtpScreen({
+    super.key,
+    required this.mobileNumber,
+    this.signUpData,
+  });
 
   @override
   ConsumerState<OtpScreen> createState() => _OtpScreenState();
@@ -18,8 +22,8 @@ class OtpScreen extends ConsumerStatefulWidget {
 
 class _OtpScreenState extends ConsumerState<OtpScreen> {
   final _otpController = TextEditingController();
-  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
-  final List<TextEditingController> _digitControllers = List.generate(6, (_) => TextEditingController());
+  final List<FocusNode> _focusNodes = List.generate(5, (_) => FocusNode());
+  final List<TextEditingController> _digitControllers = List.generate(5, (_) => TextEditingController());
 
   bool _isLoading = false;
   String? _error;
@@ -65,7 +69,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
   void _handleVerify([String? codeToUse]) async {
     final code = codeToUse ?? _getEnteredCode();
-    if (code.length != 6) return;
+    if (code.trim().isEmpty) return;
 
     setState(() {
       _isLoading = true;
@@ -73,18 +77,53 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       _notice = null;
     });
 
-    final success = await ref.read(sessionProvider.notifier).login(
+    if (widget.signUpData != null) {
+      final Map<String, dynamic> activePayload = Map.from(widget.signUpData!);
+      activePayload['otp'] = code.trim();
+
+      final signUpResponse = await ref.read(authRepositoryProvider).consumerSignUp(activePayload);
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (signUpResponse.isSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Registration successful! Please sign in with your mobile number.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          context.go('/login', extra: widget.mobileNumber);
+        } else {
+          setState(() {
+            _error = signUpResponse.statusMessage.isNotEmpty
+                ? signUpResponse.statusMessage
+                : 'Registration failed. Invalid OTP or details.';
+            for (final c in _digitControllers) {
+              c.clear();
+            }
+            if (_focusNodes.isNotEmpty) {
+              _focusNodes[0].requestFocus();
+            }
+          });
+        }
+      }
+      return;
+    }
+
+    final response = await ref.read(sessionProvider.notifier).loginWithVerificationCode(
       widget.mobileNumber,
-      code,
+      code.trim(),
     );
 
     if (mounted) {
       setState(() => _isLoading = false);
-      if (success) {
+      if (response.isSuccess) {
         context.go('/home');
       } else {
         setState(() {
-          _error = 'That code is not correct. Please try again.';
+          _error = response.statusMessage.isNotEmpty
+              ? response.statusMessage
+              : 'Login Failed with MobileNo: ${widget.mobileNumber}';
           for (final c in _digitControllers) {
             c.clear();
           }
@@ -96,40 +135,46 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     }
   }
 
-  void _handleResend() {
-    setState(() {
-      _notice = 'A new code has been sent.';
-      _error = null;
-      _secondsLeft = 30;
-      for (final c in _digitControllers) {
-        c.clear();
-      }
-    });
-    _startTimer();
-  }
 
-  void _handleQuickFill() {
-    const code = '123456';
-    for (var i = 0; i < 6; i++) {
-      _digitControllers[i].text = code[i];
-    }
+  void _handleResend() async {
     setState(() {
+      _isLoading = true;
+      _notice = null;
       _error = null;
     });
-    _handleVerify(code);
+
+    final response = await ref.read(authRepositoryProvider).sendVerificationCode(widget.mobileNumber);
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (response.isSuccess) {
+        setState(() {
+          _notice = 'A new verification code has been sent.';
+          _secondsLeft = 30;
+          for (final c in _digitControllers) {
+            c.clear();
+          }
+        });
+        _startTimer();
+      } else {
+        setState(() {
+          _error = response.statusMessage;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final enteredCode = _getEnteredCode();
-    final isComplete = enteredCode.length == 6;
+    final isComplete = enteredCode.length == 5;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      body: Column(
-        children: [
-          const PrototypeBar(),
-          // App Bar with Back Icon
+      body: SafeArea(
+        child: Column(
+          children: [
+            // App Bar with Back Icon
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             child: Align(
@@ -157,7 +202,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Enter the 6-digit code sent to',
+                    'Enter the verification code sent to',
                     style: TextStyle(fontSize: 14, color: AppColors.inkSecondary),
                   ),
                   const SizedBox(height: 4),
@@ -200,9 +245,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                         children: [
                           const Icon(Icons.check_circle, size: 16, color: Color(0xFF15803D)),
                           const SizedBox(width: 8),
-                          Text(
-                            _notice!,
-                            style: const TextStyle(fontSize: 13, color: Color(0xFF166534), fontWeight: FontWeight.w600),
+                          Expanded(
+                            child: Text(
+                              _notice!,
+                              style: const TextStyle(fontSize: 13, color: Color(0xFF166534), fontWeight: FontWeight.w600),
+                            ),
                           ),
                         ],
                       ),
@@ -211,18 +258,19 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
                   const SizedBox(height: 28),
 
-                  // 6 Digit Input Boxes
+                  // 5 Digit Input Boxes
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(6, (index) {
+                    children: List.generate(5, (index) {
                       return SizedBox(
-                        width: 46,
-                        height: 54,
+                        width: 54,
+                        height: 56,
                         child: TextField(
                           controller: _digitControllers[index],
                           focusNode: _focusNodes[index],
-                          keyboardType: TextInputType.number,
+                          keyboardType: TextInputType.text,
                           textAlign: TextAlign.center,
+                          enabled: !_isLoading,
                           maxLength: 1,
                           style: const TextStyle(
                             fontSize: 22,
@@ -257,11 +305,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                           onChanged: (val) {
                             if (_error != null) setState(() => _error = null);
                             if (val.isNotEmpty) {
-                              if (index < 5) {
+                              if (index < 4) {
                                 _focusNodes[index + 1].requestFocus();
                               } else {
                                 _focusNodes[index].unfocus();
-                                // Auto-verify on 6th digit
                                 _handleVerify();
                               }
                             } else {
@@ -276,11 +323,32 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                     }),
                   ),
 
+                  // Error Banner
                   if (_error != null) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      _error!,
-                      style: const TextStyle(fontSize: 13, color: AppColors.danger700, fontWeight: FontWeight.w500),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFFCA5A5)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline, color: AppColors.danger700, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _error!,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.danger700,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
 
@@ -294,7 +362,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                             style: const TextStyle(fontSize: 13, color: AppColors.inkMuted),
                           )
                         : TextButton(
-                            onPressed: _handleResend,
+                            onPressed: _isLoading ? null : _handleResend,
                             child: const Text(
                               'Resend code',
                               style: TextStyle(
@@ -305,62 +373,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                             ),
                           ),
                   ),
-
-                  const SizedBox(height: 32),
-
-                  // Prototype Quick Fill Box
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFFBEB),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFFCD34D)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '⚡ Quick Fill Demo OTP:',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF78350F)),
-                            ),
-                            Text(
-                              'Tap to verify',
-                              style: TextStyle(fontSize: 10, color: Color(0xFFB45309)),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        InkWell(
-                          onTap: _handleQuickFill,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFFFCD34D)),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  '123456',
-                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF78350F), letterSpacing: 2),
-                                ),
-                                SizedBox(width: 6),
-                                Text(
-                                  '(Tap to verify)',
-                                  style: TextStyle(fontSize: 11, color: Color(0xFFB45309)),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
@@ -368,15 +381,16 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: AppButton(
-              label: 'Verify OTP',
+              label: 'Verify Code & Sign In',
               fullWidth: true,
               size: AppButtonSize.large,
               isLoading: _isLoading,
-              onPressed: isComplete ? () => _handleVerify() : null,
+              onPressed: (isComplete && !_isLoading) ? () => _handleVerify() : null,
             ),
           ),
         ],
       ),
+    ),
     );
   }
 }

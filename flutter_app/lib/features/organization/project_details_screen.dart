@@ -86,7 +86,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
                         ),
                         child: Text(
                           widget.project.projectType == 'GOVERNMENT' ? 'Govt Project' : 'Private',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1D4ED8)),
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF2563EB)),
                         ),
                       ),
                       Container(

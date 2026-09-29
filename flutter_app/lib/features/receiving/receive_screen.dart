@@ -2,447 +2,692 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
-import '../../domain/delivery.dart';
-import '../../data/repositories/delivery_repository.dart';
+import '../../core/services/location_service.dart';
+import '../../core/services/scan_processing_service.dart';
+import '../../core/utils/date_formatter.dart';
+import '../../domain/consumer_digitp_models.dart';
+import '../../domain/scan_result.dart';
+import '../../providers/consumer_dashboard_count_provider.dart';
+import '../../providers/consumer_digitp_provider.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_scaffold.dart';
+import 'digitp_scan_screen.dart';
+
+enum _ReceiveStep {
+  initial,   // Step 1: Scan QR Code / Barcode option
+  loading,   // Step 2: Fetching DigiTP Details loading state
+  scanned,   // Step 3: Display Details + Confirm & Receive
+  completed, // Step 4: Successfully Received
+}
 
 class ReceiveScreen extends ConsumerStatefulWidget {
-  const ReceiveScreen({super.key});
+  final String? initialInvoiceNo;
+
+  const ReceiveScreen({
+    super.key,
+    this.initialInvoiceNo,
+  });
 
   @override
   ConsumerState<ReceiveScreen> createState() => _ReceiveScreenState();
 }
 
 class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
-  List<Delivery> _deliveries = [];
-  bool _isLoading = true;
+  final ScanProcessingService _scanProcessingService = const ScanProcessingService();
+
+  _ReceiveStep _step = _ReceiveStep.initial;
+  ConsumerDigiTpItem? _scannedItem;
+  bool _isSubmitting = false;
+  bool _alreadyReceived = false;
+  String? _statusMessage;
 
   @override
   void initState() {
     super.initState();
-    _loadDeliveries();
-  }
-
-  Future<void> _loadDeliveries() async {
-    setState(() => _isLoading = true);
-    final repo = ref.read(deliveryRepositoryProvider);
-    final all = await repo.listDeliveries(activeOnly: false);
-
-    if (mounted) {
-      setState(() {
-        _deliveries = all.where((d) =>
-          d.status == DeliveryStatus.arrivedAtDestination ||
-          d.status == DeliveryStatus.inTransit ||
-          d.status == DeliveryStatus.dispatched
-        ).toList();
-        _isLoading = false;
+    if (widget.initialInvoiceNo != null && widget.initialInvoiceNo!.trim().isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final scanResult = ScanResult(
+            rawContent: widget.initialInvoiceNo!.trim(),
+            format: 'qrCode',
+            isQrCode: false,
+          );
+          _processScanResult(scanResult);
+        }
       });
     }
   }
 
+  /// Process Scan Result (QR or Barcode) and fetch Invoice Details
+  Future<void> _processScanResult(ScanResult result) async {
+    if (!mounted) return;
+
+    setState(() {
+      _step = _ReceiveStep.loading;
+      _alreadyReceived = false;
+      _statusMessage = null;
+    });
+
+    try {
+      debugPrint('Processing ScanResult');
+      debugPrint('Format: ${result.format}');
+      debugPrint('Is QR: ${result.isQrCode}');
+      debugPrint('Raw: ${result.rawContent}');
+
+      final invoiceNo = _scanProcessingService.process(result);
+
+      debugPrint('FINAL INVOICE NUMBER: $invoiceNo');
+
+      if (!mounted) return;
+
+      final repo = ref.read(consumerDigiTpRepositoryProvider);
+      final response = await repo.getConsumerInvoiceDetails(
+        invoiceNo: invoiceNo,
+      );
+
+      if (!mounted) return;
+
+      if (response.isAlreadyReceived) {
+        setState(() {
+          _alreadyReceived = true;
+          _statusMessage = response.statusMessage.isNotEmpty
+              ? response.statusMessage
+              : 'Invoice is already received.';
+          _scannedItem = response.responseData ?? ConsumerDigiTpItem(invoiceNo: invoiceNo);
+          _step = _ReceiveStep.scanned;
+        });
+        return;
+      }
+
+      if (response.isSuccess && response.responseData != null) {
+        final item = response.responseData!;
+        final isItemReceived = item.invoiceStatusId == 1 ||
+            (item.invoiceStatus != null && item.invoiceStatus!.toLowerCase() == 'received');
+
+        setState(() {
+          _scannedItem = item;
+          _alreadyReceived = isItemReceived;
+          _statusMessage = isItemReceived
+              ? 'Invoice is already received.'
+              : (response.statusMessage.isNotEmpty ? response.statusMessage : null);
+          _step = _ReceiveStep.scanned;
+        });
+        return;
+      }
+
+      throw Exception(
+        response.statusMessage.isNotEmpty
+            ? response.statusMessage
+            : 'Unable to fetch invoice details.',
+      );
+    } catch (e, stackTrace) {
+      debugPrint('Process scan failed: $e');
+      debugPrint('$stackTrace');
+
+      if (!mounted) return;
+
+      setState(() {
+        _step = _ReceiveStep.initial;
+      });
+
+      await _showErrorDialog(
+        e is FormatException ? e.message : e.toString().replaceAll('Exception: ', ''),
+      );
+    }
+  }
+
+  Future<void> _openCameraScanner() async {
+    try {
+      final result = await Navigator.of(context).push<ScanResult>(
+        MaterialPageRoute(
+          builder: (context) => const DigitpScanScreen(),
+        ),
+      );
+
+      debugPrint('Returned ScanResult: $result');
+
+      if (!mounted || result == null) {
+        debugPrint('ScanResult is null or widget not mounted.');
+        return;
+      }
+
+      await _processScanResult(result);
+    } catch (e) {
+      debugPrint('Scanner navigation error: $e');
+
+      if (!mounted) return;
+
+      await _showErrorDialog(e.toString());
+    }
+  }
+
+  void _showManualEntryDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Enter Invoice / DigiTP Number', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.text,
+          decoration: const InputDecoration(
+            hintText: 'e.g. 491 or 0436610',
+            isDense: true,
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final text = controller.text.trim();
+              Navigator.of(ctx).pop();
+              if (text.isNotEmpty) {
+                final result = ScanResult(
+                  rawContent: text,
+                  format: 'manual',
+                  isQrCode: false,
+                );
+                _processScanResult(result);
+              }
+            },
+            child: const Text('Fetch Details'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Confirm & Receive Action with dynamic location capture
+  Future<void> _confirmAndReceive() async {
+    if (_scannedItem == null || _alreadyReceived || _isSubmitting) return;
+
+    if (!mounted) return;
+    setState(() => _isSubmitting = true);
+
+    // Get device current latitude and longitude
+    final locationRes = await LocationService.getCurrentLocation();
+
+    if (!mounted) return;
+
+    if (!locationRes.isSuccess || locationRes.latitude == 0.0 || locationRes.longitude == 0.0) {
+      setState(() => _isSubmitting = false);
+      await _showErrorDialog(
+        locationRes.errorMessage ?? 'Device GPS Location is required to confirm material receipt. Please enable location services.',
+      );
+      return;
+    }
+
+    final repo = ref.read(consumerDigiTpRepositoryProvider);
+    final request = ReceiveInvoiceRequest(
+      invoiceNo: _scannedItem!.invoiceNo,
+      rVehicleLat: locationRes.latitude,
+      rVehicleLong: locationRes.longitude,
+    );
+
+    final response = await repo.receiveInvoice(request: request);
+
+    if (!mounted) return;
+
+    setState(() => _isSubmitting = false);
+
+    if (response.isSuccess) {
+      // HTTP 200 Success
+      setState(() {
+        _alreadyReceived = true;
+        _scannedItem = ConsumerDigiTpItem(
+          invoiceNo: _scannedItem!.invoiceNo,
+          plotId: _scannedItem!.plotId,
+          plotName: _scannedItem!.plotName,
+          ownerId: _scannedItem!.ownerId,
+          ownerName: _scannedItem!.ownerName,
+          ownerMobileNo: _scannedItem!.ownerMobileNo,
+          vehicleId: _scannedItem!.vehicleId,
+          vehicleNo: _scannedItem!.vehicleNo,
+          validityFrom: _scannedItem!.validityFrom,
+          validityUpto: _scannedItem!.validityUpto,
+          distance: _scannedItem!.distance,
+          destination: _scannedItem!.destination,
+          timeStamp: _scannedItem!.timeStamp,
+          userId: _scannedItem!.userId,
+          quantity: _scannedItem!.quantity,
+          createdBy: _scannedItem!.createdBy,
+          materialId: _scannedItem!.materialId,
+          materialType: _scannedItem!.materialType,
+          mineralUnit: _scannedItem!.mineralUnit,
+          projectId: _scannedItem!.projectId,
+          projectName: _scannedItem!.projectName,
+          driverMobNo: _scannedItem!.driverMobNo,
+          driverName: _scannedItem!.driverName,
+          consumerId: _scannedItem!.consumerId,
+          invoiceStatusId: 1,
+          invoiceStatus: 'Received',
+        );
+        _step = _ReceiveStep.completed;
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response.statusMessage.isNotEmpty
+              ? response.statusMessage
+              : 'Invoice received successfully.'),
+          backgroundColor: const Color(0xFF15803D),
+        ),
+      );
+
+      // Invalidate DigiTP lists & dashboard count providers
+      ref.invalidate(consumerDigiTpListProvider(1));
+      ref.invalidate(consumerDigiTpListProvider(2));
+      ref.invalidate(consumerDashboardCountProvider);
+    } else if (response.isAlreadyReceived) {
+      // HTTP 409 Conflict: Already Received
+      setState(() {
+        _alreadyReceived = true;
+        _statusMessage = 'Invoice is already received.';
+      });
+      await _showErrorDialog('Invoice is already received.');
+    } else {
+      await _showErrorDialog(
+        response.statusMessage.isNotEmpty
+            ? response.statusMessage
+            : 'Failed to receive invoice. Please try again.',
+      );
+    }
+  }
+
+  Future<void> _showErrorDialog(String message) async {
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Receive Material Error', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _resetToInitial() {
+    if (!mounted) return;
+    setState(() {
+      _step = _ReceiveStep.initial;
+      _scannedItem = null;
+      _isSubmitting = false;
+      _alreadyReceived = false;
+      _statusMessage = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final arrivedDeliveries = _deliveries.where((d) => d.status == DeliveryStatus.arrivedAtDestination).toList();
-    final inTransitDeliveries = _deliveries.where((d) => d.status == DeliveryStatus.inTransit || d.status == DeliveryStatus.dispatched).toList();
-    final primaryTargetDelivery = arrivedDeliveries.isNotEmpty ? arrivedDeliveries.first : (inTransitDeliveries.isNotEmpty ? inTransitDeliveries.first : null);
-
     return AppScaffold(
-      title: 'Material Receiving & DigiTP',
+      title: 'Receive Material',
       showBackButton: true,
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 1. Quick QR Scan Card
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFD6E5F8)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // STEP 1: INITIAL STATE (SHOW ONLY SCAN QR CODE OPTION)
+            if (_step == _ReceiveStep.initial) ...[
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFD6E5F8)),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x0A000000),
+                      blurRadius: 10,
+                      offset: Offset(0, 3),
                     ),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEEF4FE),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(Icons.qr_code_scanner, size: 24, color: Color(0xFF1241A6)),
-                            ),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Scan DigiTP Transit Pass',
-                                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink),
-                                  ),
-                                  SizedBox(height: 2),
-                                  Text(
-                                    'Point camera at the driver\'s QR code to verify & receive',
-                                    style: TextStyle(fontSize: 12, color: AppColors.inkSecondary),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        AppButton(
-                          label: 'Open QR Scanner',
-                          fullWidth: true,
-                          size: AppButtonSize.large,
-                          icon: const Icon(Icons.qr_code, size: 18),
-                          onPressed: () {
-                            if (primaryTargetDelivery != null) {
-                              context.push('/receiving/detail', extra: {'deliveryId': primaryTargetDelivery.id});
-                            } else {
-                              context.push('/receiving/detail', extra: {'deliveryId': 'del-003'});
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // 2. Vehicles at Site Gate (Ready to Receive)
-                  if (arrivedDeliveries.isNotEmpty) ...[
-                    const Text(
-                      'VEHICLES AT SITE GATE (READY TO RECEIVE)',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF737373), letterSpacing: 0.5),
-                    ),
-                    const SizedBox(height: 2),
-                    const Text(
-                      'The following vehicles have reached your site geofence and are waiting to be unloaded.',
-                      style: TextStyle(fontSize: 12, color: AppColors.inkSecondary),
-                    ),
-                    const SizedBox(height: 10),
-
-                    ...arrivedDeliveries.map((delivery) => Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF0FDF4),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0xFFBBF7D0)),
-                          ),
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFDCFCE7),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: const Icon(Icons.check_circle, size: 16, color: Color(0xFF15803D)),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            delivery.vehicle.registrationNumber,
-                                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink, fontFamily: 'monospace'),
-                                          ),
-                                          const Text(
-                                            'At Site Gate · Ready to Offload',
-                                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF15803D)),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFDCFCE7),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Text('Arrived', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF15803D))),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0xFFDCFCE7)),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Mineral: Basalt Stone', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.ink)),
-                                    Text(
-                                      'Dispatched: ${delivery.transportPermit.permittedQuantity.formatted}',
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.ink),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              AppButton(
-                                label: 'Verify & Receive Material',
-                                fullWidth: true,
-                                size: AppButtonSize.medium,
-                                icon: const Icon(Icons.qr_code, size: 16),
-                                onPressed: () => context.push('/receiving/detail', extra: {'deliveryId': delivery.id}),
-                              ),
-                            ],
-                          ),
-                        )),
-                    const SizedBox(height: 16),
                   ],
-
-                  // 3. Vehicles In Transit (En Route)
-                  if (inTransitDeliveries.isNotEmpty) ...[
-                    const Text(
-                      'VEHICLES IN TRANSIT (EN ROUTE)',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF737373), letterSpacing: 0.5),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 90,
+                      height: 90,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEEF4FE),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.qr_code_scanner,
+                        size: 48,
+                        color: Color(0xFF2563EB),
+                      ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 20),
                     const Text(
-                      'Trucks currently moving toward your site location.',
-                      style: TextStyle(fontSize: 12, color: AppColors.inkSecondary),
+                      'Scan DigiTP QR / Barcode',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.ink,
+                      ),
                     ),
-                    const SizedBox(height: 10),
-
-                    ...inTransitDeliveries.map((delivery) => Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
-                          ),
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFEEF4FE),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: const Icon(Icons.local_shipping_outlined, size: 16, color: Color(0xFF1241A6)),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            delivery.vehicle.registrationNumber,
-                                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink, fontFamily: 'monospace'),
-                                          ),
-                                          Text(
-                                            'DigiTP: ${delivery.transportPermit.etpNumber}',
-                                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF737373)),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF7F0FD),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Text('In Transit', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF7E22CE))),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF8FAFC),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Natural River Sand', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.ink)),
-                                    Text(
-                                      delivery.transportPermit.permittedQuantity.formatted,
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.ink),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-
-                              // Distance & Driver Details Box
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF8FAFC),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Column(
-                                  children: [
-                                    const Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Icon(Icons.navigation_outlined, size: 13, color: Color(0xFF1241A6)),
-                                            SizedBox(width: 4),
-                                            Text('Distance & ETA:', style: TextStyle(fontSize: 11.5, color: Color(0xFF475569))),
-                                          ],
-                                        ),
-                                        Text('~4.2 km away (15 mins)', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.ink)),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Row(
-                                          children: [
-                                            Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF64748B)),
-                                            SizedBox(width: 4),
-                                            Text('Destination:', style: TextStyle(fontSize: 11.5, color: Color(0xFF475569))),
-                                          ],
-                                        ),
-                                        Expanded(
-                                          child: Text(
-                                            delivery.transportPermit.destinationLabel,
-                                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.ink),
-                                            textAlign: TextAlign.end,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Row(
-                                          children: [
-                                            Icon(Icons.phone_outlined, size: 13, color: Color(0xFF64748B)),
-                                            SizedBox(width: 4),
-                                            Text('Driver:', style: TextStyle(fontSize: 11.5, color: Color(0xFF475569))),
-                                          ],
-                                        ),
-                                        Text(
-                                          '${delivery.vehicle.driverName} (${delivery.vehicle.driverMobileNumber})',
-                                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.ink),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-
-                              // Geofence Lock Notice
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFFBEB),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0xFFFDE68A)),
-                                ),
-                                child: const Row(
-                                  children: [
-                                    Icon(Icons.lock_outline, size: 16, color: Color(0xFFD97706)),
-                                    SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        'Receiving locked in transit. Unlocks automatically once vehicle enters within 200m of site geofence.',
-                                        style: TextStyle(fontSize: 11.5, color: Color(0xFF78350F), height: 1.25),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: AppButton(
-                                      label: 'Track Vehicle',
-                                      size: AppButtonSize.small,
-                                      variant: AppButtonVariant.secondary,
-                                      icon: const Icon(Icons.navigation_outlined, size: 16),
-                                      onPressed: () => context.push('/deliveries/${delivery.id}/live-tracking'),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: AppButton(
-                                      label: 'Scan & Receive',
-                                      size: AppButtonSize.small,
-                                      icon: const Icon(Icons.qr_code, size: 16),
-                                      onPressed: () => context.push('/receiving/detail', extra: {'deliveryId': delivery.id}),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        )),
-                  ],
-
-                  // 4. Empty State
-                  if (_deliveries.isEmpty) ...[
-                    const SizedBox(height: 40),
-                    Center(
-                      child: Column(
-                        children: [
-                          Icon(Icons.local_shipping_outlined, size: 48, color: Colors.grey.shade400),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'No Active Mineral Deliveries',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'There are currently no vehicles in transit or waiting at your sites.',
-                            style: TextStyle(fontSize: 13, color: AppColors.inkSecondary),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Point camera at the driver\'s QR code or barcode to extract permit details and confirm material receipt.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.inkSecondary,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    AppButton(
+                      label: 'Open Camera Scanner',
+                      size: AppButtonSize.large,
+                      icon: const Icon(Icons.camera_alt, size: 20),
+                      onPressed: _openCameraScanner,
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: _showManualEntryDialog,
+                      child: const Text(
+                        'Enter Invoice Number Manually',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF2563EB),
+                        ),
                       ),
                     ),
                   ],
-                ],
+                ),
               ),
+            ],
+
+            // STEP 2: LOADING STATE
+            if (_step == _ReceiveStep.loading) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                ),
+                child: const Column(
+                  children: [
+                    CircularProgressIndicator(strokeWidth: 3, color: Color(0xFF2563EB)),
+                    SizedBox(height: 16),
+                    Text(
+                      'Processing Scan & Fetching Details...',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Decoding permit payload and verifying with Mahakhanij Server',
+                      style: TextStyle(fontSize: 12, color: AppColors.inkSecondary),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            // STEP 3: DISPLAY SCANNED DETAILS + CONFIRM & RECEIVE
+            if (_step == _ReceiveStep.scanned && _scannedItem != null) ...[
+              if (_alreadyReceived || _statusMessage != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, color: Color(0xFFD97706), size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _statusMessage ?? 'Invoice is already received.',
+                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF92400E)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              // Invoice Details Card
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'E-TRANSIT PASS DETAILS',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                            color: Color(0xFF2563EB),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'Invoice #: ${_scannedItem!.invoiceNo}',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, fontFamily: 'monospace'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 20),
+
+                    _buildDetailRow(
+                      label: 'Vehicle Number',
+                      value: _scannedItem!.vehicleNo ?? 'N/A',
+                      isBold: true,
+                    ),
+                    const SizedBox(height: 10),
+                    _buildDetailRow(
+                      label: 'Owner Name',
+                      value: _scannedItem!.ownerName ?? 'N/A',
+                    ),
+                    const SizedBox(height: 10),
+                    _buildDetailRow(
+                      label: 'Owner Mobile',
+                      value: _scannedItem!.ownerMobileNo ?? 'N/A',
+                    ),
+                    const SizedBox(height: 10),
+                    _buildDetailRow(
+                      label: 'Driver Details',
+                      value: _scannedItem!.driverName != null && _scannedItem!.driverName!.isNotEmpty
+                          ? '${_scannedItem!.driverName}${_scannedItem!.driverMobNo != null ? ' (${_scannedItem!.driverMobNo})' : ''}'
+                          : 'N/A',
+                    ),
+                    const SizedBox(height: 10),
+                    _buildDetailRow(
+                      label: 'Material & Quantity',
+                      value: '${_scannedItem!.materialType ?? "Mineral"} (${_scannedItem!.quantity ?? 0} ${_scannedItem!.mineralUnit ?? "Brass"})',
+                    ),
+                    const SizedBox(height: 10),
+                    _buildDetailRow(
+                      label: 'Destination',
+                      value: _scannedItem!.destination ?? 'N/A',
+                    ),
+                    if (_scannedItem!.distance != null) ...[
+                      const SizedBox(height: 10),
+                      _buildDetailRow(
+                        label: 'Distance (Km)',
+                        value: '${_scannedItem!.distance} KM',
+                      ),
+                    ],
+                    if (_scannedItem!.validityFrom != null) ...[
+                      const SizedBox(height: 10),
+                      _buildDetailRow(
+                        label: 'Validity From',
+                        value: AppDateFormatter.formatDateTime(_scannedItem!.validityFrom),
+                      ),
+                    ],
+                    if (_scannedItem!.validityUpto != null) ...[
+                      const SizedBox(height: 10),
+                      _buildDetailRow(
+                        label: 'Validity Upto',
+                        value: AppDateFormatter.formatDateTime(_scannedItem!.validityUpto),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Confirm & Receive Action Button
+              if (!_alreadyReceived) ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: _isSubmitting ? null : _confirmAndReceive,
+                    icon: _isSubmitting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.check_circle_outline, size: 20),
+                    label: Text(
+                      _isSubmitting ? 'Confirming Receipt...' : 'Confirm & Receive Material',
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF15803D),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: _resetToInitial,
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Scan Another DigiTP'),
+                ),
+              ),
+            ],
+
+            // STEP 4: COMPLETED STATE
+            if (_step == _ReceiveStep.completed) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFBBF7D0)),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFDCFCE7),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.check_circle, size: 54, color: Color(0xFF15803D)),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Material Received Successfully!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.ink),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'DigiTP #${_scannedItem?.invoiceNo} has been verified and marked as Received on Mahakhanij Portal.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary),
+                    ),
+                    const SizedBox(height: 20),
+                    AppButton(
+                      label: 'Scan Another Code',
+                      fullWidth: true,
+                      onPressed: _resetToInitial,
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton(
+                      onPressed: () => context.go('/activity'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 44),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('View All Received Deliveries'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow({
+    required String label,
+    required String value,
+    bool isBold = false,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,
+              color: AppColors.ink,
             ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -23,6 +23,7 @@ enum UserType {
 
 class User {
   final String id;
+  final int? consumerId;
   final String fullName;
   final String mobileNumber;
   final String? email;
@@ -36,6 +37,7 @@ class User {
 
   const User({
     required this.id,
+    this.consumerId,
     required this.fullName,
     required this.mobileNumber,
     this.email,
@@ -55,6 +57,9 @@ class User {
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'] ?? '',
+      consumerId: json['consumerId'] is int
+          ? json['consumerId'] as int
+          : int.tryParse(json['consumerId']?.toString() ?? ''),
       fullName: json['fullName'] ?? '',
       mobileNumber: json['mobileNumber'] ?? '',
       email: json['email'],
@@ -74,6 +79,7 @@ class User {
 
   Map<String, dynamic> toJson() => {
     'id': id,
+    if (consumerId != null) 'consumerId': consumerId,
     'fullName': fullName,
     'mobileNumber': mobileNumber,
     if (email != null) 'email': email,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/config/app_config.dart';
 import '../../domain/delivery.dart';
 import '../../domain/enquiry.dart';
 import '../../domain/mineral.dart';
@@ -33,6 +34,7 @@ import '../../features/orders/order_details_screen.dart';
 import '../../features/orders/digitp_pass_screen.dart';
 import '../../features/orders/delivery_tracking_screen.dart';
 import '../../features/orders/live_vehicle_tracking_screen.dart';
+import '../../features/orders/in_transit_vehicle_list_screen.dart';
 
 import '../../features/receiving/receive_screen.dart';
 import '../../features/receiving/receive_delivery_screen.dart';
@@ -62,6 +64,11 @@ import '../../features/more/more_screen.dart';
 import '../../features/profile/profile_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+final GlobalKey<NavigatorState> _shellNavigatorHomeKey = GlobalKey<NavigatorState>(debugLabel: 'shellHome');
+final GlobalKey<NavigatorState> _shellNavigatorProjectsKey = GlobalKey<NavigatorState>(debugLabel: 'shellProjects');
+final GlobalKey<NavigatorState> _shellNavigatorActivityKey = GlobalKey<NavigatorState>(debugLabel: 'shellActivity');
+final GlobalKey<NavigatorState> _shellNavigatorReportsKey = GlobalKey<NavigatorState>(debugLabel: 'shellReports');
+final GlobalKey<NavigatorState> _shellNavigatorMoreKey = GlobalKey<NavigatorState>(debugLabel: 'shellMore');
 
 LocalKey _pageKey(GoRouterState state) => ValueKey('${state.pageKey.value}_${identityHashCode(state)}');
 
@@ -90,10 +97,13 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/login',
       name: 'login',
-      pageBuilder: (context, state) => MaterialPage(
-        key: _pageKey(state),
-        child: const LoginScreen(),
-      ),
+      pageBuilder: (context, state) {
+        final mobile = (state.extra is String) ? state.extra as String? : null;
+        return MaterialPage(
+          key: _pageKey(state),
+          child: LoginScreen(initialMobile: mobile),
+        );
+      },
     ),
     GoRoute(
       path: '/register',
@@ -107,10 +117,21 @@ final appRouter = GoRouter(
       path: '/otp',
       name: 'otp',
       pageBuilder: (context, state) {
-        final mobile = (state.extra is String) ? state.extra as String : '9822014576';
+        String mobile = '9822014576';
+        Map<String, dynamic>? signUpData;
+        if (state.extra is String) {
+          mobile = state.extra as String;
+        } else if (state.extra is Map<String, dynamic>) {
+          final map = state.extra as Map<String, dynamic>;
+          mobile = map['mobileNo']?.toString() ?? map['mobileNumber']?.toString() ?? '9822014576';
+          signUpData = map;
+        }
         return MaterialPage(
           key: _pageKey(state),
-          child: OtpScreen(mobileNumber: mobile),
+          child: OtpScreen(
+            mobileNumber: mobile,
+            signUpData: signUpData,
+          ),
         );
       },
     ),
@@ -131,6 +152,7 @@ final appRouter = GoRouter(
       branches: [
         // Branch 0: Home
         StatefulShellBranch(
+          navigatorKey: _shellNavigatorHomeKey,
           routes: [
             GoRoute(
               path: '/home',
@@ -144,6 +166,7 @@ final appRouter = GoRouter(
         ),
         // Branch 1: Projects (Org)
         StatefulShellBranch(
+          navigatorKey: _shellNavigatorProjectsKey,
           routes: [
             GoRoute(
               path: '/organization/projects',
@@ -157,6 +180,7 @@ final appRouter = GoRouter(
         ),
         // Branch 2: Activity (Org & Consumer)
         StatefulShellBranch(
+          navigatorKey: _shellNavigatorActivityKey,
           routes: [
             GoRoute(
               path: '/activity',
@@ -170,6 +194,7 @@ final appRouter = GoRouter(
         ),
         // Branch 3: Reports (Consumer)
         StatefulShellBranch(
+          navigatorKey: _shellNavigatorReportsKey,
           routes: [
             GoRoute(
               path: '/reports',
@@ -183,6 +208,7 @@ final appRouter = GoRouter(
         ),
         // Branch 4: More
         StatefulShellBranch(
+          navigatorKey: _shellNavigatorMoreKey,
           routes: [
             GoRoute(
               path: '/more',
@@ -199,17 +225,38 @@ final appRouter = GoRouter(
 
     // Sub-screens & Workflows
     GoRoute(
+      path: '/deliveries/in-transit',
+      name: 'deliveries-in-transit',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => MaterialPage(
+        key: _pageKey(state),
+        child: const InTransitVehicleListScreen(),
+      ),
+    ),
+    GoRoute(
       path: '/deliveries/:id/live-tracking',
       name: 'delivery-live-tracking',
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (context, state) {
         final deliveryId = state.pathParameters['id'] ?? 'del-001';
+        final queryVehicleNo = state.uri.queryParameters['vehicleNo'];
+        String? extraVehicleNo;
+        if (state.extra is String) {
+          extraVehicleNo = state.extra as String;
+        } else if (state.extra is Map) {
+          extraVehicleNo = (state.extra as Map)['vehicleNo']?.toString();
+        }
+        final vehicleNo = queryVehicleNo ?? extraVehicleNo ?? deliveryId;
         return MaterialPage(
           key: _pageKey(state),
-          child: LiveVehicleTrackingScreen(deliveryId: deliveryId),
+          child: LiveVehicleTrackingScreen(
+            deliveryId: deliveryId,
+            vehicleNo: vehicleNo,
+          ),
         );
       },
     ),
+
     GoRoute(
       path: '/receive',
       name: 'receive',
@@ -531,13 +578,13 @@ final appRouter = GoRouter(
     ),
 
     // Compatibility Route Aliases matching React Prototype URLs
-    GoRoute(path: '/projects', redirect: (_, __) => '/organization/projects'),
-    GoRoute(path: '/projects/new', redirect: (_, __) => '/organization/projects/create'),
+    GoRoute(path: '/projects', redirect: (_, __) => AppConfig.enableOrganizationFlow ? '/organization/projects' : '/consumer/projects'),
+    GoRoute(path: '/projects/new', redirect: (_, __) => AppConfig.enableOrganizationFlow ? '/organization/projects/create' : '/consumer/projects/register'),
     GoRoute(path: '/temporary-excavation', redirect: (_, __) => '/excavation'),
     GoRoute(path: '/temporary-excavation/new', redirect: (_, __) => '/excavation/new'),
     GoRoute(path: '/stock-points', redirect: (_, __) => '/minerals/stock-points'),
     GoRoute(path: '/verify', redirect: (_, __) => '/otp'),
-    GoRoute(path: '/supervisors', redirect: (_, __) => '/organization/supervisors'),
+    GoRoute(path: '/supervisors', redirect: (_, __) => AppConfig.enableOrganizationFlow ? '/organization/supervisors' : '/home'),
     GoRoute(path: '/prototype/persona', redirect: (_, __) => '/persona-switch'),
   ],
 );

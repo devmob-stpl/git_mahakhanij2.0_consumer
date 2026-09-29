@@ -95,7 +95,7 @@ class _RegisterSupervisorScreenState extends ConsumerState<RegisterSupervisorScr
                         ),
                         child: const Icon(
                           Icons.person_outline,
-                          color: Color(0xFF1D4ED8),
+                          color: Color(0xFF2563EB),
                           size: 22,
                         ),
                       ),
@@ -217,7 +217,7 @@ class _RegisterSupervisorScreenState extends ConsumerState<RegisterSupervisorScr
                   // Field 3: Assigned to package (optional)
                   Row(
                     children: [
-                      const Icon(Icons.hub_outlined, size: 16, color: Color(0xFF1D4ED8)),
+                      const Icon(Icons.hub_outlined, size: 16, color: Color(0xFF2563EB)),
                       const SizedBox(width: 6),
                       RichText(
                         text: const TextSpan(
@@ -266,7 +266,7 @@ class _RegisterSupervisorScreenState extends ConsumerState<RegisterSupervisorScr
                     height: 50,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1D4ED8),
+                        backgroundColor: const Color(0xFF2563EB),
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -328,7 +328,7 @@ class _RegisterSupervisorScreenState extends ConsumerState<RegisterSupervisorScr
               child: Icon(
                 icon,
                 size: 20,
-                color: isActive ? const Color(0xFF1241A6) : const Color(0xFF64748B),
+                color: isActive ? const Color(0xFF2563EB) : const Color(0xFF64748B),
               ),
             ),
             const SizedBox(height: 3),
@@ -337,7 +337,7 @@ class _RegisterSupervisorScreenState extends ConsumerState<RegisterSupervisorScr
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                color: isActive ? const Color(0xFF1241A6) : const Color(0xFF64748B),
+                color: isActive ? const Color(0xFF2563EB) : const Color(0xFF64748B),
               ),
             ),
           ],

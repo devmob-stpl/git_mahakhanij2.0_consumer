@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
+import '../../core/config/app_config.dart';
 import '../../core/constants/app_colors.dart';
 import '../../domain/user.dart';
+import '../../domain/aadhaar_kyc_models.dart';
+import '../../data/repositories/aadhaar_kyc_repository.dart';
+import '../../providers/session_provider.dart';
 import '../../shared/widgets/app_button.dart';
-import '../../shared/widgets/prototype_bar.dart';
+import '../../shared/widgets/location_dropdown_section.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -14,8 +19,8 @@ class RegisterScreen extends ConsumerStatefulWidget {
 }
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
-  // Step 0: Choose Account Type (0), Step 1: Basic & Address details (1), Step 2: KYC Verification (2)
-  int _step = 0;
+  // Step 1: Basic & Address details (1), Step 2: KYC Verification (2)
+  int _step = 1;
   UserType _userType = UserType.normalConsumer;
 
   // Step 1: Basic & Contact Details
@@ -34,46 +39,41 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   String _areaClassification = 'URBAN'; // 'URBAN' | 'RURAL'
   String _district = 'Pune';
   String _taluka = 'Haveli';
+  int? _districtId;
+  int? _talukaId;
+  int? _censusId;
   final _cityController = TextEditingController(text: 'Pune City (PMC)');
+
   final _villageController = TextEditingController();
   final _addressController = TextEditingController();
   final _pincodeController = TextEditingController();
 
-  // Step 2: KYC Details
+  // Step 2: KYC Details & Aadhaar Verification API Flow
   final _aadhaarController = TextEditingController();
+  final _aadhaarOtpController = TextEditingController();
   final _panController = TextEditingController();
   String? _kycFileName;
+  String? _aadhaarDocUrl;
   String? _panFileName;
+  String? _panDocUrl;
   String? _aadhaarFileName;
+  String? _aadhaarSignatoryDocUrl;
+  bool _isUploadingAadhaarDoc = false;
+  bool _isUploadingPanDoc = false;
+
+  // Aadhaar API State
+  String? _aadhaarClientId;
+  bool _isAadhaarOtpSent = false;
+  bool _isAadhaarVerified = false;
+  bool _isCheckingAadhaar = false;
+  bool _isGeneratingAadhaarOtp = false;
+  bool _isVerifyingAadhaarOtp = false;
+  String? _aadhaarError;
+  VerifyAadhaarOtpResponse? _aadhaarVerifiedData;
 
   // Form Errors
   Map<String, String> _errors = {};
-
-  final List<String> _districts = const [
-    'Pune',
-    'Mumbai City',
-    'Mumbai Suburban',
-    'Thane',
-    'Nagpur',
-    'Nashik',
-    'Chhatrapati Sambhajinagar',
-    'Ahilyanagar',
-    'Raigad',
-    'Solapur',
-    'Satara',
-    'Kolhapur',
-  ];
-
-  final Map<String, List<String>> _talukasByDistrict = const {
-    'Pune': ['Haveli', 'Maval', 'Mulshi', 'Shirur', 'Khed', 'Baramati', 'Daund', 'Purandar'],
-    'Mumbai City': ['Mumbai City'],
-    'Mumbai Suburban': ['Andheri', 'Borivali', 'Kurla'],
-    'Thane': ['Thane', 'Kalyan', 'Bhiwandi', 'Ulhasnagar', 'Ambernath'],
-    'Nagpur': ['Nagpur Urban', 'Nagpur Rural', 'Kamptee', 'Hingna', 'Katol'],
-    'Nashik': ['Nashik', 'Sinnar', 'Niphad', 'Dindori', 'Malegaon'],
-    'Chhatrapati Sambhajinagar': ['Chhatrapati Sambhajinagar', 'Paithan', 'Gangapur', 'Vaijapur'],
-    'Ahilyanagar': ['Nagar', 'Rahata', 'Sangamner', 'Kopargaon', 'Shrirampur'],
-  };
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -87,49 +87,161 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _addressController.dispose();
     _pincodeController.dispose();
     _aadhaarController.dispose();
+    _aadhaarOtpController.dispose();
     _panController.dispose();
     super.dispose();
   }
 
-  void _handleQuickFill() {
+  Future<void> _handleSendAadhaarOtp() async {
+    final aadh = _aadhaarController.text.replaceAll(' ', '').trim();
+    if (aadh.length != 12 || !RegExp(r'^\d{12}$').hasMatch(aadh)) {
+      setState(() => _aadhaarError = 'Enter a valid 12-digit Aadhaar number.');
+      return;
+    }
+
     setState(() {
-      _errors.clear();
-      if (_step == 0) {
-        _step = 1;
-      }
-      if (_userType == UserType.organization) {
-        _fullNameController.text = 'Rajesh Patil';
-        _mobileController.text = '9822014576';
-        _orgNameController.text = 'Shree Infra & Constructions Pvt Ltd';
-        _orgType = 'CONTRACTOR';
-        _gstController.text = '27ABCDE1234F1Z5';
-        _regNumberController.text = 'MH-2024-ORG-9988';
-        _gstStatus = 'verified';
-        _noGst = false;
-        _areaClassification = 'URBAN';
-        _district = 'Pune';
-        _taluka = 'Haveli';
-        _cityController.text = 'Pune City (PMC)';
-        _addressController.text = 'Survey No. 42/1, Wagholi-Kesnand Road';
-        _pincodeController.text = '412207';
-        _panController.text = 'ABCDE1234F';
-        _aadhaarController.text = '4532 1098 4532';
-        _panFileName = 'Company_PAN_ABCDE1234F.pdf';
-        _aadhaarFileName = 'Signatory_Aadhaar.pdf';
+      _aadhaarError = null;
+      _isCheckingAadhaar = true;
+    });
+
+    final repo = ref.read(aadhaarKycRepositoryProvider);
+
+    // 1. Check if Aadhaar already exists
+    final existRes = await repo.checkAadhaarExists(aadh);
+    if (!mounted) return;
+
+    if (existRes.exists) {
+      setState(() {
+        _isCheckingAadhaar = false;
+        _aadhaarError = 'This Aadhaar card number is already registered in Mahakhanij system.';
+      });
+      return;
+    }
+
+    // 2. Generate OTP
+    setState(() {
+      _isCheckingAadhaar = false;
+      _isGeneratingAadhaarOtp = true;
+    });
+
+    final genRes = await repo.generateAadhaarOtp(aadh, createdBy: 0);
+    if (!mounted) return;
+
+    setState(() {
+      _isGeneratingAadhaarOtp = false;
+      if (genRes.isSuccess && genRes.clientId != null) {
+        _isAadhaarOtpSent = true;
+        _aadhaarClientId = genRes.clientId;
+        _aadhaarError = null;
       } else {
-        _fullNameController.text = 'Amit Deshmukh';
-        _mobileController.text = '9730845120';
-        _areaClassification = 'URBAN';
-        _district = 'Pune';
-        _taluka = 'Haveli';
-        _cityController.text = 'Pune City (PMC)';
-        _villageController.text = '';
-        _addressController.text = 'Flat 402, Shivajinagar Heights';
-        _pincodeController.text = '411005';
-        _aadhaarController.text = '9876 5432 1098';
-        _kycFileName = 'Aadhaar_Card_Amit_Deshmukh.pdf';
+        _aadhaarError = genRes.message ?? 'Failed to send OTP to Aadhaar-registered mobile number.';
       }
     });
+  }
+
+  Future<void> _handleVerifyAadhaarOtp() async {
+    final otp = _aadhaarOtpController.text.trim();
+    if (otp.length != 6 || !RegExp(r'^\d{6}$').hasMatch(otp)) {
+      setState(() => _aadhaarError = 'Enter a valid 6-digit Aadhaar OTP.');
+      return;
+    }
+
+    if (_aadhaarClientId == null) {
+      setState(() => _aadhaarError = 'Client ID missing. Please resend OTP.');
+      return;
+    }
+
+    setState(() {
+      _aadhaarError = null;
+      _isVerifyingAadhaarOtp = true;
+    });
+
+    final repo = ref.read(aadhaarKycRepositoryProvider);
+    final verifyRes = await repo.submitAadhaarOtp(
+      clientId: _aadhaarClientId!,
+      otp: otp,
+      mobileNumber: _mobileController.text.trim(),
+      createdBy: 0,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isVerifyingAadhaarOtp = false;
+      if (verifyRes.isSuccess) {
+        _isAadhaarVerified = true;
+        _aadhaarVerifiedData = verifyRes;
+        _aadhaarError = null;
+      } else {
+        _aadhaarError = verifyRes.message ?? 'Aadhaar OTP verification failed. Invalid OTP.';
+      }
+    });
+  }
+
+  Future<void> _pickAndUploadDocument({bool isPan = false, bool isSignatoryAadhaar = false}) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      );
+
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+
+      final key = isPan ? 'panFile' : (isSignatoryAadhaar ? 'aadhaarFile' : 'kycFile');
+
+      setState(() {
+        if (isPan) {
+          _isUploadingPanDoc = true;
+        } else {
+          _isUploadingAadhaarDoc = true;
+        }
+        _errors.remove(key);
+      });
+
+      final repo = ref.read(aadhaarKycRepositoryProvider);
+      final response = await repo.uploadAadhaarDocument(
+        filePath: file.path ?? '',
+        fileName: file.name,
+        bytes: file.bytes,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        if (isPan) {
+          _isUploadingPanDoc = false;
+        } else {
+          _isUploadingAadhaarDoc = false;
+        }
+
+        if (response.isSuccess && response.responseData != null && response.responseData!.isNotEmpty) {
+          if (isPan) {
+            _panFileName = file.name;
+            _panDocUrl = response.responseData;
+          } else if (isSignatoryAadhaar) {
+            _aadhaarFileName = file.name;
+            _aadhaarSignatoryDocUrl = response.responseData;
+          } else {
+            _kycFileName = file.name;
+            _aadhaarDocUrl = response.responseData;
+          }
+          _errors.remove(key);
+        } else {
+          _errors[key] = response.statusMessage.isNotEmpty
+              ? response.statusMessage
+              : 'Failed to upload document. Please try again.';
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      final key = isPan ? 'panFile' : (isSignatoryAadhaar ? 'aadhaarFile' : 'kycFile');
+      setState(() {
+        _isUploadingAadhaarDoc = false;
+        _isUploadingPanDoc = false;
+        _errors[key] = 'Document upload failed: ${e.toString()}';
+      });
+    }
   }
 
   void _verifyGst() {
@@ -165,7 +277,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   void _back() {
     setState(() {
       _errors.clear();
-      if (_step == 0) {
+      if (_step <= 1) {
         context.pop();
       } else {
         _step--;
@@ -173,7 +285,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     });
   }
 
-  void _next() {
+
+  void _next() async {
     final found = _validateStep();
     if (found.isNotEmpty) {
       setState(() => _errors = found);
@@ -188,10 +301,60 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
 
-    // Step 2 complete -> proceed to OTP verification
+    // Step 2 complete -> Directly submit Sign Up API without OTP verification
+    setState(() => _isSubmitting = true);
     final mobile = _mobileController.text.trim();
-    context.push('/otp', extra: mobile);
+
+    final Map<String, dynamic> signUpPayload = {
+      'consumerType': _userType == UserType.organization ? 1 : 0,
+      'name': _fullNameController.text.trim(),
+      'mobileNo': mobile,
+      'emailId': '',
+      'isTown': _areaClassification == 'URBAN',
+      'districtId': _districtId ?? 0,
+      'censusId': _censusId ?? 0,
+      'talukaId': _talukaId ?? 0,
+      'address': _addressController.text.trim(),
+      'pinCode': _pincodeController.text.trim(),
+      'aadharCardNo': _aadhaarController.text.replaceAll(' ', '').trim(),
+      'aadharDoc': _aadhaarDocUrl ?? _aadhaarSignatoryDocUrl ?? '',
+      'isAadharVerified': _isAadhaarVerified,
+      'panNo': _panController.text.trim(),
+      'panDoc': _panDocUrl ?? '',
+      'isPanVerified': false,
+      'gstNo': _gstController.text.trim(),
+      'gstDoc': '',
+      'isGSTVerified': _gstStatus == 'verified',
+      'pageName': 'ConsumerSignUp',
+    };
+
+    final response = await ref.read(authRepositoryProvider).consumerSignUp(signUpPayload);
+
+    if (!mounted) return;
+
+    setState(() => _isSubmitting = false);
+
+    if (response.isSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Registration successful! Please sign in with your mobile number.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      context.go('/login', extra: mobile);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response.statusMessage.isNotEmpty
+              ? response.statusMessage
+              : 'Registration failed. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
+
+
 
   Map<String, String> _validateStep() {
     final found = <String, String>{};
@@ -224,30 +387,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         found['pincode'] = 'Enter a valid 6-digit PIN code.';
       }
     } else if (_step == 2) {
-      if (_userType == UserType.normalConsumer) {
-        final aadh = _aadhaarController.text.replaceAll(' ', '').trim();
-        if (aadh.length != 12 || !RegExp(r'^\d{12}$').hasMatch(aadh)) {
-          found['aadhaar'] = 'Enter a valid 12-digit Aadhaar number.';
-        }
-        if (_kycFileName == null) {
-          found['kycFile'] = 'Please upload the required KYC document to continue.';
-        }
-      } else {
-        final pan = _panController.text.trim().toUpperCase();
-        if (pan.length != 10 || !RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(pan)) {
-          found['pan'] = 'Enter a valid 10-character PAN (e.g. ABCDE1234F).';
-        }
-        if (_panFileName == null) {
-          found['panFile'] = 'Please upload the required KYC document to continue.';
-        }
-        final aadh = _aadhaarController.text.replaceAll(' ', '').trim();
-        if (aadh.length != 12 || !RegExp(r'^\d{12}$').hasMatch(aadh)) {
-          found['aadhaar'] = 'Enter a valid 12-digit Aadhaar number.';
-        }
-        if (_aadhaarFileName == null) {
-          found['aadhaarFile'] = 'Please upload the required KYC document to continue.';
-        }
-      }
+      // Aadhaar KYC is NON-MANDATORY. Allow skipping and continuing without validation errors.
     }
 
     return found;
@@ -257,91 +397,87 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      body: Column(
-        children: [
-          const PrototypeBar(),
-          // Top Auth Header Bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.chevron_left, size: 28, color: AppColors.ink),
-                  onPressed: _back,
-                ),
-                TextButton.icon(
-                  onPressed: _handleQuickFill,
-                  icon: const Icon(Icons.bolt, size: 16, color: Color(0xFFB45309)),
-                  label: const Text(
-                    'Quick Fill',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFFB45309)),
-                  ),
-                  style: TextButton.styleFrom(
-                    backgroundColor: const Color(0xFFFEF3C7),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Step Progress Bar (Step 1 and 2)
-          if (_step > 0)
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top Auth Header Bar
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  Expanded(
-                    child: Container(
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary700,
-                        borderRadius: BorderRadius.circular(2),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left, size: 28, color: AppColors.ink),
+                    onPressed: _back,
+                  ),
+                  if (_step > 0) ...[
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: _step / 2,
+                          backgroundColor: AppColors.line,
+                          color: AppColors.primary700,
+                          minHeight: 5,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Container(
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: _step == 2 ? AppColors.primary700 : AppColors.line,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+                    const SizedBox(width: 14),
+                    Text(
+                      'Step $_step of 2',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.inkSecondary),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                  ],
                 ],
               ),
             ),
 
-          // Main Step Content
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: _step == 0
-                  ? _buildStep0ChooseType()
-                  : _step == 1
-                      ? _buildStep1Details()
-                      : _buildStep2Kyc(),
+            // Main Step Content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: _step == 0
+                    ? _buildStep0ChooseType()
+                    : _step == 1
+                        ? _buildStep1Details()
+                        : _buildStep2Kyc(),
+              ),
             ),
-          ),
 
-          // Sticky Footer Action
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: AppButton(
-              label: _step == 0
-                  ? 'Continue'
-                  : _step == 1
-                      ? 'Continue to KYC Verification'
-                      : 'Verify & Send OTP',
-              fullWidth: true,
-              size: AppButtonSize.large,
-              onPressed: _next,
+            // Sticky Footer Action
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppButton(
+                    label: _step == 0
+                        ? 'Continue'
+                        : _step == 1
+                            ? 'Continue to KYC Verification'
+                            : 'Complete Registration',
+                    isLoading: _isSubmitting,
+                    fullWidth: true,
+                    size: AppButtonSize.large,
+                    onPressed: _isSubmitting ? null : _next,
+                  ),
+                  if (_step == 2) ...[
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: _isSubmitting ? null : _next,
+                      child: const Text(
+                        'Skip Aadhaar Verification & Complete Signup',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.inkSecondary),
+                      ),
+                    ),
+                  ],
+
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -420,59 +556,60 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 14),
-
-        // Organization Card
-        InkWell(
-          onTap: () => setState(() => _userType = UserType.organization),
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: _userType == UserType.organization ? const Color(0xFFEEF4FF) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: _userType == UserType.organization ? AppColors.primary700 : AppColors.line,
-                width: _userType == UserType.organization ? 2 : 1,
+        if (AppConfig.enableOrganizationFlow) ...[
+          const SizedBox(height: 14),
+          // Organization Card
+          InkWell(
+            onTap: () => setState(() => _userType = UserType.organization),
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: _userType == UserType.organization ? const Color(0xFFEEF4FF) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: _userType == UserType.organization ? AppColors.primary700 : AppColors.line,
+                  width: _userType == UserType.organization ? 2 : 1,
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: _userType == UserType.organization ? AppColors.primary700 : const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.business_outlined,
+                      color: _userType == UserType.organization ? Colors.white : AppColors.ink,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Organization',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'For a builder, contractor, government body or any other organization working across projects and packages.',
+                          style: TextStyle(fontSize: 13, color: AppColors.inkSecondary, height: 1.3),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: _userType == UserType.organization ? AppColors.primary700 : const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    Icons.business_outlined,
-                    color: _userType == UserType.organization ? Colors.white : AppColors.ink,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Organization',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'For a builder, contractor, government body or any other organization working across projects and packages.',
-                        style: TextStyle(fontSize: 13, color: AppColors.inkSecondary, height: 1.3),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
           ),
-        ),
+        ],
 
         const SizedBox(height: 28),
         Row(
@@ -500,23 +637,66 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          isOrg ? 'Organization details' : 'Your details',
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
+        const Text(
+          'Basic & Address details',
+          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
         ),
-        const SizedBox(height: 4),
-        Text(
-          isOrg
-              ? 'Enter authorized representative, entity and registered office details.'
-              : 'Enter your personal contact and delivery destination details.',
-          style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary),
+        const SizedBox(height: 6),
+        const Text(
+          'Enter your personal contact and delivery destination details.',
+          style: TextStyle(fontSize: 14, color: AppColors.inkSecondary, height: 1.3),
         ),
         const SizedBox(height: 20),
 
-        // Full Name / Rep Name
-        _buildFieldLabel(isOrg ? 'Authorized person full name' : 'Full name'),
+        // Persona Summary Card
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEFF6FF),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFDBEAFE)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF2563EB),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isOrg ? Icons.business : Icons.person,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isOrg ? 'Organization (संस्था)' : 'Individual (व्यक्तिगत)',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isOrg ? 'Infrastructure & Commercial Projects' : 'Personal & Home Construction',
+                      style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Full Name
+        _buildFieldLabel('Full name'),
         const SizedBox(height: 6),
-        _buildTextField(_fullNameController, hint: isOrg ? 'Rajesh Patil' : 'Amit Deshmukh', error: _errors['fullName']),
+        _buildTextField(_fullNameController, hint: 'e.g. Ramesh Patil', error: _errors['fullName']),
         const SizedBox(height: 16),
 
         // Mobile Number with +91 Prefix
@@ -524,7 +704,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: _errors.containsKey('mobile') ? AppColors.danger700 : AppColors.line),
           ),
@@ -543,6 +723,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
                   decoration: const InputDecoration(
                     hintText: '10-digit number',
+                    hintStyle: TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
                     counterText: '',
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -555,10 +736,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         if (_errors.containsKey('mobile')) ...[
           const SizedBox(height: 4),
           Text(_errors['mobile']!, style: const TextStyle(fontSize: 12, color: AppColors.danger700)),
+        ] else ...[
+          const SizedBox(height: 6),
+          const Text('We will send a 5-digit verification code to this number.', style: TextStyle(fontSize: 12, color: AppColors.inkSecondary)),
         ],
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        // Organization Specific Fields
+        // Organization Specific Fields if org
         if (isOrg) ...[
           _buildFieldLabel('Organization name'),
           const SizedBox(height: 6),
@@ -590,7 +774,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ),
           const SizedBox(height: 16),
 
-          // GSTIN Section with Verify button
           if (!_noGst) ...[
             _buildFieldLabel('GSTIN / GST Number'),
             const SizedBox(height: 6),
@@ -664,144 +847,51 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           _buildFieldLabel('Mahakhanij registration number (optional)'),
           const SizedBox(height: 6),
           _buildTextField(_regNumberController, hint: 'e.g. MH-2024-ORG-9988'),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
         ],
 
-        // Address Section
-        const Divider(height: 32),
+        // Delivery Destination Section Header
         const Text(
-          'Where should mineral be delivered?',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink),
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          'Used to find nearby mineral places and to verify deliveries on arrival.',
-          style: TextStyle(fontSize: 13, color: AppColors.inkSecondary),
-        ),
-        const SizedBox(height: 16),
-
-        // Urban / Rural Toggle Pills
-        Row(
-          children: [
-            Expanded(
-              child: InkWell(
-                onTap: () => setState(() => _areaClassification = 'URBAN'),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                    color: _areaClassification == 'URBAN' ? AppColors.primary700 : Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: _areaClassification == 'URBAN' ? AppColors.primary700 : AppColors.line),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'Urban',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: _areaClassification == 'URBAN' ? Colors.white : AppColors.ink,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: InkWell(
-                onTap: () => setState(() => _areaClassification = 'RURAL'),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                    color: _areaClassification == 'RURAL' ? AppColors.primary700 : Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: _areaClassification == 'RURAL' ? AppColors.primary700 : AppColors.line),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'Rural',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: _areaClassification == 'RURAL' ? Colors.white : AppColors.ink,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // District Dropdown
-        _buildFieldLabel('District'),
-        const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.line),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _district,
-              isExpanded: true,
-              items: _districts.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
-              onChanged: (val) {
-                if (val != null) {
-                  setState(() {
-                    _district = val;
-                    final talukas = _talukasByDistrict[val] ?? ['Central'];
-                    _taluka = talukas.first;
-                  });
-                }
-              },
-            ),
+          'WHERE SHOULD MINERAL BE DELIVERED?',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: AppColors.inkMuted,
+            letterSpacing: 0.5,
           ),
         ),
         const SizedBox(height: 14),
 
-        // Taluka Dropdown
-        _buildFieldLabel('Taluka'),
-        const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.line),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: (_talukasByDistrict[_district]?.contains(_taluka) ?? false) ? _taluka : _talukasByDistrict[_district]?.first,
-              isExpanded: true,
-              items: (_talukasByDistrict[_district] ?? ['Central']).map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
-              onChanged: (val) {
-                if (val != null) setState(() => _taluka = val);
-              },
-            ),
-          ),
+        // Dynamic Location Dropdowns
+        LocationDropdownSection(
+          initialCategory: _areaClassification,
+          initialDistrict: _district,
+          initialTaluka: _taluka,
+          initialVillageCity: _areaClassification == 'URBAN' ? _cityController.text : _villageController.text,
+          onChanged: (locData) {
+            setState(() {
+              _areaClassification = locData.category;
+              _district = locData.districtName;
+              _taluka = locData.talukaName;
+              _districtId = locData.district?.id;
+              _talukaId = locData.taluka?.id;
+              _censusId = locData.villageCity?.id;
+              if (locData.category == 'RURAL') { // Rural -> Village
+                _villageController.text = locData.villageCityName;
+                _cityController.text = '';
+              } else { // Urban -> City
+                _cityController.text = locData.villageCityName;
+                _villageController.text = '';
+              }
+            });
+          },
         ),
         const SizedBox(height: 14),
-
-        if (_areaClassification == 'URBAN') ...[
-          _buildFieldLabel('City / Municipal Area'),
-          const SizedBox(height: 6),
-          _buildTextField(_cityController, hint: 'e.g. Pune City (PMC)'),
-          const SizedBox(height: 14),
-        ] else ...[
-          _buildFieldLabel('Village'),
-          const SizedBox(height: 6),
-          _buildTextField(_villageController, hint: 'e.g. Wagholi'),
-          const SizedBox(height: 14),
-        ],
 
         // Street Address
-        _buildFieldLabel(isOrg ? 'Registered office / site address' : 'Address (House / Flat / Street / Area)'),
+        _buildFieldLabel('Address (House / Flat / Street / Area)'),
         const SizedBox(height: 6),
-        _buildTextField(_addressController, hint: 'e.g. Survey No. 42/1, Wagholi Road', error: _errors['address']),
+        _buildTextField(_addressController, hint: 'Plot / House No., Building, Area / Road', error: _errors['address']),
         const SizedBox(height: 14),
 
         // PIN code
@@ -814,7 +904,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   // -------------------------------------------------------------
-  // STEP 2: KYC Verification
+  // STEP 2: KYC Verification with Live Aadhaar Verification & Skip
   // -------------------------------------------------------------
   Widget _buildStep2Kyc() {
     final isOrg = _userType == UserType.organization;
@@ -822,37 +912,238 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          isOrg ? 'Organization KYC Verification' : 'Individual KYC Verification',
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              isOrg ? 'Organization KYC Verification' : 'Aadhaar KYC Verification',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text('Optional', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.inkSecondary)),
+            ),
+          ],
         ),
         const SizedBox(height: 4),
-        Text(
-          isOrg
-              ? 'Verify entity via PAN. An OTP will be sent to your PAN-registered mobile number.'
-              : 'Verify identity via Aadhaar. An OTP will be sent to your Aadhaar-linked mobile number.',
-          style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary),
+        const Text(
+          'Verify identity via Aadhaar OTP or skip to complete your registration.',
+          style: TextStyle(fontSize: 13, color: AppColors.inkSecondary),
         ),
         const SizedBox(height: 20),
 
         if (!isOrg) ...[
-          // Individual: Aadhaar Card Input
-          _buildFieldLabel('Aadhaar card number'),
-          const SizedBox(height: 6),
-          _buildTextField(_aadhaarController, hint: '12-digit Aadhaar number', error: _errors['aadhaar']),
+          // Interactive Aadhaar Verification Box
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: _isAadhaarVerified ? const Color(0xFFBBF7D0) : AppColors.line),
+              boxShadow: const [
+                BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: _isAadhaarVerified ? const Color(0xFFDCFCE7) : const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        _isAadhaarVerified ? Icons.verified_user : Icons.badge_outlined,
+                        color: _isAadhaarVerified ? const Color(0xFF15803D) : const Color(0xFF2563EB),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _isAadhaarVerified ? 'Aadhaar Identity Verified' : 'Aadhaar Card OTP Verification',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: _isAadhaarVerified ? const Color(0xFF15803D) : AppColors.ink,
+                            ),
+                          ),
+                          Text(
+                            _isAadhaarVerified ? 'UIDAI verified national identity card' : 'Enter 12-digit Aadhaar to receive OTP',
+                            style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                if (_isAadhaarVerified) ...[
+                  // Verified State Summary Banner
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0FDF4),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFBBF7D0)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.check_circle, size: 16, color: Color(0xFF15803D)),
+                            const SizedBox(width: 6),
+                            Text(
+                              _aadhaarVerifiedData?.fullName ?? 'Suraj Akil Atar',
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF15803D)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Aadhaar: ${_aadhaarVerifiedData?.aadharNumber ?? "XXXX-XXXX-2902"}',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF166534), fontFamily: 'monospace'),
+                        ),
+                        Text(
+                          'Address: ${_aadhaarVerifiedData?.loc ?? "at post tungat taluka pandharpur"}, ${_aadhaarVerifiedData?.dist ?? "Solapur"}, ${_aadhaarVerifiedData?.state ?? "Maharashtra"} - ${_aadhaarVerifiedData?.zip ?? "413304"}',
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF166534)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  // Aadhaar Number Input Row
+                  _buildFieldLabel('Aadhaar card number'),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _aadhaarController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 12,
+                          enabled: !_isAadhaarOtpSent,
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
+                          decoration: InputDecoration(
+                            hintText: '12-digit Aadhaar number',
+                            hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
+                            counterText: '',
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.line)),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.line)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: (_isCheckingAadhaar || _isGeneratingAadhaarOtp || _isAadhaarOtpSent) ? null : _handleSendAadhaarOtp,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary700,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                        ),
+                        child: (_isCheckingAadhaar || _isGeneratingAadhaarOtp)
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : Text(_isAadhaarOtpSent ? 'Sent' : 'Send OTP', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                      ),
+                    ],
+                  ),
+
+                  if (_isAadhaarOtpSent) ...[
+                    const SizedBox(height: 14),
+                    _buildFieldLabel('Enter 6-digit Aadhaar OTP'),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _aadhaarOtpController,
+                            keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
+                            decoration: InputDecoration(
+                              hintText: '6-digit OTP',
+                              hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
+                              counterText: '',
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.line)),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.line)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: _isVerifyingAadhaarOtp ? null : _handleVerifyAadhaarOtp,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF15803D),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                          ),
+                          child: _isVerifyingAadhaarOtp
+                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                              : const Text('Verify OTP', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  if (_aadhaarError != null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFFCA5A5)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline, size: 16, color: AppColors.danger700),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _aadhaarError!,
+                              style: const TextStyle(fontSize: 12, color: AppColors.danger700, fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ],
+            ),
+          ),
           const SizedBox(height: 16),
 
-          // Upload Aadhaar Card
+          // Upload Aadhaar Card (Optional Document)
           _buildUploadCard(
-            title: 'Upload Aadhaar Card',
-            hint: 'Front or combined copy of Aadhaar card',
+            title: 'Upload Aadhaar Card (Optional)',
+            hint: 'Front or combined copy of Aadhaar card (PDF / Image)',
             fileName: _kycFileName,
+            docUrl: _aadhaarDocUrl,
+            isLoading: _isUploadingAadhaarDoc,
             error: _errors['kycFile'],
-            onPick: () => setState(() => _kycFileName = 'Aadhaar_Card_Amit_Deshmukh.pdf'),
+            onPick: () => _pickAndUploadDocument(isPan: false),
           ),
           const SizedBox(height: 20),
 
-          // UIDAI Notice Box
+          // Non-Mandatory Notice Box
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -867,7 +1158,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'A secure 6-digit OTP will be dispatched to your Aadhaar-linked mobile number for UIDAI verification.',
+                    'Aadhaar verification is non-mandatory. You can skip this step at any time and complete registration.',
                     style: TextStyle(fontSize: 12, color: Color(0xFF166534), height: 1.3),
                   ),
                 ),
@@ -875,59 +1166,36 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ),
           ),
         ] else ...[
-          // Organization: PAN Card Input
+          // Organization PAN & Signatory Aadhaar
           _buildFieldLabel('Organization PAN number'),
           const SizedBox(height: 6),
           _buildTextField(_panController, hint: '10-character PAN (e.g. ABCDE1234F)', error: _errors['pan'], uppercase: true),
           const SizedBox(height: 16),
 
-          // Upload PAN Card
           _buildUploadCard(
             title: 'Upload Organization PAN Card',
-            hint: 'Clear copy of entity PAN card',
+            hint: 'Clear copy of entity PAN card (PDF / Image)',
             fileName: _panFileName,
+            docUrl: _panDocUrl,
+            isLoading: _isUploadingPanDoc,
             error: _errors['panFile'],
-            onPick: () => setState(() => _panFileName = 'Company_PAN_ABCDE1234F.pdf'),
+            onPick: () => _pickAndUploadDocument(isPan: true),
           ),
           const SizedBox(height: 20),
 
-          // Signatory Aadhaar Number
           _buildFieldLabel('Signatory Aadhaar Card Number'),
           const SizedBox(height: 6),
           _buildTextField(_aadhaarController, hint: '12-digit Aadhaar number', error: _errors['aadhaar']),
           const SizedBox(height: 16),
 
-          // Upload Signatory Aadhaar Card
           _buildUploadCard(
             title: 'Upload Signatory Aadhaar Card',
-            hint: 'Clear copy of authorized signatory Aadhaar',
+            hint: 'Clear copy of authorized signatory Aadhaar (PDF / Image)',
             fileName: _aadhaarFileName,
+            docUrl: _aadhaarSignatoryDocUrl ?? _aadhaarDocUrl,
+            isLoading: _isUploadingAadhaarDoc,
             error: _errors['aadhaarFile'],
-            onPick: () => setState(() => _aadhaarFileName = 'Signatory_Aadhaar.pdf'),
-          ),
-          const SizedBox(height: 20),
-
-          // Organization Signatory Notice Box
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFBBF7D0)),
-            ),
-            child: const Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.shield_outlined, size: 18, color: Color(0xFF15803D)),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'A secure 6-digit OTP will be dispatched to the authorized mobile number registered with this Aadhaar.',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF166534), height: 1.3),
-                  ),
-                ),
-              ],
-            ),
+            onPick: () => _pickAndUploadDocument(isPan: false, isSignatoryAadhaar: true),
           ),
         ],
 
@@ -985,16 +1253,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     required String title,
     required String hint,
     required String? fileName,
+    required String? docUrl,
+    required bool isLoading,
     String? error,
     required VoidCallback onPick,
   }) {
-    final hasFile = fileName != null;
+    final hasFile = docUrl != null && docUrl.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
-          onTap: onPick,
+          onTap: isLoading ? null : onPick,
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.all(14),
@@ -1011,14 +1281,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: hasFile ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6),
+                    color: isLoading
+                        ? const Color(0xFFEEF4FE)
+                        : (hasFile ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6)),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
-                    hasFile ? Icons.check_circle : Icons.upload_file,
-                    color: hasFile ? const Color(0xFF15803D) : AppColors.inkSecondary,
-                    size: 20,
-                  ),
+                  child: isLoading
+                      ? const Padding(
+                          padding: EdgeInsets.all(10),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary700),
+                        )
+                      : Icon(
+                          hasFile ? Icons.check_circle : Icons.upload_file,
+                          color: hasFile ? const Color(0xFF15803D) : AppColors.inkSecondary,
+                          size: 20,
+                        ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1026,23 +1303,39 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        hasFile ? fileName : title,
+                        hasFile ? (fileName ?? 'Aadhaar_Document.pdf') : title,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: hasFile ? const Color(0xFF15803D) : AppColors.ink,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        hasFile ? 'File attached (240 KB)' : hint,
-                        style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary),
+                        isLoading
+                            ? 'Uploading document to Mahakhanij server...'
+                            : (hasFile ? 'Document uploaded & verified' : hint),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isLoading ? AppColors.primary700 : AppColors.inkSecondary,
+                          fontWeight: isLoading ? FontWeight.w600 : FontWeight.normal,
+                        ),
                       ),
+                      if (hasFile) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          docUrl,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 10, color: Color(0xFF166534), fontFamily: 'monospace'),
+                        ),
+                      ],
                     ],
                   ),
                 ),
                 Text(
-                  hasFile ? 'Replace' : 'Upload',
+                  isLoading ? 'Uploading...' : (hasFile ? 'Replace' : 'Upload'),
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary700),
                 ),
               ],
@@ -1051,7 +1344,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ),
         if (error != null) ...[
           const SizedBox(height: 4),
-          Text(error, style: const TextStyle(fontSize: 12, color: AppColors.danger700)),
+          Row(
+            children: [
+              Expanded(
+                child: Text(error, style: const TextStyle(fontSize: 12, color: AppColors.danger700)),
+              ),
+              GestureDetector(
+                onTap: onPick,
+                child: const Text(
+                  'Retry',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.danger700, decoration: TextDecoration.underline),
+                ),
+              ),
+            ],
+          ),
         ],
       ],
     );

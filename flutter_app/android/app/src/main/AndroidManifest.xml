@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.mahakhanij.consumer">
+    package="com.mahakhanij.consumerapp">
 
     <!-- Permissions required for DigiTP QR scanner, GPS map pinning, and API communication -->
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -13,7 +13,7 @@
     <application
         android:label="Mahakhanij"
         android:name="${applicationName}"
-        android:icon="@android:drawable/sym_def_app_icon"
+        android:icon="@mipmap/launcher_icon"
         android:usesCleartextTraffic="true">
 
         <activity
@@ -41,5 +41,10 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Google Maps API Key for Live Vehicle Tracking -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyC0QWhZ9_4KDv4l6jgc7IV0IqXXxXDn-dg" />
     </application>
 </manifest>

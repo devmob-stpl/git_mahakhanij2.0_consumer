@@ -41,9 +41,9 @@ class _PackageDetailsScreenState extends ConsumerState<PackageDetailsScreen> {
       'category': 'Aggregate',
       'available': 5.0,
       'unit': 'Brass',
-      'color': Color(0xFF1A5FE8),
+      'color': Color(0xFF2563EB),
       'bgColor': Color(0xFFEEF4FE),
-      'textColor': Color(0xFF1550CC),
+      'textColor': Color(0xFF2563EB),
     },
     {
       'id': 'min-murum',
@@ -377,7 +377,7 @@ class _PackageDetailsScreenState extends ConsumerState<PackageDetailsScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(color: const Color(0xFFEEF4FE), borderRadius: BorderRadius.circular(10)),
-                      child: const Icon(Icons.engineering_outlined, color: Color(0xFF1241A6), size: 22),
+                      child: const Icon(Icons.engineering_outlined, color: Color(0xFF2563EB), size: 22),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -397,7 +397,7 @@ class _PackageDetailsScreenState extends ConsumerState<PackageDetailsScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF1241A6),
+                          foregroundColor: const Color(0xFF2563EB),
                           side: const BorderSide(color: Color(0xFFBFDBFE)),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           padding: const EdgeInsets.symmetric(vertical: 8),

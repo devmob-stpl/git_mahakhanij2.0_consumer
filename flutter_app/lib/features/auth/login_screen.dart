@@ -1,35 +1,87 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
-import '../../shared/widgets/app_button.dart';
-import '../../shared/widgets/prototype_bar.dart';
+import '../../providers/session_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  final String? initialMobile;
+  const LoginScreen({super.key, this.initialMobile});
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _mobileController = TextEditingController();
+  late final TextEditingController _mobileController;
+  final FocusNode _mobileFocusNode = FocusNode();
+  final List<FocusNode> _focusNodes = List.generate(5, (_) => FocusNode());
+  final List<TextEditingController> _digitControllers = List.generate(5, (_) => TextEditingController());
+
+  bool _isOtpSent = false;
+  bool _isLoading = false;
   String? _error;
+  int _secondsLeft = 30;
+  Timer? _countdownTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _mobileController = TextEditingController(text: widget.initialMobile ?? '');
+    _mobileFocusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void dispose() {
+    _countdownTimer?.cancel();
+    _mobileFocusNode.removeListener(_onFocusChange);
+    _mobileFocusNode.dispose();
     _mobileController.dispose();
+    for (final node in _focusNodes) {
+      node.dispose();
+    }
+    for (final controller in _digitControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
-  void _fillNumber(String num) {
-    setState(() {
-      _mobileController.text = num;
-      _error = null;
+  void _startTimer() {
+    _secondsLeft = 30;
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsLeft <= 1) {
+        timer.cancel();
+        if (mounted) setState(() => _secondsLeft = 0);
+      } else {
+        if (mounted) setState(() => _secondsLeft--);
+      }
     });
   }
 
-  void _handleSubmit() {
+  void _resetOtpState() {
+    _countdownTimer?.cancel();
+    setState(() {
+      _isOtpSent = false;
+      _mobileController.clear();
+      _error = null;
+      for (final c in _digitControllers) {
+        c.clear();
+      }
+    });
+  }
+
+  String _getEnteredCode() {
+    return _digitControllers.map((c) => c.text).join();
+  }
+
+  Future<void> _handleSendOtp() async {
     final mobile = _mobileController.text.trim();
     if (mobile.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
       setState(() {
@@ -38,239 +90,432 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
 
-    context.push('/otp', extra: mobile);
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final authRepo = ref.read(authRepositoryProvider);
+    final response = await authRepo.sendVerificationCode(mobile);
+
+    if (!mounted) return;
+
+    if (response.isSuccess) {
+      setState(() {
+        _isLoading = false;
+        _isOtpSent = true;
+      });
+      _startTimer();
+      if (_focusNodes.isNotEmpty) {
+        _focusNodes[0].requestFocus();
+      }
+    } else {
+      setState(() {
+        _isLoading = false;
+        _error = response.statusMessage.isNotEmpty
+            ? response.statusMessage
+            : 'User Not Available';
+      });
+    }
+  }
+
+  Future<void> _handleVerifyOtp() async {
+    final code = _getEnteredCode().trim();
+    if (code.length != 5) {
+      setState(() {
+        _error = 'Please enter complete 5-digit OTP.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final mobile = _mobileController.text.trim();
+    final response = await ref.read(sessionProvider.notifier).loginWithVerificationCode(
+      mobile,
+      code,
+    );
+
+    if (!mounted) return;
+
+    if (response.isSuccess) {
+      setState(() => _isLoading = false);
+      context.go('/home');
+    } else {
+      setState(() {
+        _isLoading = false;
+        _error = response.statusMessage.isNotEmpty
+            ? response.statusMessage
+            : 'Invalid OTP. Please try again.';
+        for (final c in _digitControllers) {
+          c.clear();
+        }
+        if (_focusNodes.isNotEmpty) {
+          _focusNodes[0].requestFocus();
+        }
+      });
+    }
+  }
+
+  Future<void> _handleResendOtp() async {
+    final mobile = _mobileController.text.trim();
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final response = await ref.read(authRepositoryProvider).sendVerificationCode(mobile);
+
+    if (!mounted) return;
+
+    if (response.isSuccess) {
+      setState(() {
+        _isLoading = false;
+        for (final c in _digitControllers) {
+          c.clear();
+        }
+      });
+      _startTimer();
+      if (_focusNodes.isNotEmpty) {
+        _focusNodes[0].requestFocus();
+      }
+    } else {
+      setState(() {
+        _isLoading = false;
+        _error = response.statusMessage;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final hasInput = _mobileController.text.trim().isNotEmpty;
+    const primaryBlue = Color(0xFF2563EB);
 
     return Scaffold(
-      backgroundColor: AppColors.canvas,
-      body: Column(
-        children: [
-          const PrototypeBar(),
-          // Auth Header Bar with Back Button
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: IconButton(
-                icon: const Icon(Icons.chevron_left, size: 28, color: AppColors.ink),
-                onPressed: () => context.pop(),
-              ),
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Sign in',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ink,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'We will send a 6-digit verification code to this number.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.inkSecondary,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        bottom: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
+                ),
+                child: IntrinsicHeight(
+                  child: Column(
+                    children: [
+                      const Spacer(flex: 2),
 
-                  // Mobile Number Field
-                  const Text(
-                    'Mobile number',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: _error != null ? AppColors.danger700 : AppColors.line,
+                      // App Title: Mahakhanij 2•0
+                      RichText(
+                        textAlign: TextAlign.center,
+                        text: const TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Mahakhanij ',
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: primaryBlue,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            TextSpan(
+                              text: '2•0',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: primaryBlue,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 14),
-                          child: Text(
-                            '+91',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.inkSecondary,
+                      const SizedBox(height: 36),
+
+                      // Section Header: LOGIN
+                      const Text(
+                        'LOGIN',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: primaryBlue,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Mobile Number Input Box
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 36),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3F5F8),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: _error != null
+                                  ? AppColors.danger700
+                                  : (_mobileFocusNode.hasFocus && !_isOtpSent
+                                      ? primaryBlue
+                                      : const Color(0xFFCBD5E1)),
+                              width: (_mobileFocusNode.hasFocus && !_isOtpSent && _error == null) ? 1.5 : 1.0,
                             ),
                           ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _mobileController,
+                                  focusNode: _mobileFocusNode,
+                                  keyboardType: TextInputType.phone,
+                                  maxLength: 10,
+                                  enabled: !_isLoading && !_isOtpSent,
+                                  onChanged: (_) {
+                                    if (_error != null) setState(() => _error = null);
+                                  },
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                  decoration: const InputDecoration(
+                                    hintText: 'Mobile Number',
+                                    hintStyle: TextStyle(
+                                      color: Color(0xFF94A3B8),
+                                      fontSize: 15,
+                                    ),
+                                    counterText: '',
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              if (_isOtpSent)
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 12),
+                                  child: GestureDetector(
+                                    onTap: _resetOtpState,
+                                    child: const Icon(
+                                      Icons.cancel,
+                                      color: Color(0xFFEF4444),
+                                      size: 22,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
-                        Container(width: 1, height: 24, color: AppColors.line),
-                        Expanded(
-                          child: TextField(
-                            controller: _mobileController,
-                            keyboardType: TextInputType.phone,
-                            maxLength: 10,
-                            autofocus: true,
-                            onChanged: (_) {
-                              if (_error != null) setState(() => _error = null);
-                              setState(() {});
-                            },
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
-                            decoration: const InputDecoration(
-                              hintText: '10-digit number',
-                              counterText: '',
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                      ),
+
+                      // OTP Boxes Row (visible when OTP is sent)
+                      if (_isOtpSent) ...[
+                        const SizedBox(height: 16),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 36),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: List.generate(5, (index) {
+                                  return SizedBox(
+                                    width: 48,
+                                    height: 48,
+                                    child: TextField(
+                                      controller: _digitControllers[index],
+                                      focusNode: _focusNodes[index],
+                                      textCapitalization: TextCapitalization.characters,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.allow(RegExp(r'[A-Z0-9]')),
+                                      ],
+                                      textAlign: TextAlign.center,
+                                      enabled: !_isLoading,
+                                      maxLength: 1,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1E293B),
+                                      ),
+                                      decoration: InputDecoration(
+                                        counterText: '',
+                                        filled: true,
+                                        fillColor: const Color(0xFFF3F5F8),
+                                        contentPadding: EdgeInsets.zero,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: const BorderSide(
+                                            color: primaryBlue,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                      onChanged: (val) {
+                                        if (_error != null) setState(() => _error = null);
+                                        if (val.isNotEmpty) {
+                                          if (index < 4) {
+                                            _focusNodes[index + 1].requestFocus();
+                                          } else {
+                                            _focusNodes[index].unfocus();
+                                            _handleVerifyOtp();
+                                          }
+                                        } else {
+                                          if (index > 0) {
+                                            _focusNodes[index - 1].requestFocus();
+                                          }
+                                        }
+                                        setState(() {});
+                                      },
+                                    ),
+                                  );
+                                }),
+                              ),
+                              const SizedBox(height: 8),
+
+                              // Timer / Resend OTP text
+                              _secondsLeft > 0
+                                  ? Text(
+                                      'Please wait $_secondsLeft Seconds',
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: primaryBlue,
+                                      ),
+                                    )
+                                  : GestureDetector(
+                                      onTap: _isLoading ? null : _handleResendOtp,
+                                      child: const Text(
+                                        'Resend OTP',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: primaryBlue,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      // Error message if any
+                      if (_error != null) ...[
+                        const SizedBox(height: 10),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 36),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              _error!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.danger700,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                  if (_error != null) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      _error!,
-                      style: const TextStyle(fontSize: 12, color: AppColors.danger700),
-                    ),
-                  ],
 
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      const Text(
-                        'New to Mahakhanij? ',
-                        style: TextStyle(fontSize: 13, color: AppColors.inkSecondary),
-                      ),
-                      GestureDetector(
-                        onTap: () => context.push('/register'),
-                        child: const Text(
-                          'Create account',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary700,
-                            decoration: TextDecoration.underline,
+                      const SizedBox(height: 24),
+
+                      // Button: Get OTP / Login
+                      SizedBox(
+                        width: 150,
+                        height: 44,
+                        child: ElevatedButton(
+                          onPressed: _isLoading
+                              ? null
+                              : (_isOtpSent ? _handleVerifyOtp : _handleSendOtp),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryBlue,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Text(
+                                  _isOtpSent ? 'Login' : 'Get OTP',
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                         ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Sub-link: New Member? Sign Up
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'New Member? ',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF334155),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => context.push('/register'),
+                            child: const Text(
+                              'Sign Up',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: primaryBlue,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const Spacer(flex: 3),
+
+                      // Bottom Mining Banner Illustration
+                      Image.asset(
+                        'assets/images/img.png',
+                        width: double.infinity,
+                        fit: BoxFit.fitWidth,
+                        alignment: Alignment.bottomCenter,
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 32),
-                  // Prototype Quick Fill Demo Numbers Card
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFFBEB),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFFCD34D)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '⚡ Quick Fill Demo Numbers:',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF78350F)),
-                            ),
-                            Text(
-                              'Tap to fill',
-                              style: TextStyle(fontSize: 10, color: Color(0xFFB45309)),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            InkWell(
-                              onTap: () => _fillNumber('9822014576'),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: const Color(0xFFFCD34D)),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      '9822014576',
-                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF78350F)),
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      '(Organization)',
-                                      style: TextStyle(fontSize: 11, color: Color(0xFFB45309)),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            InkWell(
-                              onTap: () => _fillNumber('9730845120'),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: const Color(0xFFFCD34D)),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      '9730845120',
-                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF78350F)),
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      '(Individual)',
-                                      style: TextStyle(fontSize: 11, color: Color(0xFFB45309)),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: AppButton(
-              label: 'Continue',
-              fullWidth: true,
-              size: AppButtonSize.large,
-              onPressed: hasInput ? _handleSubmit : null,
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
     );
   }
 }
+
+

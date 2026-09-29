@@ -19,17 +19,18 @@ class AppColors {
   static const Color neutral800 = Color(0xFF1E293B);
   static const Color neutral900 = Color(0xFF0F172A); // Primary ink
 
-  // Primary Institutional Blue Scale
-  static const Color primary50 = Color(0xFFEEF4FE);
-  static const Color primary100 = Color(0xFFDCE8FD);
-  static const Color primary200 = Color(0xFFBFD5FB);
-  static const Color primary300 = Color(0xFF91B9F8);
-  static const Color primary400 = Color(0xFF5A91F0);
-  static const Color primary500 = Color(0xFF1A5FE8);
-  static const Color primary600 = Color(0xFF1550CC);
-  static const Color primary700 = Color(0xFF1241A6); // Primary Brand & Active CTA
-  static const Color primary800 = Color(0xFF123788);
-  static const Color primary900 = Color(0xFF132F6D);
+  // Primary Institutional Blue Scale (#2563EB Theme)
+  static const Color primary = Color(0xFF2563EB); // Central Primary Theme Color (#2563EB)
+  static const Color primary50 = Color(0xFFEFF6FF);
+  static const Color primary100 = Color(0xFFDBEAFE);
+  static const Color primary200 = Color(0xFFBFDBFE);
+  static const Color primary300 = Color(0xFF93C5FD);
+  static const Color primary400 = Color(0xFF60A5FA);
+  static const Color primary500 = Color(0xFF2563EB);
+  static const Color primary600 = Color(0xFF2563EB);
+  static const Color primary700 = Color(0xFF2563EB); // Primary Brand & Active CTA (#2563EB)
+  static const Color primary800 = Color(0xFF2563EB);
+  static const Color primary900 = Color(0xFF1E40AF);
 
   // Success Green Scale
   static const Color success50 = Color(0xFFDCFCE7);

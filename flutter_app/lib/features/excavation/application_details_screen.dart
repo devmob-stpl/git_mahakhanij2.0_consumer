@@ -48,7 +48,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
                           color: const Color(0xFFEFF6FF),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.picture_as_pdf, color: Color(0xFF1D4ED8), size: 24),
+                        child: const Icon(Icons.picture_as_pdf, color: Color(0xFF2563EB), size: 24),
                       ),
                       const SizedBox(width: 12),
                       Column(
@@ -114,8 +114,8 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
                           SnackBar(content: Text('Downloading $filename...')),
                         );
                       },
-                      icon: const Icon(Icons.download, size: 18, color: Color(0xFF1D4ED8)),
-                      label: const Text('Download', style: TextStyle(color: Color(0xFF1D4ED8), fontWeight: FontWeight.w600)),
+                      icon: const Icon(Icons.download, size: 18, color: Color(0xFF2563EB)),
+                      label: const Text('Download', style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.w600)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -123,7 +123,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: const Color(0xFF1D4ED8),
+                        backgroundColor: const Color(0xFF2563EB),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
@@ -213,7 +213,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
                     height: 48,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1D4ED8),
+                        backgroundColor: const Color(0xFF2563EB),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
@@ -330,7 +330,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
                         children: [
                           Icon(
                             uploadedDocName != null ? Icons.check_circle : Icons.upload_file,
-                            color: uploadedDocName != null ? const Color(0xFF16A34A) : const Color(0xFF1D4ED8),
+                            color: uploadedDocName != null ? const Color(0xFF16A34A) : const Color(0xFF2563EB),
                             size: 20,
                           ),
                           const SizedBox(width: 8),
@@ -339,7 +339,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: uploadedDocName != null ? const Color(0xFF16A34A) : const Color(0xFF1D4ED8),
+                              color: uploadedDocName != null ? const Color(0xFF16A34A) : const Color(0xFF2563EB),
                             ),
                           ),
                         ],
@@ -366,7 +366,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
                     height: 48,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1D4ED8),
+                        backgroundColor: const Color(0xFF2563EB),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
@@ -426,12 +426,12 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
       case TemporaryExcavationStatus.underReview:
         statusBadgeLabel = 'Under Review';
         statusBadgeBg = const Color(0xFFEFF6FF);
-        statusBadgeFg = const Color(0xFF1D4ED8);
+        statusBadgeFg = const Color(0xFF2563EB);
         break;
       default:
         statusBadgeLabel = 'Submitted';
         statusBadgeBg = const Color(0xFFEFF6FF);
-        statusBadgeFg = const Color(0xFF1D4ED8);
+        statusBadgeFg = const Color(0xFF2563EB);
         break;
     }
 
@@ -651,10 +651,10 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1D4ED8) : Colors.white,
+          color: isSelected ? const Color(0xFF2563EB) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF1D4ED8) : const Color(0xFFE2E8F0),
+            color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
           ),
         ),
         child: Row(
@@ -663,7 +663,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
             Icon(
               icon,
               size: 16,
-              color: isSelected ? Colors.white : const Color(0xFF1D4ED8),
+              color: isSelected ? Colors.white : const Color(0xFF2563EB),
             ),
             const SizedBox(width: 6),
             Text(
@@ -766,7 +766,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
                       width: 6,
                       height: 6,
                       decoration: const BoxDecoration(
-                        color: Color(0xFF1D4ED8),
+                        color: Color(0xFF2563EB),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -776,7 +776,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
                       style: const TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1D4ED8),
+                        color: Color(0xFF2563EB),
                       ),
                     ),
                   ],
@@ -906,7 +906,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
                             style: TextStyle(
                               fontSize: 9.5,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF1D4ED8),
+                              color: Color(0xFF2563EB),
                             ),
                           ),
                         ),
@@ -965,9 +965,9 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
           height: 28,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isDone ? const Color(0xFF1D4ED8) : Colors.white,
+            color: isDone ? const Color(0xFF2563EB) : Colors.white,
             border: Border.all(
-              color: isDone ? const Color(0xFF1D4ED8) : const Color(0xFFCBD5E1),
+              color: isDone ? const Color(0xFF2563EB) : const Color(0xFFCBD5E1),
               width: 1.5,
             ),
           ),
@@ -979,7 +979,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: isActive ? const Color(0xFF1D4ED8) : const Color(0xFF64748B),
+                      color: isActive ? const Color(0xFF2563EB) : const Color(0xFF64748B),
                     ),
                   ),
           ),
@@ -990,7 +990,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
           style: TextStyle(
             fontSize: 11.5,
             fontWeight: isDone || isActive ? FontWeight.w700 : FontWeight.w500,
-            color: isDone || isActive ? const Color(0xFF1D4ED8) : const Color(0xFF64748B),
+            color: isDone || isActive ? const Color(0xFF2563EB) : const Color(0xFF64748B),
           ),
         ),
       ],
@@ -1002,7 +1002,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
       child: Container(
         margin: const EdgeInsets.only(top: 13, left: 4, right: 4),
         height: 2,
-        color: isDone ? const Color(0xFF1D4ED8) : const Color(0xFFE2E8F0),
+        color: isDone ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
       ),
     );
   }
@@ -1086,7 +1086,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: const Color(0xFF1D4ED8)),
+              Icon(icon, size: 16, color: const Color(0xFF2563EB)),
               const SizedBox(width: 6),
               Text(
                 title,
@@ -1157,7 +1157,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
           subtitle: 'DM No. 244 · Akole Tahsil Office',
           icon: Icons.article_outlined,
           iconBg: const Color(0xFFEFF6FF),
-          iconColor: const Color(0xFF1D4ED8),
+          iconColor: const Color(0xFF2563EB),
           downloadBg: const Color(0xFFF1F5F9),
           downloadColor: const Color(0xFF475569),
           onDownload: () {
@@ -1356,14 +1356,14 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.add_circle_outline, color: Color(0xFF1D4ED8), size: 20),
+                Icon(Icons.add_circle_outline, color: Color(0xFF2563EB), size: 20),
                 SizedBox(width: 8),
                 Text(
                   'Upload Additional Document',
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1D4ED8),
+                    color: Color(0xFF2563EB),
                   ),
                 ),
               ],
@@ -1501,7 +1501,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
               child: Icon(
                 icon,
                 size: 20,
-                color: isActive ? const Color(0xFF1241A6) : const Color(0xFF64748B),
+                color: isActive ? const Color(0xFF2563EB) : const Color(0xFF64748B),
               ),
             ),
             const SizedBox(height: 3),
@@ -1510,7 +1510,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                color: isActive ? const Color(0xFF1241A6) : const Color(0xFF64748B),
+                color: isActive ? const Color(0xFF2563EB) : const Color(0xFF64748B),
               ),
             ),
           ],

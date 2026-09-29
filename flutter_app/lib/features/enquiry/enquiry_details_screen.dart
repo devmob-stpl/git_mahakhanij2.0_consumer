@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../domain/consumer_digitp_models.dart';
 import '../../domain/enquiry.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/app_button.dart';
@@ -28,7 +29,7 @@ class EnquiryDetailsScreen extends ConsumerWidget {
       badgeFg = const Color(0xFF16A34A);
     } else {
       badgeBg = const Color(0xFFEFF6FF);
-      badgeFg = const Color(0xFF1D4ED8);
+      badgeFg = const Color(0xFF2563EB);
     }
 
     Widget? bottomAction;
@@ -55,8 +56,12 @@ class EnquiryDetailsScreen extends ConsumerWidget {
         onPressed: () {
           showDigiTpPassModal(
             context,
-            digiTpNumber: 'ETP/2026/MH/0431188',
-            destination: enq.packageName ?? 'Package A — Km 12 to Km 28',
+            item: ConsumerDigiTpItem(
+              invoiceNo: 'ETP/2026/MH/0431188',
+              destination: enq.packageName,
+              materialType: enq.mineralName,
+              quantity: enq.requiredQuantity.value,
+            ),
           );
         },
       );
@@ -257,7 +262,7 @@ class EnquiryDetailsScreen extends ConsumerWidget {
               child: Icon(
                 icon,
                 size: 20,
-                color: isActive ? const Color(0xFF1241A6) : const Color(0xFF64748B),
+                color: isActive ? const Color(0xFF2563EB) : const Color(0xFF64748B),
               ),
             ),
             const SizedBox(height: 3),
@@ -266,7 +271,7 @@ class EnquiryDetailsScreen extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                color: isActive ? const Color(0xFF1241A6) : const Color(0xFF64748B),
+                color: isActive ? const Color(0xFF2563EB) : const Color(0xFF64748B),
               ),
             ),
           ],
