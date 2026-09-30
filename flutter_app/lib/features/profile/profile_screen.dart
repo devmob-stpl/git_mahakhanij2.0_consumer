@@ -14,6 +14,7 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../shared/widgets/location_dropdown_section.dart';
 import '../../l10n/app_localizations.dart';
+import 'package:flutter/services.dart';
 
 enum KycStep { view, upload, success }
 
@@ -967,6 +968,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   label: '${loc.profileName} *',
                                   controller: _nameController,
                                   prefixIcon: const Icon(Icons.person_outline, size: 18),
+                                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]'))],
+                                  keyboardType: TextInputType.name,
                                 ),
                                 const SizedBox(height: 12),
                                 AppTextField(
@@ -975,6 +978,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   enabled: false,
                                   prefixIcon: const Icon(Icons.phone_outlined, size: 18),
                                   helperText: 'Verified via Government OTP (Locked)',
+                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                  keyboardType: TextInputType.phone,
+                                  maxLength: 10,
                                 ),
                                 const SizedBox(height: 12),
                                 AppTextField(
@@ -1030,6 +1036,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   label: '${loc.profileAddress} *',
                                   controller: _line1Controller,
                                   prefixIcon: const Icon(Icons.location_on_outlined, size: 18),
+                                  keyboardType: TextInputType.streetAddress,
                                 ),
                                 const SizedBox(height: 14),
                                 LocationDropdownSection(
@@ -1060,6 +1067,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   controller: _pincodeController,
                                   keyboardType: TextInputType.number,
                                   prefixIcon: const Icon(Icons.pin_drop_outlined, size: 18),
+                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                  maxLength: 6,
                                 ),
                               ],
                             ),

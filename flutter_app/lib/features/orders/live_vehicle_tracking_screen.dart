@@ -482,6 +482,9 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
     final locationStr = location.locationName ?? 'Tracking Live GPS';
 
     Set<Polyline> polylines = {};
+
+    LatLng? srcLatLng;
+    LatLng? destLatLng;
     if (trip != null && trip.sourceLatLong != null && trip.destinationLatLong != null) {
       try {
         final srcParts = trip.sourceLatLong!.split(',');
@@ -491,16 +494,9 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
           final srcLng = double.tryParse(srcParts[1].trim());
           final destLat = double.tryParse(destParts[0].trim());
           final destLng = double.tryParse(destParts[1].trim());
-          
           if (srcLat != null && srcLng != null && destLat != null && destLng != null) {
-            polylines.add(
-              Polyline(
-                polylineId: const PolylineId('route'),
-                points: [LatLng(srcLat, srcLng), LatLng(destLat, destLng)],
-                color: Colors.blueAccent,
-                width: 5,
-              ),
-            );
+            srcLatLng = LatLng(srcLat, srcLng);
+            destLatLng = LatLng(destLat, destLng);
           }
         }
       } catch (_) {}
@@ -540,6 +536,20 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
                     title: '${location.vehicleNo ?? _activeVehicleNo} ($speedText)',
                     snippet: locationStr,
                   ),
+                ),
+              if (srcLatLng != null)
+                Marker(
+                  markerId: const MarkerId('source_marker'),
+                  position: srcLatLng,
+                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+                  infoWindow: InfoWindow(title: 'Source: ${trip?.plotName ?? 'Plot'}'),
+                ),
+              if (destLatLng != null)
+                Marker(
+                  markerId: const MarkerId('destination_marker'),
+                  position: destLatLng,
+                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                  infoWindow: InfoWindow(title: 'Destination: ${trip?.destination ?? 'Site'}'),
                 ),
             },
           ),

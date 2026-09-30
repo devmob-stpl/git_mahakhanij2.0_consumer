@@ -224,8 +224,14 @@ class VehicleTripData {
           ? (json['distance'] as num)
           : num.tryParse(json['distance']?.toString() ?? ''),
       plotName: json['plotName']?.toString(),
-      sourceLatLong: json['sourceLatLong']?.toString(),
-      destinationLatLong: json['destinationLatLong']?.toString(),
+      sourceLatLong: json['sourceLatLong']?.toString() ?? 
+          (json['plot_Latitude'] != null && json['plot_Longitude'] != null 
+              ? '${json['plot_Latitude']},${json['plot_Longitude']}' 
+              : null),
+      destinationLatLong: json['destinationLatLong']?.toString() ?? 
+          (json['destination_Latitude'] != null && json['destination_Longitude'] != null 
+              ? '${json['destination_Latitude']},${json['destination_Longitude']}' 
+              : null),
     );
   }
 
