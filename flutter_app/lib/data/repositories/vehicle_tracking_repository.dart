@@ -6,6 +6,7 @@ import '../../domain/vehicle_tracking_models.dart';
 abstract class VehicleTrackingRepository {
   Future<VehicleTrackingApiResponse> getVehicleLocationAndTrip({
     required String vehicleNo,
+    String? deliveryId,
   });
 }
 
@@ -24,6 +25,7 @@ class VehicleTrackingRepositoryImpl implements VehicleTrackingRepository {
   @override
   Future<VehicleTrackingApiResponse> getVehicleLocationAndTrip({
     required String vehicleNo,
+    String? deliveryId,
   }) async {
     final cleanedVehicleNo = vehicleNo.trim();
     if (cleanedVehicleNo.isEmpty) {
@@ -34,21 +36,48 @@ class VehicleTrackingRepositoryImpl implements VehicleTrackingRepository {
     }
 
     try {
-      final url = ApiEndpoints.getVehicleTrackingLocationAndTripUrl(cleanedVehicleNo);
-      final response = await _dio.get(url);
+      final locUrl = ApiEndpoints.getVehicleTrackingLocationUrl(cleanedVehicleNo);
+      final locResponse = await _dio.get(locUrl);
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
+      dynamic locData = locResponse.data;
+      if (locData is String) {
+        locData = jsonDecode(locData);
       }
 
-      if (data is Map<String, dynamic>) {
-        return VehicleTrackingApiResponse.fromJson(data);
+      List<VehicleLocationData>? locationList;
+      if (locData != null && locData['responseData'] != null) {
+        // The new API returns a single object in responseData, not a list
+        if (locData['responseData'] is Map<String, dynamic>) {
+          locationList = [VehicleLocationData.fromJson(locData['responseData'] as Map<String, dynamic>)];
+        }
       }
 
-      return const VehicleTrackingApiResponse(
-        statusCode: '500',
-        statusMessage: 'Invalid response format received from tracking server.',
+      List<VehicleTripData>? tripList;
+      if (deliveryId != null && deliveryId.isNotEmpty) {
+        try {
+          final tripUrl = ApiEndpoints.getConsumerInvoiceDetailsUrl(deliveryId);
+          final tripResponse = await _dio.get(tripUrl);
+          
+          dynamic tripData = tripResponse.data;
+          if (tripData is String) {
+            tripData = jsonDecode(tripData);
+          }
+          
+          if (tripData != null && tripData['responseData'] != null) {
+            if (tripData['responseData'] is Map<String, dynamic>) {
+              tripList = [VehicleTripData.fromJson(tripData['responseData'] as Map<String, dynamic>)];
+            }
+          }
+        } catch (_) {
+          // If trip fails, we can still return location data
+        }
+      }
+
+      return VehicleTrackingApiResponse(
+        statusCode: locData?['statusCode']?.toString() ?? '200',
+        statusMessage: locData?['statusMessage']?.toString() ?? 'Success',
+        responseData: locationList,
+        responseData1: tripList,
       );
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout ||

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../../domain/scan_result.dart';
 import '../utils/aes_utils.dart';
@@ -14,29 +15,36 @@ class ScanProcessingService {
       );
     }
 
-    final processedContent = AesUtils.utf8Parse(rawContent);
+    String candidateString = '';
 
-    if (processedContent.isEmpty) {
-      throw const FormatException(
-        'Invalid QR code or barcode.',
-      );
-    }
+    // Handle Barcode Scans
+    if (!result.isQrCode && result.format != 'manual') {
+      debugPrint('Processing Barcode: Decoding Base64...');
+      try {
+        final decodedBytes = base64.decode(rawContent);
+        candidateString = utf8.decode(decodedBytes);
+        debugPrint('Base64 Decoded Barcode Payload: $candidateString');
+      } catch (e) {
+        debugPrint('Base64 Decoding failed for Barcode, falling back to raw payload: $e');
+        candidateString = rawContent;
+      }
+    } 
+    // Handle QR Codes and Manual Fallback
+    else {
+      final processedContent = AesUtils.utf8Parse(rawContent);
+      if (processedContent.isEmpty) {
+        throw const FormatException(
+          'Invalid QR code or manual input.',
+        );
+      }
 
-    debugPrint('========== SCAN PROCESSING SERVICE ==========');
-    debugPrint('Raw Content: $rawContent');
-    debugPrint('Processed Content: $processedContent');
-    debugPrint('Is QR: ${result.isQrCode}');
+      candidateString = processedContent;
 
-    String candidateString = processedContent;
+      if (RegExp(r'^\d+$').hasMatch(processedContent)) {
+        debugPrint('Payload is direct numeric invoice number: $processedContent');
+        return int.parse(processedContent).toString();
+      }
 
-    // 1. Direct check: if payload is already pure digits (e.g. "491" or "0436610"), use directly
-    if (RegExp(r'^\d+$').hasMatch(processedContent)) {
-      debugPrint('Payload is direct numeric invoice number: $processedContent');
-      return int.parse(processedContent).toString();
-    }
-
-    // 2. Attempt AES decryption if marked as QR code or payload length looks like Base64
-    if (result.isQrCode || processedContent.length >= 12) {
       try {
         final decrypted = AesUtils.decryptStringAES(processedContent);
         if (decrypted.trim().isNotEmpty) {
@@ -54,7 +62,6 @@ class ScanProcessingService {
         .replaceAll('\n', '')
         .trim();
 
-    // 3. Extract numeric digits from candidate string (e.g. "491" from "491" or "Invoice: 491")
     final match = RegExp(r'\d+').firstMatch(cleanedValue);
     final String digitsOnly = match != null ? match.group(0)! : cleanedValue;
 

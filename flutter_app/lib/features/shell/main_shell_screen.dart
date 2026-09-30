@@ -5,6 +5,7 @@ import '../../core/config/app_config.dart';
 import '../../core/constants/app_colors.dart';
 import '../../domain/user.dart';
 import '../../providers/session_provider.dart';
+import '../../l10n/app_localizations.dart';
 
 class MainShellScreen extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
@@ -18,17 +19,18 @@ class MainShellScreen extends ConsumerWidget {
 
     // Organization: Home(0) -> Projects(1) -> Activity(2) -> More(4)
     // Consumer:     Home(0) -> Activity(2) -> More(4)
+    final loc = AppLocalizations.of(context)!;
     final tabConfigs = isOrg
         ? [
-            const _TabConfig(label: 'Home', icon: Icons.home_outlined, activeIcon: Icons.home, branchIndex: 0),
+            _TabConfig(label: loc.home, icon: Icons.home_outlined, activeIcon: Icons.home, branchIndex: 0),
             const _TabConfig(label: 'Projects', icon: Icons.layers_outlined, activeIcon: Icons.layers, branchIndex: 1),
-            const _TabConfig(label: 'Activity', icon: Icons.show_chart, activeIcon: Icons.show_chart, branchIndex: 2),
+            _TabConfig(label: loc.activityTab, icon: Icons.show_chart, activeIcon: Icons.show_chart, branchIndex: 2),
             const _TabConfig(label: 'More', icon: Icons.more_horiz, activeIcon: Icons.more_horiz, branchIndex: 4),
           ]
         : [
-            const _TabConfig(label: 'Home', icon: Icons.home_outlined, activeIcon: Icons.home, branchIndex: 0),
-            const _TabConfig(label: 'Activity', icon: Icons.show_chart, activeIcon: Icons.show_chart, branchIndex: 2),
-            const _TabConfig(label: 'More', icon: Icons.more_horiz, activeIcon: Icons.more_horiz, branchIndex: 4),
+            _TabConfig(label: loc.home, icon: Icons.home_outlined, activeIcon: Icons.home, branchIndex: 0),
+            _TabConfig(label: loc.activityTab, icon: Icons.show_chart, activeIcon: Icons.show_chart, branchIndex: 2),
+            _TabConfig(label: loc.profile, icon: Icons.person, activeIcon: Icons.person, branchIndex: 4),
           ];
 
     return PopScope(

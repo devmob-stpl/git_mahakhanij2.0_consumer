@@ -37,12 +37,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   // Step 1: Address Details
   String _areaClassification = 'URBAN'; // 'URBAN' | 'RURAL'
-  String _district = 'Pune';
-  String _taluka = 'Haveli';
+  String? _district;
+  String? _taluka;
   int? _districtId;
   int? _talukaId;
   int? _censusId;
-  final _cityController = TextEditingController(text: 'Pune City (PMC)');
+  final _cityController = TextEditingController();
 
   final _villageController = TextEditingController();
   final _addressController = TextEditingController();
@@ -639,7 +639,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       children: [
         const Text(
           'Basic & Address details',
-          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
         ),
         const SizedBox(height: 6),
         const Text(
@@ -677,7 +677,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isOrg ? 'Organization (संस्था)' : 'Individual (व्यक्तिगत)',
+                      isOrg ? 'Organization' : 'Individual',
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink),
                     ),
                     const SizedBox(height: 2),
@@ -696,7 +696,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         // Full Name
         _buildFieldLabel('Full name'),
         const SizedBox(height: 6),
-        _buildTextField(_fullNameController, hint: 'e.g. Ramesh Patil', error: _errors['fullName']),
+        _buildTextField(_fullNameController, error: _errors['fullName']),
         const SizedBox(height: 16),
 
         // Mobile Number with +91 Prefix
@@ -980,7 +980,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             ),
                           ),
                           Text(
-                            _isAadhaarVerified ? 'UIDAI verified national identity card' : 'Enter 12-digit Aadhaar to receive OTP',
+                            _isAadhaarVerified ? 'Aadhaar verified national identity card' : 'Enter 12-digit Aadhaar to receive OTP',
                             style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary),
                           ),
                         ],

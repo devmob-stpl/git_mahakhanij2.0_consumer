@@ -60,7 +60,7 @@ import '../../features/minerals/stock_point_map_screen.dart';
 import '../../features/minerals/stock_point_details_screen.dart';
 
 import '../../features/reports/consumer_reports_screen.dart';
-import '../../features/more/more_screen.dart';
+import '../../features/settings/settings_screen.dart';
 import '../../features/profile/profile_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -206,16 +206,16 @@ final appRouter = GoRouter(
             ),
           ],
         ),
-        // Branch 4: More
+        // Branch 4: Profile
         StatefulShellBranch(
-          navigatorKey: _shellNavigatorMoreKey,
+          navigatorKey: _shellNavigatorMoreKey, // Keeping the same key variable name for simplicity
           routes: [
             GoRoute(
-              path: '/more',
-              name: 'more',
+              path: '/profile',
+              name: 'profile',
               pageBuilder: (context, state) => MaterialPage(
                 key: _pageKey(state),
-                child: const MoreScreen(),
+                child: const ProfileScreen(),
               ),
             ),
           ],
@@ -568,12 +568,12 @@ final appRouter = GoRouter(
       },
     ),
     GoRoute(
-      path: '/profile',
-      name: 'profile',
+      path: '/settings',
+      name: 'settings',
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (context, state) => MaterialPage(
         key: _pageKey(state),
-        child: const ProfileScreen(),
+        child: const SettingsScreen(),
       ),
     ),
 

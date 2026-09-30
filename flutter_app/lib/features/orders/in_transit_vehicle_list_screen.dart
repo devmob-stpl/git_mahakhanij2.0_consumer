@@ -193,7 +193,7 @@ class InTransitVehicleListScreen extends ConsumerWidget {
     final qtyStr = '${item.quantity ?? 0} ${item.mineralUnit ?? 'Brass'}';
     final mineralStr = item.materialType ?? 'Mineral';
     final destStr = item.destination ?? 'Destination N/A';
-    final distanceStr = item.distance != null ? '~${item.distance} km away' : 'GPS Active';
+    final distanceStr = item.distance != null ? '${item.distance} km away' : 'GPS Active';
     final driverStr = item.driverName != null && item.driverName!.isNotEmpty
         ? '${item.driverName}${item.driverMobNo != null ? ' (${item.driverMobNo})' : ''}'
         : 'N/A';
@@ -312,7 +312,7 @@ class InTransitVehicleListScreen extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Distance / Speed:', style: TextStyle(fontSize: 11, color: Color(0xFF737373))),
+                    const Text('Distance :', style: TextStyle(fontSize: 11, color: Color(0xFF737373))),
                     Text(distanceStr, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF2563EB))),
                   ],
                 ),

@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.mahakhanij.consumerapp-mergeDebugResources-49:/values-ldltr-v21/values-ldltr-v21.xml",
+            "outputFile": "com.mahakhanij.consumerapp-mergeDebugResources-53:/values-ldltr-v21/values-ldltr-v21.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\suraja\\.gradle\\caches\\8.14\\transforms\\61c93533f231d7f7b3537f02082d4264\\transformed\\appcompat-1.1.0\\res\\values-ldltr-v21\\values-ldltr-v21.xml",
+                    "source": "C:\\Users\\suraja\\.gradle\\caches\\8.14\\transforms\\f14fca39d6bdaaccc76516e8fbe7e086\\transformed\\appcompat-1.7.1\\res\\values-ldltr-v21\\values-ldltr-v21.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

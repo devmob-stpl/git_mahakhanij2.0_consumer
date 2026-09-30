@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../domain/consumer_digitp_models.dart';
 import '../../../shared/widgets/digitp_modal.dart';
+import '../../../l10n/app_localizations.dart';
 
 class DeliveryItemSummary {
   final String id;
@@ -54,7 +55,8 @@ class DeliverySummaryCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusConfig = _getStatusBadge(item.status);
+    final loc = AppLocalizations.of(context)!;
+    final statusConfig = _getStatusBadge(item.status, loc);
     final digiTpCode = item.digiTpNumber ?? item.code;
     final vehicleStr = item.vehicleNo ?? item.rawItem?.vehicleNo;
 
@@ -93,7 +95,7 @@ class DeliverySummaryCardWidget extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text.rich(
                     TextSpan(
-                      text: 'DigiTP: ',
+                      text: '${loc.digiTpNo}: ',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -140,7 +142,7 @@ class DeliverySummaryCardWidget extends StatelessWidget {
                 const Icon(Icons.directions_car_outlined, size: 14, color: AppColors.inkSecondary),
                 const SizedBox(width: 4),
                 Text(
-                  'Vehicle: $vehicleStr',
+                  '${loc.vehicle}: $vehicleStr',
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, fontFamily: 'monospace', color: AppColors.ink),
                 ),
               ],
@@ -149,9 +151,9 @@ class DeliverySummaryCardWidget extends StatelessWidget {
           ],
 
           // Destination
-          const Text(
-            'Destination Site',
-            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500, color: Color(0xFF737373)),
+          Text(
+            loc.destination,
+            style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500, color: Color(0xFF737373)),
           ),
           const SizedBox(height: 2),
           Text(
@@ -173,7 +175,7 @@ class DeliverySummaryCardWidget extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Text('Mineral: ', style: TextStyle(fontSize: 11.5, color: Color(0xFF737373))),
+                    Text('${loc.mineral}: ', style: const TextStyle(fontSize: 11.5, color: Color(0xFF737373))),
                     Text(
                       item.mineralName,
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.ink),
@@ -182,7 +184,7 @@ class DeliverySummaryCardWidget extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    const Text('Qty: ', style: TextStyle(fontSize: 11.5, color: Color(0xFF737373))),
+                    Text('${loc.qty}: ', style: const TextStyle(fontSize: 11.5, color: Color(0xFF737373))),
                     Text(
                       item.quantity,
                       style: const TextStyle(
@@ -206,7 +208,7 @@ class DeliverySummaryCardWidget extends StatelessWidget {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  'From: ${item.purchasedFrom ?? 'Authorized Quarry'}',
+                  '${loc.source}: ${item.purchasedFrom ?? 'Authorized Quarry'}',
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 11.5, color: Color(0xFF525252), fontWeight: FontWeight.w500),
                 ),
@@ -223,6 +225,7 @@ class DeliverySummaryCardWidget extends StatelessWidget {
   }
 
   Widget _buildActionButton(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     if (item.isInTransit) {
       // In-Transit DigiTP → Show both "View DigiTP" & "Track Vehicle" buttons
       return Row(
@@ -247,7 +250,7 @@ class DeliverySummaryCardWidget extends StatelessWidget {
                   }
                 },
                 icon: const Icon(Icons.assignment_outlined, size: 15),
-                label: const Text('View DigiTP', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                label: Text(loc.viewDigiTp, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF2563EB),
                   side: const BorderSide(color: Color(0xFF2563EB), width: 1.2),
@@ -273,7 +276,7 @@ class DeliverySummaryCardWidget extends StatelessWidget {
                   }
                 },
                 icon: const Icon(Icons.navigation_outlined, size: 15),
-                label: const Text('Track Vehicle', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                label: Text(loc.trackVehicle.replaceAll('\n', ' '), style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2563EB), // Purple theme for in-transit tracking
                   foregroundColor: Colors.white,
@@ -310,7 +313,7 @@ class DeliverySummaryCardWidget extends StatelessWidget {
             }
           },
           icon: const Icon(Icons.assignment_outlined, size: 16),
-          label: const Text('View DigiTP', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+          label: Text(loc.viewDigiTp, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
           style: OutlinedButton.styleFrom(
             foregroundColor: const Color(0xFF2563EB),
             side: const BorderSide(color: Color(0xFF2563EB), width: 1.2),
@@ -322,10 +325,10 @@ class DeliverySummaryCardWidget extends StatelessWidget {
   }
 
 
-  _StatusConfig _getStatusBadge(String status) {
+  _StatusConfig _getStatusBadge(String status, AppLocalizations loc) {
     final normalized = status.toUpperCase();
     if (normalized.contains('TRANSIT') || normalized == 'DISPATCHED' || normalized == '1') {
-      return _StatusConfig('In Transit', const Color(0xFFF7F0FD), const Color(0xFFEBD9FB), const Color(0xFF7E22CE));
+      return _StatusConfig(loc.inTransit, const Color(0xFFF7F0FD), const Color(0xFFEBD9FB), const Color(0xFF7E22CE));
     }
     if (normalized.contains('ARRIV')) {
       return _StatusConfig('Arrived at Site', const Color(0xFFFEF3C7), const Color(0xFFFDE68A), const Color(0xFF92400E));
@@ -334,7 +337,7 @@ class DeliverySummaryCardWidget extends StatelessWidget {
       return _StatusConfig('Pass Issued', const Color(0xFFE0F2FE), const Color(0xFFBAE6FD), const Color(0xFF0369A1));
     }
     if (normalized.contains('RECEIV') || normalized.contains('DELIVER') || normalized == '2') {
-      return _StatusConfig('Delivered & Verified', const Color(0xFFDCFCE7), const Color(0xFFBBF7D0), const Color(0xFF15803D));
+      return _StatusConfig(loc.delivered, const Color(0xFFDCFCE7), const Color(0xFFBBF7D0), const Color(0xFF15803D));
     }
     return _StatusConfig(status, const Color(0xFFF3F4F6), const Color(0xFFE5E7EB), const Color(0xFF525252));
   }

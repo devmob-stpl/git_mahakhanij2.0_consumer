@@ -112,12 +112,8 @@ class _LocationDropdownSectionState
             ? districts.first
             : const DistrictModel(id: 1, district: 'Pune'),
       );
-    } else if (districts.isNotEmpty) {
-      matchedDistrict = districts.firstWhere(
-        (d) => d.district.toLowerCase() == 'pune',
-        orElse: () => districts.first,
-      );
     }
+
 
     setState(() {
       _districts = districts;
@@ -167,9 +163,8 @@ class _LocationDropdownSectionState
             ? talukas.first
             : TalukaModel(id: 232, taluka: 'Haveli', districtId: districtId),
       );
-    } else if (talukas.isNotEmpty) {
-      matchedTaluka = talukas.first;
     }
+
 
     setState(() {
       _talukas = talukas;
@@ -235,9 +230,8 @@ class _LocationDropdownSectionState
                 talukaId: talukaId,
                 isTown: isTown),
       );
-    } else if (items.isNotEmpty) {
-      matchedItem = items.first;
     }
+
 
     setState(() {
       _villageCities = items;

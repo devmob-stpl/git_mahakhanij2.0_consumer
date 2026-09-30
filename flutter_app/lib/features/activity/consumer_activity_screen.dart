@@ -11,6 +11,7 @@ import '../enquiry/enquiries_screen.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/digitp_modal.dart';
+import '../../l10n/app_localizations.dart';
 
 enum ActivityChip { live, delivered, enquiries }
 
@@ -54,6 +55,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final enquiries = ref.watch(enquiriesProvider);
     final inTransitAsync = ref.watch(consumerDigiTpListProvider(1));
     final deliveredAsync = ref.watch(consumerDigiTpListProvider(2));
@@ -70,7 +72,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
     final activeAsync = activeStatus == 1 ? inTransitAsync : deliveredAsync;
 
     return AppScaffold(
-      title: 'DigiTP Deliveries',
+      title: loc.digitpDeliveries.replaceAll('\n', ' '),
       showBackButton: Navigator.canPop(context),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -91,7 +93,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                     _buildChip(
                       chip: ActivityChip.live,
                       icon: Icons.local_shipping_outlined,
-                      label: 'In Transit',
+                      label: loc.inTransit,
                       count: inTransitCount,
                       isLoading: inTransitAsync.isLoading,
                     ),
@@ -99,7 +101,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                     _buildChip(
                       chip: ActivityChip.delivered,
                       icon: Icons.check_circle_outline,
-                      label: 'Delivered',
+                      label: loc.delivered,
                       count: deliveredCount,
                       isLoading: deliveredAsync.isLoading,
                     ),
@@ -155,7 +157,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                         ),
                         const SizedBox(height: 12),
                         AppButton(
-                          label: 'Retry Fetching',
+                          label: loc.retryFetching,
                           size: AppButtonSize.small,
                           variant: AppButtonVariant.primary,
                           onPressed: () => ref.invalidate(consumerDigiTpListProvider(activeStatus)),
@@ -167,10 +169,10 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                     final items = response.items;
 
                     if (items.isEmpty) {
-                      final titleStr = activeStatus == 1 ? 'No In Transit Deliveries' : 'No Delivered DigiTP Records';
+                      final titleStr = activeStatus == 1 ? loc.noActiveDeliveries : loc.noDeliveredItems;
                       final subStr = activeStatus == 1
-                          ? 'There are currently no active mineral deliveries in transit for your account.'
-                          : 'No completed mineral deliveries found for your consumer account.';
+                          ? loc.noDeliveriesInTransitDesc
+                          : loc.noDeliveriesReceivedDesc;
 
                       return Container(
                         padding: const EdgeInsets.all(24),
@@ -208,7 +210,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                             ),
                             const SizedBox(height: 16),
                             AppButton(
-                              label: 'Refresh List',
+                              label: loc.refreshLocation,
                               size: AppButtonSize.small,
                               variant: AppButtonVariant.secondary,
                               icon: const Icon(Icons.refresh, size: 16),
@@ -240,8 +242,9 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
   }
 
   Widget _buildDigiTpCard(BuildContext context, ConsumerDigiTpItem item, int activeStatus) {
-    final statusLabel = item.invoiceStatus ?? (activeStatus == 1 ? 'In Transit' : 'Delivered');
-    final isDelivered = activeStatus == 2 || statusLabel.toLowerCase() == 'delivered';
+    final loc = AppLocalizations.of(context)!;
+    final statusLabel = item.invoiceStatus ?? (activeStatus == 1 ? loc.inTransit : loc.delivered);
+    final isDelivered = activeStatus == 2 || statusLabel.toLowerCase() == 'delivered' || statusLabel == loc.delivered;
 
     final badgeBg = isDelivered ? const Color(0xFFF0FDF4) : const Color(0xFFF7F0FD);
     final badgeBorder = isDelivered ? const Color(0xFFBBF7D0) : const Color(0xFFEBD9FB);
@@ -314,7 +317,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
             ],
           ),
           const SizedBox(height: 10),
-          const Text('Destination', style: TextStyle(fontSize: 11, color: Color(0xFF737373))),
+          Text(loc.destination, style: const TextStyle(fontSize: 11, color: Color(0xFF737373))),
           Text(destStr, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink)),
           const SizedBox(height: 10),
 
@@ -327,8 +330,8 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Mineral: $mineralStr', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.ink)),
-                Text('Qty: $qtyStr', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.ink)),
+                Text('${loc.mineral}: $mineralStr', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.ink)),
+                Text('${loc.qty}: $qtyStr', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.ink)),
               ],
             ),
           ),
@@ -346,7 +349,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Vehicle:', style: TextStyle(fontSize: 11, color: Color(0xFF737373))),
+                    Text('${loc.vehicle}:', style: const TextStyle(fontSize: 11, color: Color(0xFF737373))),
                     Text(vehicleNoStr, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.ink, fontFamily: 'monospace')),
                   ],
                 ),
@@ -354,7 +357,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Driver:', style: TextStyle(fontSize: 11, color: Color(0xFF737373))),
+                    Text('${loc.driver}:', style: const TextStyle(fontSize: 11, color: Color(0xFF737373))),
                     Text(driverStr, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.ink)),
                   ],
                 ),
@@ -362,7 +365,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Quarry / Seller:', style: TextStyle(fontSize: 11, color: Color(0xFF737373))),
+                    Text('${loc.quarrySeller}:', style: const TextStyle(fontSize: 11, color: Color(0xFF737373))),
                     Expanded(
                       child: Text(
                         ownerStr,
@@ -378,7 +381,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Validity:', style: TextStyle(fontSize: 11, color: Color(0xFF737373))),
+                      Text('${loc.validity}:', style: const TextStyle(fontSize: 11, color: Color(0xFF737373))),
                       Text(
                         '${AppDateFormatter.formatDateTime(item.validityFrom)} - ${AppDateFormatter.formatDateTime(item.validityUpto)}',
                         style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: AppColors.inkSecondary),
@@ -397,17 +400,17 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
               if (!isDelivered) ...[
                 Expanded(
                   child: AppButton(
-                    label: 'Track Vehicle',
+                    label: loc.trackVehicle.replaceAll('\n', ' '),
                     size: AppButtonSize.small,
                     icon: const Icon(Icons.navigation_outlined, size: 16),
-                    onPressed: () => context.push('/deliveries/${item.invoiceNo}/live-tracking'),
+                    onPressed: () => context.push('/deliveries/${item.invoiceNo}/live-tracking?vehicleNo=${item.vehicleNo ?? item.invoiceNo}'),
                   ),
                 ),
                 const SizedBox(width: 8),
               ],
               Expanded(
                 child: AppButton(
-                  label: 'View DigiTP',
+                  label: loc.viewDigiTp,
                   size: AppButtonSize.small,
                   variant: AppButtonVariant.secondary,
                   icon: const Icon(Icons.qr_code, size: 16),
@@ -525,7 +528,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
               ),
               const SizedBox(height: 6),
               Text(enq.mineralName, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink)),
-              Text('Qty: ${enq.requiredQuantity.formatted} · Source: ${enq.stockPointName}', style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary)),
+              Text('Qty: ${enq.requiredQuantity.formatted} · ${AppLocalizations.of(context)!.source}: ${enq.stockPointName}', style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary)),
             ],
           ),
         ),

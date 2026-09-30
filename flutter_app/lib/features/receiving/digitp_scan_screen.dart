@@ -4,6 +4,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/constants/app_colors.dart';
 import '../../domain/scan_result.dart';
 import '../../shared/widgets/app_button.dart';
+import '../../l10n/app_localizations.dart';
 
 class DigitpScanScreen extends StatefulWidget {
   final String? simulatedPayload;
@@ -79,7 +80,7 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
 
     final result = ScanResult(
       rawContent: trimmed,
-      format: 'qrCode',
+      format: 'manual',
       isQrCode: false,
     );
 
@@ -97,9 +98,10 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Scan DigiTP QR Code / Barcode'),
+        title: Text(loc.scanDigiTp),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
       ),
@@ -130,11 +132,11 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 32),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: Text(
-                    'Point camera at the driver\'s QR code or barcode',
-                    style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                    loc.pointCameraDescription,
+                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -184,30 +186,21 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  AppButton(
-                    label: 'Simulate Test Scan (Invoice 491)',
-                    fullWidth: true,
-                    size: AppButtonSize.medium,
-                    icon: const Icon(Icons.qr_code, size: 18),
-                    onPressed: () {
-                      _submitManualValue(widget.simulatedPayload ?? '491');
-                    },
-                  ),
                   const SizedBox(height: 10),
 
                   if (_showManualInput) ...[
                     TextField(
                       controller: _manualController,
                       keyboardType: TextInputType.text,
-                      decoration: const InputDecoration(
-                        labelText: 'Enter Invoice Number',
+                      decoration: InputDecoration(
+                        labelText: loc.enterInvoiceManually,
                         hintText: 'e.g. 491',
                         isDense: true,
                       ),
                     ),
                     const SizedBox(height: 10),
                     AppButton(
-                      label: 'Verify Invoice',
+                      label: 'Verify DigiTP',
                       fullWidth: true,
                       size: AppButtonSize.medium,
                       variant: AppButtonVariant.secondary,
@@ -220,9 +213,9 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
                   ] else
                     TextButton(
                       onPressed: () => setState(() => _showManualInput = true),
-                      child: const Text(
-                        'Enter invoice number manually',
-                        style: TextStyle(color: AppColors.primary700, fontWeight: FontWeight.w600, fontSize: 13),
+                      child: Text(
+                        loc.enterInvoiceManually,
+                        style: const TextStyle(color: AppColors.primary700, fontWeight: FontWeight.w600, fontSize: 13),
                       ),
                     ),
                 ],

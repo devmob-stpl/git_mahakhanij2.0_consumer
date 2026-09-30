@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../providers/consumer_digitp_provider.dart';
 import '../../../providers/consumer_dashboard_count_provider.dart';
@@ -9,12 +10,12 @@ import '../../../shared/widgets/digitp_modal.dart';
 import 'home_header.dart';
 import 'delivery_summary_card.dart';
 
-
 class ConsumerDashboard extends ConsumerWidget {
   const ConsumerDashboard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final user = ref.watch(sessionProvider).currentUser;
     final userName = user?.fullName ?? '';
 
@@ -40,17 +41,16 @@ class ConsumerDashboard extends ConsumerWidget {
           code: item.invoiceNo,
           digiTpNumber: item.invoiceNo,
           vehicleNo: item.vehicleNo,
-          purchasedFrom: item.plotName ?? 'Quarry / Stockyard',
-          status: item.invoiceStatus ?? 'IN_TRANSIT',
-          destination: item.destination ?? 'Destination Site',
-          mineralName: item.materialType ?? 'Mineral',
-          quantity: '${item.quantity ?? 0} ${item.mineralUnit ?? 'Brass'}',
+          purchasedFrom: item.plotName ?? '-',
+          status: item.invoiceStatus ?? '-',
+          destination: item.destination ?? '-',
+          mineralName: item.materialType ?? '-',
+          quantity: '${item.quantity ?? 0} ${item.mineralUnit ?? '-'}',
           onTrackVehicle: () => context.push('/deliveries/${item.invoiceNo}/live-tracking?vehicleNo=${item.vehicleNo ?? item.invoiceNo}'),
           onViewDigiTp: () => showDigiTpPassModal(context, item: item),
         ),
       );
     }
-
 
     for (final item in deliveredItems) {
       recentDeliveries.add(
@@ -59,18 +59,16 @@ class ConsumerDashboard extends ConsumerWidget {
           code: item.invoiceNo,
           digiTpNumber: item.invoiceNo,
           vehicleNo: item.vehicleNo,
-          purchasedFrom: item.ownerName ?? 'Quarry / Stockyard',
-          status: item.invoiceStatus ?? 'RECEIVED',
-          destination: item.destination ?? 'Destination Site',
-          mineralName: item.materialType ?? 'Mineral',
-          quantity: '${item.quantity ?? 0} ${item.mineralUnit ?? 'Brass'}',
+          purchasedFrom: item.ownerName ?? '-',
+          status: item.invoiceStatus ?? '-',
+          destination: item.destination ?? '-',
+          mineralName: item.materialType ?? '-',
+          quantity: '${item.quantity ?? 0} ${item.mineralUnit ?? '-'}',
           rawItem: item,
           onViewDigiTp: () => showDigiTpPassModal(context, item: item),
         ),
       );
     }
-
-
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -108,7 +106,7 @@ class ConsumerDashboard extends ConsumerWidget {
                       Expanded(
                         child: _buildStatCard(
                           count: dashboardCountAsync.isLoading ? '...' : totalCount.toString().padLeft(2, '0'),
-                          label: 'DigiTP\nDeliveries',
+                          label: l10n.digitpDeliveries,
                           bgColor: const Color(0xFFEEF5FD),
                           borderColor: const Color(0xFFD6E5F8),
                           textColor: const Color(0xFF134280),
@@ -119,7 +117,7 @@ class ConsumerDashboard extends ConsumerWidget {
                       Expanded(
                         child: _buildStatCard(
                           count: dashboardCountAsync.isLoading ? '...' : deliveredCount.toString().padLeft(2, '0'),
-                          label: 'Received\nMaterial',
+                          label: l10n.receivedMaterial,
                           bgColor: const Color(0xFFF0FDF4),
                           borderColor: const Color(0xFFBBF7D0),
                           textColor: const Color(0xFF15803D),
@@ -130,7 +128,7 @@ class ConsumerDashboard extends ConsumerWidget {
                       Expanded(
                         child: _buildStatCard(
                           count: dashboardCountAsync.isLoading ? '...' : inTransitCount.toString().padLeft(2, '0'),
-                          label: 'In Transit\nVehicles',
+                          label: l10n.inTransitVehicles,
                           bgColor: const Color(0xFFF7F0FD),
                           borderColor: const Color(0xFFEBD9FB),
                           textColor: const Color(0xFF7E22CE),
@@ -141,8 +139,9 @@ class ConsumerDashboard extends ConsumerWidget {
                   const SizedBox(height: 20),
 
                   // 2. Core Actions Header
-                  const Text(
-                    'CORE SERVICES',
+                  Text(
+                    l10n.coreServices,
+
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -173,17 +172,17 @@ class ConsumerDashboard extends ConsumerWidget {
                       children: [
                         _buildQuickServiceItem(
                           icon: Icons.assignment_turned_in_outlined,
-                          title: 'DigiTP\nPasses',
+                          title: l10n.digitpPasses,
                           onTap: () => context.go('/activity'),
                         ),
                         _buildQuickServiceItem(
                           icon: Icons.qr_code_2,
-                          title: 'Receive\nMaterial',
+                          title: l10n.receiveMaterialAction,
                           onTap: () => context.push('/receive'),
                         ),
                         _buildQuickServiceItem(
                           icon: Icons.local_shipping_outlined,
-                          title: 'Track\nVehicle',
+                          title: l10n.trackVehicle,
                           onTap: () => context.push('/deliveries/in-transit'),
                         ),
                       ],
@@ -195,9 +194,9 @@ class ConsumerDashboard extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'DIGITP & MINERAL DELIVERIES',
-                        style: TextStyle(
+                      Text(
+                        l10n.recentDeliveriesHeader,
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.8,
@@ -206,18 +205,18 @@ class ConsumerDashboard extends ConsumerWidget {
                       ),
                       GestureDetector(
                         onTap: () => context.go('/activity'),
-                        child: const Row(
+                        child: Row(
                           children: [
                             Text(
-                              'View All',
-                              style: TextStyle(
+                              l10n.viewAll,
+                              style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.primary700,
                               ),
                             ),
-                            SizedBox(width: 2),
-                            Icon(Icons.arrow_forward, size: 13, color: AppColors.primary700),
+                            const SizedBox(width: 2),
+                            const Icon(Icons.arrow_forward, size: 13, color: AppColors.primary700),
                           ],
                         ),
                       ),
@@ -235,10 +234,10 @@ class ConsumerDashboard extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: const Color(0xFFE5E7EB)),
                       ),
-                      child: const Text(
-                        'No recent DigiTP deliveries found.',
+                      child: Text(
+                        l10n.noRecentDeliveries,
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 13, color: AppColors.inkSecondary),
+                        style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary),
                       ),
                     )
                   else

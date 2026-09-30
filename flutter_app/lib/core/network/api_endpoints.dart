@@ -148,9 +148,9 @@ class ApiEndpoints {
   static String get paymentsInitiate => '$baseUrl/payments/initiate';
 
   // Live Vehicle Tracking
-  static String get vehicleTrackingLocationAndTrip =>
-      'https://gps.mahakhanij.in/gps-data-provider/api/v2/mobile/vehicle-tracking/tracking/get-vehicles-current-location-and-trip';
-  static String getVehicleTrackingLocationAndTripUrl(String vehicleNo) =>
-      '$vehicleTrackingLocationAndTrip?VehicleNo=$vehicleNo';
+  static String get vehicleTrackingLocation =>
+      'https://gps.mahakhanij.in/gps-data-provider/api/v2/vehicle-tracking/tracking/get-vehicle-current-location';
+  static String getVehicleTrackingLocationUrl(String vehicleNo) =>
+      '$vehicleTrackingLocation?VehicleNumber=$vehicleNo';
 }
 

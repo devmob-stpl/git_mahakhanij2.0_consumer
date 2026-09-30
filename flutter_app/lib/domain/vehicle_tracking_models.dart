@@ -69,7 +69,7 @@ class VehicleLocationData {
 
   factory VehicleLocationData.fromJson(Map<String, dynamic> json) {
     return VehicleLocationData(
-      vehicleNo: json['vehicleNo']?.toString(),
+      vehicleNo: json['vehicleNo']?.toString() ?? json['vehicle']?.toString(),
       vehicleId: json['vehicleId']?.toString(),
       vehicleStatus: json['vehicleStatus']?.toString(),
       gpsStatus: json['gpsStatus']?.toString(),
@@ -80,12 +80,14 @@ class VehicleLocationData {
           : num.tryParse(json['speed']?.toString() ?? ''),
       direction: json['direction'] is num
           ? (json['direction'] as num)
-          : num.tryParse(json['direction']?.toString() ?? ''),
+          : (json['courseDeg'] is num
+              ? (json['courseDeg'] as num)
+              : num.tryParse(json['direction']?.toString() ?? json['courseDeg']?.toString() ?? '')),
       locationName: json['locationName']?.toString(),
-      deviceDatetime: json['deviceDatetime']?.toString() ?? json['deviceDateTime']?.toString(),
+      deviceDatetime: json['deviceDatetime']?.toString() ?? json['deviceDateTime']?.toString() ?? json['deviceDate']?.toString(),
       driverName: json['driverName']?.toString(),
       driverMobileNo: json['driverMobileNo']?.toString(),
-      vehTypeName: json['vehTypeName']?.toString() ?? json['vehicleTypeName']?.toString(),
+      vehTypeName: json['vehTypeName']?.toString() ?? json['vehicleTypeName']?.toString() ?? json['vehicleType']?.toString(),
       capacity: json['capacity']?.toString(),
       gpsFixed: json['gpsFixed']?.toString(),
       ignition: json['ignition'] is num
@@ -175,6 +177,9 @@ class VehicleTripData {
   final String? district;
   final String? taluka;
   final String? destination;
+  final String? materialType;
+  final String? mineralUnit;
+  final String? quantity;
   final num? distance;
   final String? plotName;
   final String? sourceLatLong;
@@ -191,6 +196,9 @@ class VehicleTripData {
     this.district,
     this.taluka,
     this.destination,
+    this.materialType,
+    this.mineralUnit,
+    this.quantity,
     this.distance,
     this.plotName,
     this.sourceLatLong,
@@ -199,16 +207,19 @@ class VehicleTripData {
 
   factory VehicleTripData.fromJson(Map<String, dynamic> json) {
     return VehicleTripData(
-      tripID: json['tripID']?.toString() ?? json['tripId']?.toString(),
+      tripID: json['tripID']?.toString() ?? json['tripId']?.toString() ?? json['invoiceNo']?.toString(),
       driverName: json['driverName']?.toString(),
       driverMobNo: json['driverMobNo']?.toString() ?? json['driverMobileNo']?.toString(),
       validityFrom: json['validityFrom']?.toString(),
       validityUpto: json['validityUpto']?.toString(),
-      capacity: json['capacity']?.toString(),
+      capacity: json['capacity']?.toString() ?? json['quantity']?.toString(),
       division: json['division']?.toString(),
       district: json['district']?.toString(),
       taluka: json['taluka']?.toString(),
       destination: json['destination']?.toString(),
+      materialType: json['materialType']?.toString(),
+      mineralUnit: json['mineralUnit']?.toString(),
+      quantity: json['quantity']?.toString(),
       distance: json['distance'] is num
           ? (json['distance'] as num)
           : num.tryParse(json['distance']?.toString() ?? ''),
@@ -229,6 +240,9 @@ class VehicleTripData {
         'district': district,
         'taluka': taluka,
         'destination': destination,
+        'materialType': materialType,
+        'mineralUnit': mineralUnit,
+        'quantity': quantity,
         'distance': distance,
         'plotName': plotName,
         'sourceLatLong': sourceLatLong,

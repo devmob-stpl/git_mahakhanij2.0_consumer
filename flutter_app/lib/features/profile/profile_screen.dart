@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../core/constants/app_colors.dart';
 import '../../domain/consumer_profile_models.dart';
@@ -12,6 +13,7 @@ import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../shared/widgets/location_dropdown_section.dart';
+import '../../l10n/app_localizations.dart';
 
 enum KycStep { view, upload, success }
 
@@ -376,23 +378,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         'Aadhaar e-KYC Information',
                         style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink),
                       ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        'Government of Maharashtra Mineral Portal Authentication Status',
-                        style: TextStyle(fontSize: 12, color: AppColors.inkSecondary),
-                      ),
+
                       const SizedBox(height: 16),
 
                       _buildKycDetailRow(
                         'Aadhaar Number',
                         _activeProfileData?.aadharCardNo != null && _activeProfileData!.aadharCardNo!.isNotEmpty
                             ? _activeProfileData!.aadharCardNo!
-                            : 'Not Uploaded',
+                            : 'N/A',
                       ),
                       const SizedBox(height: 10),
                       _buildKycDetailRow(
                         'Aadhaar Verification',
-                        _activeProfileData?.isAadharVerified == true ? 'VERIFIED (UIDAI)' : 'PENDING',
+                        _activeProfileData?.isAadharVerified == true ? 'VERIFIED' : 'PENDING',
                       ),
                       const SizedBox(height: 10),
                       if (_profileAadhaarDocUrl != null) ...[
@@ -402,7 +400,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                         const SizedBox(height: 10),
                       ],
-                      _buildKycDetailRow('State Registry', 'Mahakhanij Mineral Portal'),
                       const SizedBox(height: 20),
 
                       Row(
@@ -432,7 +429,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'Verify your Aadhaar via UIDAI OTP or upload document photo',
+                        'Verify your Aadhaar OTP or upload document photo',
                         style: TextStyle(fontSize: 12, color: AppColors.inkSecondary),
                       ),
                       const SizedBox(height: 16),
@@ -448,7 +445,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Method 1: Live UIDAI OTP Verification', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF))),
+                            const Text('Method 1: Live OTP Verification', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF))),
                             const SizedBox(height: 8),
                             AppTextField(
                               label: '12-Digit Aadhaar Number *',
@@ -683,12 +680,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = ref.watch(sessionProvider).currentUser;
     final isOrg = user?.isOrganization ?? false;
     final mobileNo = user?.mobileNumber ?? '';
+    final loc = AppLocalizations.of(context)!;
 
     final profileAsync = ref.watch(consumerProfileProvider(mobileNo));
 
     return AppScaffold(
       title: 'Consumer Profile & KYC',
       showBackButton: false,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.settings_outlined, color: AppColors.ink),
+          onPressed: () => context.push('/settings'),
+        ),
+      ],
       body: profileAsync.when(
         loading: () => const Center(
           child: Column(
@@ -854,7 +858,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                             children: [
                                               Expanded(
                                                 child: Text(
-                                                  isAadhaarVerified ? 'Aadhaar Verified' : 'Aadhaar Verification Pending',
+                                                  isAadhaarVerified ? loc.aadhaarVerified : loc.aadhaarPending,
                                                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink),
                                                   overflow: TextOverflow.ellipsis,
                                                 ),
@@ -901,7 +905,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     children: [
                                       _buildChecklistRow(
                                         icon: Icons.person_outline,
-                                        label: 'Aadhaar / UIDAI Authentication',
+                                        label: 'Aadhaar Authentication',
                                         isVerified: isAadhaarVerified,
                                       ),
                                     ],
@@ -920,7 +924,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                         ),
                                         onPressed: () => _openKycModal(KycStep.view),
-                                        child: const Text('View Aadhaar Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.ink)),
+                                        child: Text(loc.viewDocument, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.ink)),
                                       ),
                                     ),
                                     if (!isAadhaarVerified) ...[
@@ -933,7 +937,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                           ),
                                           onPressed: () => _openKycModal(KycStep.upload),
-                                          child: const Text('Verify Aadhaar →', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+                                          child: Text('${loc.verifyAadhaar} →', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
                                         ),
                                       ),
                                     ],
@@ -945,9 +949,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           const SizedBox(height: 18),
 
                           // 3) Personal & Account Details Form
-                          const Text(
-                            'Personal & Account Details',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink),
+                          Text(
+                            loc.personalDetails,
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink),
                           ),
                           const SizedBox(height: 8),
                           Container(
@@ -960,13 +964,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             child: Column(
                               children: [
                                 AppTextField(
-                                  label: 'Full Name *',
+                                  label: '${loc.profileName} *',
                                   controller: _nameController,
                                   prefixIcon: const Icon(Icons.person_outline, size: 18),
                                 ),
                                 const SizedBox(height: 12),
                                 AppTextField(
-                                  label: 'Registered Mobile Number',
+                                  label: '${loc.profileMobile} *',
                                   controller: _mobileController,
                                   enabled: false,
                                   prefixIcon: const Icon(Icons.phone_outlined, size: 18),
@@ -974,7 +978,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 ),
                                 const SizedBox(height: 12),
                                 AppTextField(
-                                  label: 'Email Address *',
+                                  label: '${loc.profileEmail} *',
                                   controller: _emailController,
                                   keyboardType: TextInputType.emailAddress,
                                   prefixIcon: const Icon(Icons.mail_outline, size: 18),
@@ -988,9 +992,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Address & Location Details',
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink),
+                              Text(
+                                loc.residentialDetails,
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink),
                               ),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -1002,7 +1006,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   ),
                                 ),
                                 child: Text(
-                                  _isTown ? 'URBAN (CITY)' : 'RURAL (VILLAGE)',
+                                  _isTown ? loc.urban.toUpperCase() : loc.rural.toUpperCase(),
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
@@ -1023,7 +1027,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             child: Column(
                               children: [
                                 AppTextField(
-                                  label: 'Full Address *',
+                                  label: '${loc.profileAddress} *',
                                   controller: _line1Controller,
                                   prefixIcon: const Icon(Icons.location_on_outlined, size: 18),
                                 ),
@@ -1052,7 +1056,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 ),
                                 const SizedBox(height: 14),
                                 AppTextField(
-                                  label: 'PIN Code *',
+                                  label: '${loc.profilePincode} *',
                                   controller: _pincodeController,
                                   keyboardType: TextInputType.number,
                                   prefixIcon: const Icon(Icons.pin_drop_outlined, size: 18),
@@ -1064,7 +1068,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                           // Save Button
                           AppButton(
-                            label: _isSaving ? 'Saving Changes...' : 'Save Profile Changes',
+                            label: _isSaving ? 'Saving Changes...' : loc.saveChanges,
                             fullWidth: true,
                             size: AppButtonSize.large,
                             onPressed: _isSaving ? null : _handleSaveProfile,

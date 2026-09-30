@@ -258,9 +258,11 @@ class ReceiveInvoiceRequest {
   final dynamic invoiceNo;
   final double rVehicleLat;
   final double rVehicleLong;
+  final dynamic consumerId;
 
   const ReceiveInvoiceRequest({
     required this.invoiceNo,
+    required this.consumerId,
     this.rVehicleLat = 0.0,
     this.rVehicleLong = 0.0,
   });
@@ -269,6 +271,7 @@ class ReceiveInvoiceRequest {
     'invoiceNo': int.tryParse(invoiceNo.toString()) ?? invoiceNo,
     'r_Vehicle_Lat': rVehicleLat,
     'r_Vehicle_Long': rVehicleLong,
+    'consumerId': consumerId,
   };
 }
 

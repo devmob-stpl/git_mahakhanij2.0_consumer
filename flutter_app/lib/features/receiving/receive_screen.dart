@@ -7,8 +7,10 @@ import '../../core/services/scan_processing_service.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../domain/consumer_digitp_models.dart';
 import '../../domain/scan_result.dart';
+import '../../l10n/app_localizations.dart';
 import '../../providers/consumer_dashboard_count_provider.dart';
 import '../../providers/consumer_digitp_provider.dart';
+import '../../providers/session_provider.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import 'digitp_scan_screen.dart';
@@ -76,7 +78,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
 
       final invoiceNo = _scanProcessingService.process(result);
 
-      debugPrint('FINAL INVOICE NUMBER: $invoiceNo');
+      debugPrint('FINAL DigiTP NUMBER: $invoiceNo');
 
       if (!mounted) return;
 
@@ -118,7 +120,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
       throw Exception(
         response.statusMessage.isNotEmpty
             ? response.statusMessage
-            : 'Unable to fetch invoice details.',
+            : 'Unable to fetch DigiTP details.',
       );
     } catch (e, stackTrace) {
       debugPrint('Process scan failed: $e');
@@ -166,21 +168,21 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Enter Invoice / DigiTP Number', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        title: Text(AppLocalizations.of(context)!.enterDigiTpNumber, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
         content: TextField(
           controller: controller,
           autofocus: true,
           keyboardType: TextInputType.text,
-          decoration: const InputDecoration(
-            hintText: 'e.g. 491 or 0436610',
+          decoration: InputDecoration(
+            hintText: AppLocalizations.of(context)!.enterDigiTpNumberHint,
             isDense: true,
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -195,7 +197,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                 _processScanResult(result);
               }
             },
-            child: const Text('Fetch Details'),
+            child: Text(AppLocalizations.of(context)!.fetchDetails),
           ),
         ],
       ),
@@ -222,9 +224,24 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
       return;
     }
 
+    final session = ref.read(sessionProvider);
+    final user = session.currentUser;
+    int resolvedConsumerId = user?.consumerId ?? 0; // Fallback to 0 if null
+    
+    // Attempt fallback from profile if needed (similar to dashboard)
+    if (resolvedConsumerId <= 0) {
+      if (user != null && user.id.isNotEmpty) {
+        final parsed = int.tryParse(user.id);
+        if (parsed != null && parsed > 0) {
+          resolvedConsumerId = parsed;
+        }
+      }
+    }
+
     final repo = ref.read(consumerDigiTpRepositoryProvider);
     final request = ReceiveInvoiceRequest(
       invoiceNo: _scannedItem!.invoiceNo,
+      consumerId: resolvedConsumerId,
       rVehicleLat: locationRes.latitude,
       rVehicleLong: locationRes.longitude,
     );
@@ -288,14 +305,14 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
       // HTTP 409 Conflict: Already Received
       setState(() {
         _alreadyReceived = true;
-        _statusMessage = 'Invoice is already received.';
+        _statusMessage = 'DigiTP is already received.';
       });
-      await _showErrorDialog('Invoice is already received.');
+      await _showErrorDialog('DigiTP is already received.');
     } else {
       await _showErrorDialog(
         response.statusMessage.isNotEmpty
             ? response.statusMessage
-            : 'Failed to receive invoice. Please try again.',
+            : 'Failed to receive DigiTP. Please try again.',
       );
     }
   }
@@ -305,7 +322,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Receive Material Error', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        title: Text(AppLocalizations.of(context)!.receiveMaterialError, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
         content: Text(message),
         actions: [
           TextButton(
@@ -330,8 +347,9 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AppScaffold(
-      title: 'Receive Material',
+      title: l10n.receiveMaterial,
       showBackButton: true,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -372,19 +390,19 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const Text(
-                      'Scan DigiTP QR / Barcode',
-                      style: TextStyle(
+                    Text(
+                      l10n.scanDigiTp,
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: AppColors.ink,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Point camera at the driver\'s QR code or barcode to extract permit details and confirm material receipt.',
+                    Text(
+                      l10n.pointCameraDescription,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 13,
                         color: AppColors.inkSecondary,
                         height: 1.35,
@@ -392,7 +410,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                     ),
                     const SizedBox(height: 24),
                     AppButton(
-                      label: 'Open Camera Scanner',
+                      label: l10n.openCameraScanner,
                       size: AppButtonSize.large,
                       icon: const Icon(Icons.camera_alt, size: 20),
                       onPressed: _openCameraScanner,
@@ -400,9 +418,9 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                     const SizedBox(height: 12),
                     TextButton(
                       onPressed: _showManualEntryDialog,
-                      child: const Text(
-                        'Enter Invoice Number Manually',
-                        style: TextStyle(
+                      child: Text(
+                        l10n.enterInvoiceManually,
+                        style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF2563EB),
@@ -424,18 +442,18 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: const Color(0xFFE5E7EB)),
                 ),
-                child: const Column(
+                child: Column(
                   children: [
-                    CircularProgressIndicator(strokeWidth: 3, color: Color(0xFF2563EB)),
-                    SizedBox(height: 16),
+                    const CircularProgressIndicator(strokeWidth: 3, color: Color(0xFF2563EB)),
+                    const SizedBox(height: 16),
                     Text(
-                      'Processing Scan & Fetching Details...',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink),
+                      l10n.processingScan,
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      'Decoding permit payload and verifying with Mahakhanij Server',
-                      style: TextStyle(fontSize: 12, color: AppColors.inkSecondary),
+                      l10n.decodingPermit,
+                      style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary),
                     ),
                   ],
                 ),
@@ -482,9 +500,9 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'E-TRANSIT PASS DETAILS',
-                          style: TextStyle(
+                        Text(
+                          l10n.eTransitPassDetails,
+                          style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.5,
@@ -498,7 +516,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            'Invoice #: ${_scannedItem!.invoiceNo}',
+                            '${l10n.invoiceHash}: ${_scannedItem!.invoiceNo}',
                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, fontFamily: 'monospace'),
                           ),
                         ),
@@ -507,55 +525,55 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                     const Divider(height: 20),
 
                     _buildDetailRow(
-                      label: 'Vehicle Number',
+                      label: l10n.vehicleNumber,
                       value: _scannedItem!.vehicleNo ?? 'N/A',
                       isBold: true,
                     ),
                     const SizedBox(height: 10),
                     _buildDetailRow(
-                      label: 'Owner Name',
+                      label: l10n.ownerName,
                       value: _scannedItem!.ownerName ?? 'N/A',
                     ),
                     const SizedBox(height: 10),
                     _buildDetailRow(
-                      label: 'Owner Mobile',
+                      label: l10n.ownerMobile,
                       value: _scannedItem!.ownerMobileNo ?? 'N/A',
                     ),
                     const SizedBox(height: 10),
                     _buildDetailRow(
-                      label: 'Driver Details',
+                      label: l10n.driverDetails,
                       value: _scannedItem!.driverName != null && _scannedItem!.driverName!.isNotEmpty
                           ? '${_scannedItem!.driverName}${_scannedItem!.driverMobNo != null ? ' (${_scannedItem!.driverMobNo})' : ''}'
                           : 'N/A',
                     ),
                     const SizedBox(height: 10),
                     _buildDetailRow(
-                      label: 'Material & Quantity',
+                      label: l10n.materialAndQuantity,
                       value: '${_scannedItem!.materialType ?? "Mineral"} (${_scannedItem!.quantity ?? 0} ${_scannedItem!.mineralUnit ?? "Brass"})',
                     ),
                     const SizedBox(height: 10),
                     _buildDetailRow(
-                      label: 'Destination',
+                      label: l10n.destination,
                       value: _scannedItem!.destination ?? 'N/A',
                     ),
                     if (_scannedItem!.distance != null) ...[
                       const SizedBox(height: 10),
                       _buildDetailRow(
-                        label: 'Distance (Km)',
+                        label: l10n.distanceKm,
                         value: '${_scannedItem!.distance} KM',
                       ),
                     ],
                     if (_scannedItem!.validityFrom != null) ...[
                       const SizedBox(height: 10),
                       _buildDetailRow(
-                        label: 'Validity From',
+                        label: l10n.validityFrom,
                         value: AppDateFormatter.formatDateTime(_scannedItem!.validityFrom),
                       ),
                     ],
                     if (_scannedItem!.validityUpto != null) ...[
                       const SizedBox(height: 10),
                       _buildDetailRow(
-                        label: 'Validity Upto',
+                        label: l10n.validityUpto,
                         value: AppDateFormatter.formatDateTime(_scannedItem!.validityUpto),
                       ),
                     ],
@@ -579,11 +597,11 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                           )
                         : const Icon(Icons.check_circle_outline, size: 20),
                     label: Text(
-                      _isSubmitting ? 'Confirming Receipt...' : 'Confirm & Receive Material',
+                      _isSubmitting ? l10n.confirmingReceipt : l10n.confirmAndReceiveMaterial,
                       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF15803D),
+                      backgroundColor: const Color(0xFF2563EB),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
@@ -600,7 +618,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                   style: OutlinedButton.styleFrom(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('Scan Another DigiTP'),
+                  child: Text(l10n.scanAnotherCode),
                 ),
               ),
             ],
@@ -626,10 +644,10 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                       child: const Icon(Icons.check_circle, size: 54, color: Color(0xFF15803D)),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Material Received Successfully!',
+                    Text(
+                      l10n.materialReceivedSuccess,
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.ink),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.ink),
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -639,7 +657,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                     ),
                     const SizedBox(height: 20),
                     AppButton(
-                      label: 'Scan Another Code',
+                      label: l10n.scanAnotherCode,
                       fullWidth: true,
                       onPressed: _resetToInitial,
                     ),
@@ -650,7 +668,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                         minimumSize: const Size(double.infinity, 44),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: const Text('View All Received Deliveries'),
+                      child: Text(l10n.viewAllReceivedDeliveries),
                     ),
                   ],
                 ),
