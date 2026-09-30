@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../providers/session_provider.dart';
 import '../../providers/locale_provider.dart';
+import '../../l10n/app_localizations.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -72,9 +73,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final locale = ref.watch(localeProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return AppScaffold(
-      title: 'Settings',
+      title: l10n.settingsScreenTitle,
       showBackButton: true,
       body: SingleChildScrollView(
         child: Column(

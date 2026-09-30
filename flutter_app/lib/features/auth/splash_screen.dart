@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -33,8 +34,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       // Valid session exists -> navigate directly to Dashboard
       context.go('/home');
     } else {
-      // No session -> navigate to Login
-      context.go('/login');
+      // No session -> Check if it's the first time launch
+      final prefs = await SharedPreferences.getInstance();
+      final hasSelectedLanguage = prefs.getBool('has_selected_language') ?? false;
+      
+      if (!hasSelectedLanguage) {
+        context.go('/language-selection');
+      } else {
+        context.go('/login');
+      }
     }
   }
 

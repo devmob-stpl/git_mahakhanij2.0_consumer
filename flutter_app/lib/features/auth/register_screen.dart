@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/config/app_config.dart';
 import '../../core/constants/app_colors.dart';
 import '../../domain/user.dart';
@@ -75,8 +78,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Map<String, String> _errors = {};
   bool _isSubmitting = false;
 
+  Timer? _resendTimer;
+  int _timerCountdown = 0;
+
   @override
   void dispose() {
+    _resendTimer?.cancel();
     _fullNameController.dispose();
     _mobileController.dispose();
     _orgNameController.dispose();
@@ -90,6 +97,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _aadhaarOtpController.dispose();
     _panController.dispose();
     super.dispose();
+  }
+
+  void _startResendTimer() {
+    _resendTimer?.cancel();
+    setState(() {
+      _timerCountdown = 60;
+    });
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        if (_timerCountdown > 0) {
+          _timerCountdown--;
+        } else {
+          timer.cancel();
+        }
+      });
+    });
   }
 
   Future<void> _handleSendAadhaarOtp() async {
@@ -133,6 +160,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         _isAadhaarOtpSent = true;
         _aadhaarClientId = genRes.clientId;
         _aadhaarError = null;
+        _startResendTimer();
       } else {
         _aadhaarError = genRes.message ?? 'Failed to send OTP to Aadhaar-registered mobile number.';
       }
@@ -306,6 +334,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final mobile = _mobileController.text.trim();
 
     final Map<String, dynamic> signUpPayload = {
+      'id': 0,
       'consumerType': _userType == UserType.organization ? 1 : 0,
       'name': _fullNameController.text.trim(),
       'mobileNo': mobile,
@@ -424,7 +453,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                     const SizedBox(width: 14),
                     Text(
-                      'Step $_step of 2',
+                      AppLocalizations.of(context)!.stepOf(_step, 2),
                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.inkSecondary),
                     ),
                     const SizedBox(width: 8),
@@ -453,10 +482,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 children: [
                   AppButton(
                     label: _step == 0
-                        ? 'Continue'
+                        ? AppLocalizations.of(context)!.continueBtn
                         : _step == 1
-                            ? 'Continue to KYC Verification'
-                            : 'Complete Registration',
+                            ? AppLocalizations.of(context)!.continueToKyc
+                            : AppLocalizations.of(context)!.completeRegistration,
                     isLoading: _isSubmitting,
                     fullWidth: true,
                     size: AppButtonSize.large,
@@ -466,9 +495,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     const SizedBox(height: 8),
                     TextButton(
                       onPressed: _isSubmitting ? null : _next,
-                      child: const Text(
-                        'Skip Aadhaar Verification & Complete Signup',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.inkSecondary),
+                      child: Text(
+                        AppLocalizations.of(context)!.skipAadhaar,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.inkSecondary),
                       ),
                     ),
                   ],
@@ -486,22 +515,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // STEP 0: Choose Account Type
   // -------------------------------------------------------------
   Widget _buildStep0ChooseType() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Choose Account Type',
-          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
+        Text(
+          l10n.chooseAccountType,
+          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'How will you use Mahakhanij?',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
+        Text(
+          l10n.howWillYouUse,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
         ),
         const SizedBox(height: 4),
-        const Text(
-          'This decides what the app shows you. It cannot be changed later.',
-          style: TextStyle(fontSize: 13, color: AppColors.inkSecondary),
+        Text(
+          l10n.chooseAccountDesc,
+          style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary),
         ),
         const SizedBox(height: 24),
 
@@ -536,18 +566,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(width: 14),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Individual',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
+                        l10n.individual,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
-                        'For an individual buying mineral for personal use.',
-                        style: TextStyle(fontSize: 13, color: AppColors.inkSecondary, height: 1.3),
+                        l10n.individualDesc,
+                        style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary, height: 1.3),
                       ),
                     ],
                   ),
@@ -589,18 +619,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                   ),
                   const SizedBox(width: 14),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Organization',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
+                          l10n.organization,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          'For a builder, contractor, government body or any other organization working across projects and packages.',
-                          style: TextStyle(fontSize: 13, color: AppColors.inkSecondary, height: 1.3),
+                          l10n.organizationDesc,
+                          style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary, height: 1.3),
                         ),
                       ],
                     ),
@@ -614,12 +644,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         const SizedBox(height: 28),
         Row(
           children: [
-            const Text('Already have an account? ', style: TextStyle(fontSize: 13, color: AppColors.inkSecondary)),
+            Text(l10n.alreadyHaveAccount, style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary)),
             GestureDetector(
               onTap: () => context.push('/login'),
-              child: const Text(
-                'Sign in',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary700, decoration: TextDecoration.underline),
+              child: Text(
+                l10n.signIn,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary700, decoration: TextDecoration.underline),
               ),
             ),
           ],
@@ -633,18 +663,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // -------------------------------------------------------------
   Widget _buildStep1Details() {
     final isOrg = _userType == UserType.organization;
+    final l10n = AppLocalizations.of(context)!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Basic & Address details',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
+        Text(
+          l10n.basicAndAddressDetails,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
         ),
         const SizedBox(height: 6),
-        const Text(
-          'Enter your personal contact and delivery destination details.',
-          style: TextStyle(fontSize: 14, color: AppColors.inkSecondary, height: 1.3),
+        Text(
+          l10n.enterPersonalContact,
+          style: const TextStyle(fontSize: 14, color: AppColors.inkSecondary, height: 1.3),
         ),
         const SizedBox(height: 20),
 
@@ -677,12 +708,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isOrg ? 'Organization' : 'Individual',
+                      isOrg ? l10n.organization : l10n.individual,
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isOrg ? 'Infrastructure & Commercial Projects' : 'Personal & Home Construction',
+                      isOrg ? l10n.personaOrganizationDesc : l10n.personaIndividualDesc,
                       style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary),
                     ),
                   ],
@@ -694,13 +725,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         const SizedBox(height: 20),
 
         // Full Name
-        _buildFieldLabel('Full name'),
+        _buildFieldLabel(l10n.fullName),
         const SizedBox(height: 6),
-        _buildTextField(_fullNameController, error: _errors['fullName']),
+        _buildTextField(
+          _fullNameController, 
+          error: _errors['fullName'],
+          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]'))],
+          keyboardType: TextInputType.name,
+        ),
         const SizedBox(height: 16),
 
         // Mobile Number with +91 Prefix
-        _buildFieldLabel('Mobile number'),
+        _buildFieldLabel(l10n.mobileNumber),
         const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
@@ -720,13 +756,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   controller: _mobileController,
                   keyboardType: TextInputType.phone,
                   maxLength: 10,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
-                  decoration: const InputDecoration(
-                    hintText: '10-digit number',
-                    hintStyle: TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
+                  decoration: InputDecoration(
+                    hintText: l10n.tenDigitNumber,
+                    hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
                     counterText: '',
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   ),
                 ),
               ),
@@ -738,18 +775,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           Text(_errors['mobile']!, style: const TextStyle(fontSize: 12, color: AppColors.danger700)),
         ] else ...[
           const SizedBox(height: 6),
-          const Text('We will send a 5-digit verification code to this number.', style: TextStyle(fontSize: 12, color: AppColors.inkSecondary)),
+          Text(l10n.weWillSendVerification, style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary)),
         ],
         const SizedBox(height: 20),
 
         // Organization Specific Fields if org
         if (isOrg) ...[
-          _buildFieldLabel('Organization name'),
+          _buildFieldLabel(l10n.orgNameLabel),
           const SizedBox(height: 6),
           _buildTextField(_orgNameController, hint: 'Shree Infra & Constructions Pvt Ltd', error: _errors['orgName']),
           const SizedBox(height: 16),
 
-          _buildFieldLabel('Organization type'),
+          _buildFieldLabel(l10n.orgTypeLabel),
           const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -851,9 +888,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ],
 
         // Delivery Destination Section Header
-        const Text(
-          'WHERE SHOULD MINERAL BE DELIVERED?',
-          style: TextStyle(
+        Text(
+          l10n.whereDeliverMineral,
+          style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
             color: AppColors.inkMuted,
@@ -889,15 +926,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         const SizedBox(height: 14),
 
         // Street Address
-        _buildFieldLabel('Address (House / Flat / Street / Area)'),
+        _buildFieldLabel(l10n.addressLabel),
         const SizedBox(height: 6),
-        _buildTextField(_addressController, hint: 'Plot / House No., Building, Area / Road', error: _errors['address']),
+        _buildTextField(_addressController, hint: l10n.addressHint, error: _errors['address'], keyboardType: TextInputType.streetAddress),
         const SizedBox(height: 14),
 
         // PIN code
-        _buildFieldLabel('PIN code'),
+        _buildFieldLabel(l10n.pincodeLabel),
         const SizedBox(height: 6),
-        _buildTextField(_pincodeController, hint: '6-digit PIN code', error: _errors['pincode']),
+        _buildTextField(
+          _pincodeController, 
+          hint: l10n.pincodeHint, 
+          error: _errors['pincode'],
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          maxLength: 6,
+        ),
         const SizedBox(height: 24),
       ],
     );
@@ -917,7 +961,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           children: [
             Text(
               isOrg ? 'Organization KYC Verification' : 'Aadhaar KYC Verification',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -1049,7 +1093,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(
-                        onPressed: (_isCheckingAadhaar || _isGeneratingAadhaarOtp || _isAadhaarOtpSent) ? null : _handleSendAadhaarOtp,
+                        onPressed: (_isCheckingAadhaar || _isGeneratingAadhaarOtp || (_isAadhaarOtpSent && _timerCountdown > 0)) ? null : _handleSendAadhaarOtp,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary700,
                           foregroundColor: Colors.white,
@@ -1058,7 +1102,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ),
                         child: (_isCheckingAadhaar || _isGeneratingAadhaarOtp)
                             ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : Text(_isAadhaarOtpSent ? 'Sent' : 'Send OTP', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                            : Text(
+                                _isAadhaarOtpSent
+                                    ? (_timerCountdown > 0
+                                        ? '00:${_timerCountdown.toString().padLeft(2, '0')}'
+                                        : 'Resend')
+                                    : 'Send OTP',
+                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                              ),
                       ),
                     ],
                   ),
@@ -1219,6 +1270,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     String? hint,
     String? error,
     bool uppercase = false,
+    List<TextInputFormatter>? inputFormatters,
+    TextInputType? keyboardType,
+    int? maxLength,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1231,12 +1285,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ),
           child: TextField(
             controller: controller,
-            textCapitalization: uppercase ? TextCapitalization.characters : TextCapitalization.none,
+            textCapitalization: uppercase ? TextCapitalization.characters : TextCapitalization.words,
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
+            inputFormatters: inputFormatters,
+            keyboardType: keyboardType,
+            maxLength: maxLength,
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
               border: InputBorder.none,
+              counterText: '',
               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             ),
           ),

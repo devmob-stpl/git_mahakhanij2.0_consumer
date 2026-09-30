@@ -92,7 +92,7 @@
   "viewDigiTp": "View DigiTP",
   "cancelEnquiry": "Cancel Enquiry",
   "cancelling": "Cancelling...",
-  "activityTab": "Activity",
+  "activityTab": "DigiTP",
   "mineral": "Mineral",
   "qty": "Qty",
   "vehicle": "Vehicle",
@@ -147,5 +147,81 @@
   "fetchDetails": "Fetch Details",
   "scanAnotherCode": "Scan Another Code",
   "viewAllReceivedDeliveries": "View All Received Deliveries",
-  "materialReceivedSuccess": "Material Received Successfully!"
+  "materialReceivedSuccess": "Material Received Successfully!",
+  "revenueDeptMsg": "Revenue Department, Government of Maharashtra",
+  "welcomeTitle": "Mineral, from source to site",
+  "welcomeSubtitle": "Find a mineral place, raise an enquiry, track the vehicle, verify what arrives, and manage what you use.",
+  "signIn": "Sign in",
+  "createAccount": "Create account",
+  "loginHeading": "LOGIN",
+  "mobileNumberHint": "Mobile Number",
+  "waitSeconds": "Please wait {seconds} Seconds",
+  "@waitSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "resendOtp": "Resend OTP",
+  "invalidMobileError": "Enter a valid 10-digit Indian mobile number.",
+  "invalidOtpError": "Please enter complete 5-digit OTP.",
+  "getOtpBtn": "Get OTP",
+  "loginBtn": "Login",
+  "newMemberMsg": "New Member? ",
+  "signUpLink": "Sign Up",
+  "chooseAccountType": "Choose Account Type",
+  "howWillYouUse": "How will you use Mahakhanij?",
+  "chooseAccountDesc": "This decides what the app shows you. It cannot be changed later.",
+  "individual": "Individual",
+  "individualDesc": "For an individual buying mineral for personal use.",
+  "organization": "Organization",
+  "organizationDesc": "For a builder, contractor, government body or any other organization working across projects and packages.",
+  "alreadyHaveAccount": "Already have an account? ",
+  "basicAndAddressDetails": "Basic & Address details",
+  "enterPersonalContact": "Enter your personal contact and delivery destination details.",
+  "fullName": "Full name",
+  "mobileNumber": "Mobile number",
+  "tenDigitNumber": "10-digit number",
+  "weWillSendVerification": "We will send a 5-digit verification code to this number.",
+  "orgNameLabel": "Organization name",
+  "orgTypeLabel": "Organization type",
+  "gstinLabel": "GSTIN",
+  "continueBtn": "Continue",
+  "continueToKyc": "Continue to KYC Verification",
+  "completeRegistration": "Complete Registration",
+  "skipAadhaar": "Skip Aadhaar Verification & Complete Signup",
+  "stepOf": "Step {step} of {total}",
+  "@stepOf": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "personaIndividualDesc": "Personal & Home Construction",
+  "personaOrganizationDesc": "Infrastructure & Commercial Projects",
+  "whereDeliverMineral": "WHERE SHOULD MINERAL BE DELIVERED?",
+  "areaClassificationLabel": "Area Classification",
+  "urbanCity": "Urban (City)",
+  "ruralVillage": "Rural (Village)",
+  "districtLabel": "District *",
+  "selectDistrictHint": "Select District",
+  "loadingDistricts": "Loading Districts...",
+  "talukaLabel": "Taluka *",
+  "talukaHint": "e.g. Haveli",
+  "loading": "Loading...",
+  "cityCorporationLabel": "City / Corporation",
+  "villageRuralLabel": "Village / Rural Area",
+  "cityCorporationHint": "e.g. Pune City (PMC)",
+  "villageRuralHint": "e.g. Narayangaon",
+  "addressLabel": "Address (House / Flat / Street / Area)",
+  "addressHint": "Plot / House No., Building, Area / Road",
+  "pincodeLabel": "PIN code",
+  "pincodeHint": "6-digit PIN code",
+  "profileScreenTitle": "Consumer Profile & KYC",
+  "settingsScreenTitle": "Settings"
 }

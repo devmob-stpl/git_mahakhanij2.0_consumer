@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../shared/widgets/app_button.dart';
 
@@ -8,6 +9,8 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
@@ -22,20 +25,20 @@ class WelcomeScreen extends StatelessWidget {
                     fit: BoxFit.contain,
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'Revenue Department, Government of Maharashtra',
+                  Text(
+                    l10n.revenueDeptMsg,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.inkMuted,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 36),
-                  const Text(
-                    'Mineral, from source to site',
+                  Text(
+                    l10n.welcomeTitle,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: AppColors.ink,
@@ -43,10 +46,10 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Find a mineral place, raise an enquiry, track the vehicle, verify what arrives, and manage what you use.',
+                  Text(
+                    l10n.welcomeSubtitle,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
                       color: AppColors.inkSecondary,
                       height: 1.45,
@@ -54,14 +57,14 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                   const Spacer(),
                   AppButton(
-                    label: 'Sign in',
+                    label: l10n.signIn,
                     fullWidth: true,
                     size: AppButtonSize.large,
                     onPressed: () => context.push('/login'),
                   ),
                   const SizedBox(height: 12),
                   AppButton(
-                    label: 'Create account',
+                    label: l10n.createAccount,
                     fullWidth: true,
                     size: AppButtonSize.large,
                     variant: AppButtonVariant.secondary,

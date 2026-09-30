@@ -87,18 +87,21 @@ class SessionNotifier extends StateNotifier<SessionState> {
     state = state.copyWith(isLoading: true);
     try {
       final response = await _authRepository.logoutUser(userId);
-      if (response.isSuccess) {
-        state = const SessionState(currentUser: null, isLoading: false);
-      } else {
-        state = state.copyWith(isLoading: false, error: response.statusMessage);
-      }
-      return response;
+      // Always clear local session even if API fails
+      await _authRepository.clearSession();
+      state = const SessionState(currentUser: null, isLoading: false);
+      
+      // Force success so the UI navigates away
+      return const LogoutApiResponse(
+        statusCode: '200',
+        statusMessage: 'Logged out successfully',
+      );
     } catch (e) {
       await _authRepository.clearSession();
       state = const SessionState(currentUser: null, isLoading: false);
       return LogoutApiResponse(
-        statusCode: '500',
-        statusMessage: 'Logout error: ${e.toString()}',
+        statusCode: '200',
+        statusMessage: 'Logged out successfully (Offline)',
       );
     }
   }

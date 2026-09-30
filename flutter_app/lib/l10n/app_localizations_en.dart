@@ -199,7 +199,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancelling => 'Cancelling...';
 
   @override
-  String get activityTab => 'Activity';
+  String get activityTab => 'DigiTP';
 
   @override
   String get mineral => 'Mineral';
@@ -366,4 +366,192 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get materialReceivedSuccess => 'Material Received Successfully!';
+
+  @override
+  String get revenueDeptMsg => 'Revenue Department, Government of Maharashtra';
+
+  @override
+  String get welcomeTitle => 'Mineral, from source to site';
+
+  @override
+  String get welcomeSubtitle =>
+      'Find a mineral place, raise an enquiry, track the vehicle, verify what arrives, and manage what you use.';
+
+  @override
+  String get signIn => 'Sign in';
+
+  @override
+  String get createAccount => 'Create account';
+
+  @override
+  String get loginHeading => 'LOGIN';
+
+  @override
+  String get mobileNumberHint => 'Mobile Number';
+
+  @override
+  String waitSeconds(String seconds) {
+    return 'Please wait $seconds Seconds';
+  }
+
+  @override
+  String get resendOtp => 'Resend OTP';
+
+  @override
+  String get invalidMobileError =>
+      'Enter a valid 10-digit Indian mobile number.';
+
+  @override
+  String get invalidOtpError => 'Please enter complete 5-digit OTP.';
+
+  @override
+  String get getOtpBtn => 'Get OTP';
+
+  @override
+  String get loginBtn => 'Login';
+
+  @override
+  String get newMemberMsg => 'New Member? ';
+
+  @override
+  String get signUpLink => 'Sign Up';
+
+  @override
+  String get chooseAccountType => 'Choose Account Type';
+
+  @override
+  String get howWillYouUse => 'How will you use Mahakhanij?';
+
+  @override
+  String get chooseAccountDesc =>
+      'This decides what the app shows you. It cannot be changed later.';
+
+  @override
+  String get individual => 'Individual';
+
+  @override
+  String get individualDesc =>
+      'For an individual buying mineral for personal use.';
+
+  @override
+  String get organization => 'Organization';
+
+  @override
+  String get organizationDesc =>
+      'For a builder, contractor, government body or any other organization working across projects and packages.';
+
+  @override
+  String get alreadyHaveAccount => 'Already have an account? ';
+
+  @override
+  String get basicAndAddressDetails => 'Basic & Address details';
+
+  @override
+  String get enterPersonalContact =>
+      'Enter your personal contact and delivery destination details.';
+
+  @override
+  String get fullName => 'Full name';
+
+  @override
+  String get mobileNumber => 'Mobile number';
+
+  @override
+  String get tenDigitNumber => '10-digit number';
+
+  @override
+  String get weWillSendVerification =>
+      'We will send a 5-digit verification code to this number.';
+
+  @override
+  String get orgNameLabel => 'Organization name';
+
+  @override
+  String get orgTypeLabel => 'Organization type';
+
+  @override
+  String get gstinLabel => 'GSTIN';
+
+  @override
+  String get continueBtn => 'Continue';
+
+  @override
+  String get continueToKyc => 'Continue to KYC Verification';
+
+  @override
+  String get completeRegistration => 'Complete Registration';
+
+  @override
+  String get skipAadhaar => 'Skip Aadhaar Verification & Complete Signup';
+
+  @override
+  String stepOf(int step, int total) {
+    return 'Step $step of $total';
+  }
+
+  @override
+  String get personaIndividualDesc => 'Personal & Home Construction';
+
+  @override
+  String get personaOrganizationDesc => 'Infrastructure & Commercial Projects';
+
+  @override
+  String get whereDeliverMineral => 'WHERE SHOULD MINERAL BE DELIVERED?';
+
+  @override
+  String get areaClassificationLabel => 'Area Classification';
+
+  @override
+  String get urbanCity => 'Urban (City)';
+
+  @override
+  String get ruralVillage => 'Rural (Village)';
+
+  @override
+  String get districtLabel => 'District *';
+
+  @override
+  String get selectDistrictHint => 'Select District';
+
+  @override
+  String get loadingDistricts => 'Loading Districts...';
+
+  @override
+  String get talukaLabel => 'Taluka *';
+
+  @override
+  String get talukaHint => 'e.g. Haveli';
+
+  @override
+  String get loading => 'Loading...';
+
+  @override
+  String get cityCorporationLabel => 'City / Corporation';
+
+  @override
+  String get villageRuralLabel => 'Village / Rural Area';
+
+  @override
+  String get cityCorporationHint => 'e.g. Pune City (PMC)';
+
+  @override
+  String get villageRuralHint => 'e.g. Narayangaon';
+
+  @override
+  String get addressLabel => 'Address (House / Flat / Street / Area)';
+
+  @override
+  String get addressHint => 'Plot / House No., Building, Area / Road';
+
+  @override
+  String get pincodeLabel => 'PIN code';
+
+  @override
+  String get pincodeHint => '6-digit PIN code';
+
+  @override
+  String get profileScreenTitle => 'Consumer Profile & KYC';
+
+  @override
+  String get settingsScreenTitle => 'Settings';
 }

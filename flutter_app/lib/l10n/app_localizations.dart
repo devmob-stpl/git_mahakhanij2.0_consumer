@@ -463,7 +463,7 @@ abstract class AppLocalizations {
   /// No description provided for @activityTab.
   ///
   /// In en, this message translates to:
-  /// **'Activity'**
+  /// **'DigiTP'**
   String get activityTab;
 
   /// No description provided for @mineral.
@@ -795,6 +795,360 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Material Received Successfully!'**
   String get materialReceivedSuccess;
+
+  /// No description provided for @revenueDeptMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue Department, Government of Maharashtra'**
+  String get revenueDeptMsg;
+
+  /// No description provided for @welcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mineral, from source to site'**
+  String get welcomeTitle;
+
+  /// No description provided for @welcomeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a mineral place, raise an enquiry, track the vehicle, verify what arrives, and manage what you use.'**
+  String get welcomeSubtitle;
+
+  /// No description provided for @signIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get signIn;
+
+  /// No description provided for @createAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create account'**
+  String get createAccount;
+
+  /// No description provided for @loginHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'LOGIN'**
+  String get loginHeading;
+
+  /// No description provided for @mobileNumberHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile Number'**
+  String get mobileNumberHint;
+
+  /// No description provided for @waitSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait {seconds} Seconds'**
+  String waitSeconds(String seconds);
+
+  /// No description provided for @resendOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend OTP'**
+  String get resendOtp;
+
+  /// No description provided for @invalidMobileError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid 10-digit Indian mobile number.'**
+  String get invalidMobileError;
+
+  /// No description provided for @invalidOtpError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter complete 5-digit OTP.'**
+  String get invalidOtpError;
+
+  /// No description provided for @getOtpBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Get OTP'**
+  String get getOtpBtn;
+
+  /// No description provided for @loginBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get loginBtn;
+
+  /// No description provided for @newMemberMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'New Member? '**
+  String get newMemberMsg;
+
+  /// No description provided for @signUpLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Up'**
+  String get signUpLink;
+
+  /// No description provided for @chooseAccountType.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Account Type'**
+  String get chooseAccountType;
+
+  /// No description provided for @howWillYouUse.
+  ///
+  /// In en, this message translates to:
+  /// **'How will you use Mahakhanij?'**
+  String get howWillYouUse;
+
+  /// No description provided for @chooseAccountDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'This decides what the app shows you. It cannot be changed later.'**
+  String get chooseAccountDesc;
+
+  /// No description provided for @individual.
+  ///
+  /// In en, this message translates to:
+  /// **'Individual'**
+  String get individual;
+
+  /// No description provided for @individualDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'For an individual buying mineral for personal use.'**
+  String get individualDesc;
+
+  /// No description provided for @organization.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization'**
+  String get organization;
+
+  /// No description provided for @organizationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'For a builder, contractor, government body or any other organization working across projects and packages.'**
+  String get organizationDesc;
+
+  /// No description provided for @alreadyHaveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account? '**
+  String get alreadyHaveAccount;
+
+  /// No description provided for @basicAndAddressDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic & Address details'**
+  String get basicAndAddressDetails;
+
+  /// No description provided for @enterPersonalContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your personal contact and delivery destination details.'**
+  String get enterPersonalContact;
+
+  /// No description provided for @fullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Full name'**
+  String get fullName;
+
+  /// No description provided for @mobileNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile number'**
+  String get mobileNumber;
+
+  /// No description provided for @tenDigitNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'10-digit number'**
+  String get tenDigitNumber;
+
+  /// No description provided for @weWillSendVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'We will send a 5-digit verification code to this number.'**
+  String get weWillSendVerification;
+
+  /// No description provided for @orgNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization name'**
+  String get orgNameLabel;
+
+  /// No description provided for @orgTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization type'**
+  String get orgTypeLabel;
+
+  /// No description provided for @gstinLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'GSTIN'**
+  String get gstinLabel;
+
+  /// No description provided for @continueBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continueBtn;
+
+  /// No description provided for @continueToKyc.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to KYC Verification'**
+  String get continueToKyc;
+
+  /// No description provided for @completeRegistration.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Registration'**
+  String get completeRegistration;
+
+  /// No description provided for @skipAadhaar.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip Aadhaar Verification & Complete Signup'**
+  String get skipAadhaar;
+
+  /// No description provided for @stepOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {step} of {total}'**
+  String stepOf(int step, int total);
+
+  /// No description provided for @personaIndividualDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal & Home Construction'**
+  String get personaIndividualDesc;
+
+  /// No description provided for @personaOrganizationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Infrastructure & Commercial Projects'**
+  String get personaOrganizationDesc;
+
+  /// No description provided for @whereDeliverMineral.
+  ///
+  /// In en, this message translates to:
+  /// **'WHERE SHOULD MINERAL BE DELIVERED?'**
+  String get whereDeliverMineral;
+
+  /// No description provided for @areaClassificationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Area Classification'**
+  String get areaClassificationLabel;
+
+  /// No description provided for @urbanCity.
+  ///
+  /// In en, this message translates to:
+  /// **'Urban (City)'**
+  String get urbanCity;
+
+  /// No description provided for @ruralVillage.
+  ///
+  /// In en, this message translates to:
+  /// **'Rural (Village)'**
+  String get ruralVillage;
+
+  /// No description provided for @districtLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'District *'**
+  String get districtLabel;
+
+  /// No description provided for @selectDistrictHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select District'**
+  String get selectDistrictHint;
+
+  /// No description provided for @loadingDistricts.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading Districts...'**
+  String get loadingDistricts;
+
+  /// No description provided for @talukaLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Taluka *'**
+  String get talukaLabel;
+
+  /// No description provided for @talukaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Haveli'**
+  String get talukaHint;
+
+  /// No description provided for @loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loading;
+
+  /// No description provided for @cityCorporationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'City / Corporation'**
+  String get cityCorporationLabel;
+
+  /// No description provided for @villageRuralLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Village / Rural Area'**
+  String get villageRuralLabel;
+
+  /// No description provided for @cityCorporationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Pune City (PMC)'**
+  String get cityCorporationHint;
+
+  /// No description provided for @villageRuralHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Narayangaon'**
+  String get villageRuralHint;
+
+  /// No description provided for @addressLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Address (House / Flat / Street / Area)'**
+  String get addressLabel;
+
+  /// No description provided for @addressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Plot / House No., Building, Area / Road'**
+  String get addressHint;
+
+  /// No description provided for @pincodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN code'**
+  String get pincodeLabel;
+
+  /// No description provided for @pincodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'6-digit PIN code'**
+  String get pincodeHint;
+
+  /// No description provided for @profileScreenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Consumer Profile & KYC'**
+  String get profileScreenTitle;
+
+  /// No description provided for @settingsScreenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsScreenTitle;
 }
 
 class _AppLocalizationsDelegate

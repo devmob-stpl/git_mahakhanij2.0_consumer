@@ -10,6 +10,7 @@ import '../../domain/project.dart';
 import '../../domain/temporary_excavation.dart';
 
 import '../../features/auth/splash_screen.dart';
+import '../../features/auth/language_selection_screen.dart';
 import '../../features/auth/welcome_screen.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/auth/register_screen.dart';
@@ -83,6 +84,15 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => MaterialPage(
         key: _pageKey(state),
         child: const SplashScreen(),
+      ),
+    ),
+    // Language Selection Screen (First Launch)
+    GoRoute(
+      path: '/language-selection',
+      name: 'language-selection',
+      pageBuilder: (context, state) => MaterialPage(
+        key: _pageKey(state),
+        child: const LanguageSelectionScreen(),
       ),
     ),
     // Welcome Screen

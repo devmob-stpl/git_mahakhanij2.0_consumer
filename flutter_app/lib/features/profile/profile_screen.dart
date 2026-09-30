@@ -289,7 +289,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final isAadhaarVerified = _activeProfileData?.isAadharVerified ?? false;
 
     final Map<String, dynamic> updatePayload = {
-      if (_activeProfileData?.id != null && _activeProfileData!.id > 0) 'id': _activeProfileData!.id,
+      'id': user!.consumerId,
       'consumerType': (user?.isOrganization ?? false) ? 1 : 0,
       'name': _nameController.text.trim(),
       'mobileNo': mobile,
@@ -685,7 +685,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final profileAsync = ref.watch(consumerProfileProvider(mobileNo));
 
     return AppScaffold(
-      title: 'Consumer Profile & KYC',
+      title: loc.profileScreenTitle,
       showBackButton: false,
       actions: [
         IconButton(

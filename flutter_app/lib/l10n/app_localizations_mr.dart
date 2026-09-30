@@ -197,7 +197,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get cancelling => 'रद्द करत आहे...';
 
   @override
-  String get activityTab => 'अॅक्टिव्हिटी';
+  String get activityTab => 'डिजीटीपी';
 
   @override
   String get mineral => 'खनिज';
@@ -364,4 +364,192 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get materialReceivedSuccess => 'सामग्री यशस्वीरित्या प्राप्त झाली!';
+
+  @override
+  String get revenueDeptMsg => 'महसूल विभाग, महाराष्ट्र शासन';
+
+  @override
+  String get welcomeTitle => 'खनिज, स्रोतापासून साइटपर्यंत';
+
+  @override
+  String get welcomeSubtitle =>
+      'खनिज ठिकाण शोधा, चौकशी करा, वाहनाचा मागोवा घ्या, काय येते ते सत्यापित करा आणि तुम्ही काय वापरता ते व्यवस्थापित करा.';
+
+  @override
+  String get signIn => 'साइन इन करा';
+
+  @override
+  String get createAccount => 'नवीन खाते तयार करा';
+
+  @override
+  String get loginHeading => 'लॉगिन';
+
+  @override
+  String get mobileNumberHint => 'मोबाईल क्रमांक';
+
+  @override
+  String waitSeconds(String seconds) {
+    return 'कृपया $seconds सेकंद प्रतीक्षा करा';
+  }
+
+  @override
+  String get resendOtp => 'ओटीपी पुन्हा पाठवा';
+
+  @override
+  String get invalidMobileError =>
+      'वैध 10-अंकी भारतीय मोबाईल क्रमांक प्रविष्ट करा.';
+
+  @override
+  String get invalidOtpError => 'कृपया संपूर्ण 5-अंकी OTP प्रविष्ट करा.';
+
+  @override
+  String get getOtpBtn => 'ओटीपी मिळवा';
+
+  @override
+  String get loginBtn => 'लॉगिन करा';
+
+  @override
+  String get newMemberMsg => 'नवीन सदस्य? ';
+
+  @override
+  String get signUpLink => 'साइन अप करा';
+
+  @override
+  String get chooseAccountType => 'खाता प्रकार निवडा';
+
+  @override
+  String get howWillYouUse => 'तुम्ही महाखनिज कसे वापराल?';
+
+  @override
+  String get chooseAccountDesc =>
+      'अॅप तुम्हाला काय दाखवते हे हे ठरवते. हे नंतर बदलता येणार नाही.';
+
+  @override
+  String get individual => 'वैयक्तिक';
+
+  @override
+  String get individualDesc =>
+      'वैयक्तिक वापरासाठी खनिज खरेदी करणार्‍या व्यक्तीसाठी.';
+
+  @override
+  String get organization => 'संस्था';
+
+  @override
+  String get organizationDesc =>
+      'प्रकल्प आणि पॅकेजेसमध्ये काम करणाऱ्या बिल्डर, कंत्राटदार, सरकारी संस्था किंवा इतर कोणत्याही संस्थेसाठी.';
+
+  @override
+  String get alreadyHaveAccount => 'आधीच खाते आहे का? ';
+
+  @override
+  String get basicAndAddressDetails => 'मूलभूत आणि पत्ता तपशील';
+
+  @override
+  String get enterPersonalContact =>
+      'तुमचे वैयक्तिक संपर्क आणि वितरण गंतव्य तपशील प्रविष्ट करा.';
+
+  @override
+  String get fullName => 'पूर्ण नाव';
+
+  @override
+  String get mobileNumber => 'मोबाईल क्रमांक';
+
+  @override
+  String get tenDigitNumber => '10-अंकी क्रमांक';
+
+  @override
+  String get weWillSendVerification =>
+      'आम्ही या नंबरवर 5-अंकी सत्यापन कोड पाठवू.';
+
+  @override
+  String get orgNameLabel => 'संस्थेचे नाव';
+
+  @override
+  String get orgTypeLabel => 'संस्थेचा प्रकार';
+
+  @override
+  String get gstinLabel => 'जीएसटीआयएन (GSTIN)';
+
+  @override
+  String get continueBtn => 'पुढे जा';
+
+  @override
+  String get continueToKyc => 'KYC पडताळणीसाठी पुढे जा';
+
+  @override
+  String get completeRegistration => 'नोंदणी पूर्ण करा';
+
+  @override
+  String get skipAadhaar => 'आधार पडताळणी वगळा आणि साइनअप पूर्ण करा';
+
+  @override
+  String stepOf(int step, int total) {
+    return 'चरण $step / $total';
+  }
+
+  @override
+  String get personaIndividualDesc => 'वैयक्तिक आणि घर बांधकाम';
+
+  @override
+  String get personaOrganizationDesc => 'पायाभूत सुविधा आणि व्यावसायिक प्रकल्प';
+
+  @override
+  String get whereDeliverMineral => 'खनिजाचे वितरण कोठे करावे?';
+
+  @override
+  String get areaClassificationLabel => 'क्षेत्र वर्गीकरण';
+
+  @override
+  String get urbanCity => 'शहरी (शहर)';
+
+  @override
+  String get ruralVillage => 'ग्रामीण (गाव)';
+
+  @override
+  String get districtLabel => 'जिल्हा *';
+
+  @override
+  String get selectDistrictHint => 'जिल्हा निवडा';
+
+  @override
+  String get loadingDistricts => 'जिल्हे लोड करत आहे...';
+
+  @override
+  String get talukaLabel => 'तालुका *';
+
+  @override
+  String get talukaHint => 'उदा. हवेली';
+
+  @override
+  String get loading => 'लोड करत आहे...';
+
+  @override
+  String get cityCorporationLabel => 'शहर / महानगरपालिका';
+
+  @override
+  String get villageRuralLabel => 'गाव / ग्रामीण भाग';
+
+  @override
+  String get cityCorporationHint => 'उदा. पुणे शहर (PMC)';
+
+  @override
+  String get villageRuralHint => 'उदा. नारायणगाव';
+
+  @override
+  String get addressLabel => 'पत्ता (घर / फ्लॅट / रस्ता / क्षेत्र)';
+
+  @override
+  String get addressHint => 'प्लॉट / घर क्र., इमारत, क्षेत्र / रस्ता';
+
+  @override
+  String get pincodeLabel => 'पिन कोड';
+
+  @override
+  String get pincodeHint => '6-अंकी पिन कोड';
+
+  @override
+  String get profileScreenTitle => 'ग्राहक प्रोफाइल आणि केवायसी (KYC)';
+
+  @override
+  String get settingsScreenTitle => 'सेटिंग्ज';
 }

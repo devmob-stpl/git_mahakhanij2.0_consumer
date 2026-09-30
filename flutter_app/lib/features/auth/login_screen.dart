@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/session_provider.dart';
 
@@ -85,7 +86,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final mobile = _mobileController.text.trim();
     if (mobile.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
       setState(() {
-        _error = 'Enter a valid 10-digit Indian mobile number.';
+        _error = AppLocalizations.of(context)!.invalidMobileError;
       });
       return;
     }
@@ -123,7 +124,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final code = _getEnteredCode().trim();
     if (code.length != 5) {
       setState(() {
-        _error = 'Please enter complete 5-digit OTP.';
+        _error = AppLocalizations.of(context)!.invalidOtpError;
       });
       return;
     }
@@ -192,6 +193,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     const primaryBlue = Color(0xFF2563EB);
 
     return Scaffold(
@@ -238,9 +240,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const SizedBox(height: 36),
 
                       // Section Header: LOGIN
-                      const Text(
-                        'LOGIN',
-                        style: TextStyle(
+                      Text(
+                        l10n.loginHeading,
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: primaryBlue,
@@ -282,9 +284,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     fontWeight: FontWeight.w500,
                                     color: Color(0xFF1E293B),
                                   ),
-                                  decoration: const InputDecoration(
-                                    hintText: 'Mobile Number',
-                                    hintStyle: TextStyle(
+                                  decoration: InputDecoration(
+                                    hintText: l10n.mobileNumberHint,
+                                    hintStyle: const TextStyle(
                                       color: Color(0xFF94A3B8),
                                       fontSize: 15,
                                     ),
@@ -389,7 +391,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               // Timer / Resend OTP text
                               _secondsLeft > 0
                                   ? Text(
-                                      'Please wait $_secondsLeft Seconds',
+                                      l10n.waitSeconds(_secondsLeft.toString()),
                                       style: const TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
@@ -398,9 +400,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     )
                                   : GestureDetector(
                                       onTap: _isLoading ? null : _handleResendOtp,
-                                      child: const Text(
-                                        'Resend OTP',
-                                        style: TextStyle(
+                                      child: Text(
+                                        l10n.resendOtp,
+                                        style: const TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w600,
                                           color: primaryBlue,
@@ -460,7 +462,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   ),
                                 )
                               : Text(
-                                  _isOtpSent ? 'Login' : 'Get OTP',
+                                  _isOtpSent ? l10n.loginBtn : l10n.getOtpBtn,
                                   style: const TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w600,
@@ -475,18 +477,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
-                            'New Member? ',
-                            style: TextStyle(
+                          Text(
+                            l10n.newMemberMsg,
+                            style: const TextStyle(
                               fontSize: 14,
                               color: Color(0xFF334155),
                             ),
                           ),
                           GestureDetector(
                             onTap: () => context.push('/register'),
-                            child: const Text(
-                              'Sign Up',
-                              style: TextStyle(
+                            child: Text(
+                              l10n.signUpLink,
+                              style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: primaryBlue,

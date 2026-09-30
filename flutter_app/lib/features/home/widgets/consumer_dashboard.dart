@@ -149,7 +149,6 @@ class ConsumerDashboard extends ConsumerWidget {
                       color: Color(0xFF737373),
                     ),
                   ),
-                  const SizedBox(height: 10),
 
                   // Core Actions Box
                   Container(
@@ -222,8 +221,8 @@ class ConsumerDashboard extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
 
+                  const SizedBox(height: 12),
                   // Recent Deliveries Cards
                   if (recentDeliveries.isEmpty)
                     Container(
@@ -242,6 +241,7 @@ class ConsumerDashboard extends ConsumerWidget {
                     )
                   else
                     ListView.separated(
+                      padding: EdgeInsets.zero,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: recentDeliveries.length > 3 ? 3 : recentDeliveries.length,

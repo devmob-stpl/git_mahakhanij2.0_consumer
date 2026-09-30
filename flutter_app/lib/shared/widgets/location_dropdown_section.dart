@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/repositories/location_repository.dart';
 import '../../domain/location_models.dart';
+import '../../l10n/app_localizations.dart';
 
 class LocationSelectionData {
   final DistrictModel? district;
@@ -269,17 +270,18 @@ class _LocationDropdownSectionState
 
   @override
   Widget build(BuildContext context) {
-    final villageCityLabel = _isTown ? 'City / Corporation' : 'Village / Rural Area';
+    final l10n = AppLocalizations.of(context)!;
+    final villageCityLabel = _isTown ? l10n.cityCorporationLabel : l10n.villageRuralLabel;
     final villageCityHint =
-        _isTown ? 'e.g. Pune City (PMC)' : 'e.g. Narayangaon';
+        _isTown ? l10n.cityCorporationHint : l10n.villageRuralHint;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Urban / Rural Pill Selector
         if (widget.showCategorySelector) ...[
-          const Text('Area Classification',
-              style: TextStyle(
+          Text(l10n.areaClassificationLabel,
+              style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppColors.ink)),
@@ -314,7 +316,7 @@ class _LocationDropdownSectionState
                                 : const Color(0xFF64748B)),
                         const SizedBox(width: 6),
                         Text(
-                          'Urban (City)',
+                          l10n.urbanCity,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -357,7 +359,7 @@ class _LocationDropdownSectionState
                                 : const Color(0xFF64748B)),
                         const SizedBox(width: 6),
                         Text(
-                          'Rural (Village)',
+                          l10n.ruralVillage,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -380,8 +382,8 @@ class _LocationDropdownSectionState
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('District *',
-                style: TextStyle(
+            Text(l10n.districtLabel,
+                style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: AppColors.ink)),
@@ -395,15 +397,15 @@ class _LocationDropdownSectionState
                       border: Border.all(color: AppColors.line),
                       color: AppColors.surface,
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        SizedBox(
+                        const SizedBox(
                             width: 14,
                             height: 14,
                             child: CircularProgressIndicator(strokeWidth: 2)),
-                        SizedBox(width: 8),
-                        Text('Loading Districts...',
-                            style: TextStyle(
+                        const SizedBox(width: 8),
+                        Text(l10n.loadingDistricts,
+                            style: const TextStyle(
                                 fontSize: 12, color: AppColors.inkMuted)),
                       ],
                     ),
@@ -411,8 +413,8 @@ class _LocationDropdownSectionState
                 : DropdownButtonFormField<DistrictModel>(
                     initialValue: _selectedDistrict,
                     isExpanded: true,
-                    hint: const Text('Select District',
-                        style: TextStyle(
+                    hint: Text(l10n.selectDistrictHint,
+                        style: const TextStyle(
                             fontSize: 13, color: AppColors.inkMuted)),
                     decoration: InputDecoration(
                       contentPadding: const EdgeInsets.symmetric(
@@ -459,8 +461,8 @@ class _LocationDropdownSectionState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Taluka *',
-                      style: TextStyle(
+                  Text(l10n.talukaLabel,
+                      style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: AppColors.ink)),
@@ -474,16 +476,16 @@ class _LocationDropdownSectionState
                             border: Border.all(color: AppColors.line),
                             color: AppColors.surface,
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              SizedBox(
+                              const SizedBox(
                                   width: 14,
                                   height: 14,
                                   child: CircularProgressIndicator(
                                       strokeWidth: 2)),
-                              SizedBox(width: 6),
-                              Text('Loading...',
-                                  style: TextStyle(
+                              const SizedBox(width: 6),
+                              Text(l10n.loading,
+                                  style: const TextStyle(
                                       fontSize: 12, color: AppColors.inkMuted)),
                             ],
                           ),
@@ -491,8 +493,8 @@ class _LocationDropdownSectionState
                       : DropdownButtonFormField<TalukaModel>(
                           initialValue: _selectedTaluka,
                           isExpanded: true,
-                          hint: const Text('e.g. Haveli',
-                              style: TextStyle(
+                          hint: Text(l10n.talukaHint,
+                              style: const TextStyle(
                                   fontSize: 12, color: AppColors.inkMuted),
                               overflow: TextOverflow.ellipsis),
                           decoration: InputDecoration(
@@ -559,16 +561,16 @@ class _LocationDropdownSectionState
                             border: Border.all(color: AppColors.line),
                             color: AppColors.surface,
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              SizedBox(
+                              const SizedBox(
                                   width: 14,
                                   height: 14,
                                   child: CircularProgressIndicator(
                                       strokeWidth: 2)),
-                              SizedBox(width: 6),
-                              Text('Loading...',
-                                  style: TextStyle(
+                              const SizedBox(width: 6),
+                              Text(l10n.loading,
+                                  style: const TextStyle(
                                       fontSize: 12, color: AppColors.inkMuted)),
                             ],
                           ),

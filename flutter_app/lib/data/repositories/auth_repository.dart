@@ -248,8 +248,8 @@ class AuthRepositoryImpl implements AuthRepository {
       if (data is Map<String, dynamic>) {
         final parsed = ConsumerSignUpResponse.fromJson(data);
         if (parsed.isSuccess) {
-          final mob = signUpData['mobileNo']?.toString() ?? '9822014576';
-          final name = signUpData['name']?.toString() ?? 'Mahakhanij Consumer';
+          final mob = signUpData['mobileNo']?.toString() ?? '';
+          final name = signUpData['name']?.toString() ?? '';
           final isOrg = signUpData['consumerType'] == 1;
           _currentUser = User(
             id: (parsed.responseData != null && parsed.responseData is Map && parsed.responseData['id'] != null)
