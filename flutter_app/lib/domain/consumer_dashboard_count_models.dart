@@ -1,9 +1,11 @@
 class ConsumerDashboardCountData {
+  final int notReceivedCount;
   final int inTransitCount;
   final int deliveredCount;
   final int totalCount;
 
   ConsumerDashboardCountData({
+    this.notReceivedCount = 0,
     this.inTransitCount = 0,
     this.deliveredCount = 0,
     this.totalCount = 0,
@@ -11,6 +13,7 @@ class ConsumerDashboardCountData {
 
   factory ConsumerDashboardCountData.fromJson(Map<String, dynamic> json) {
     return ConsumerDashboardCountData(
+      notReceivedCount: (json['notReceivedCount'] as num?)?.toInt() ?? 0,
       inTransitCount: (json['inTransitCount'] as num?)?.toInt() ?? 0,
       deliveredCount: (json['deliveredCount'] as num?)?.toInt() ?? 0,
       totalCount: (json['totalCount'] as num?)?.toInt() ?? 0,
@@ -19,6 +22,7 @@ class ConsumerDashboardCountData {
 
   Map<String, dynamic> toJson() {
     return {
+      'notReceivedCount': notReceivedCount,
       'inTransitCount': inTransitCount,
       'deliveredCount': deliveredCount,
       'totalCount': totalCount,

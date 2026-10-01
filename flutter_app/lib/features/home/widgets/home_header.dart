@@ -38,39 +38,28 @@ class HomeHeader extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Image.asset(
-                  'assets/images/mahakhanij-emblem.png',
-                  height: 36,
-                  width: 36,
-                  fit: BoxFit.contain,
+                Text(
+                  l10n?.welcome ?? 'Welcome',
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    color: Color(0xFFD4D4D4),
+                    height: 1.1,
+                  ),
                 ),
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      l10n?.welcome ?? 'Welcome',
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        color: Color(0xFFD4D4D4),
-                        height: 1.1,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      userName,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: -0.2,
-                        height: 1.1,
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 2),
+                Text(
+                  userName,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: -0.2,
+                    height: 1.1,
+                  ),
                 ),
               ],
             ),

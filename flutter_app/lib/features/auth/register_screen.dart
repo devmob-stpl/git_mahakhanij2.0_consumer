@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/config/app_config.dart';
@@ -207,60 +208,52 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _pickAndUploadDocument({bool isPan = false, bool isSignatoryAadhaar = false}) async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Camera'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _processPickImage(ImageSource.camera, isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _processPickImage(ImageSource.gallery, isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.insert_drive_file),
+                title: const Text('File Document'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _processPickFile(isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _processPickImage(ImageSource source, {bool isPan = false, bool isSignatoryAadhaar = false}) async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-      );
-
-      if (result == null || result.files.isEmpty) return;
-      final file = result.files.first;
-
-      final key = isPan ? 'panFile' : (isSignatoryAadhaar ? 'aadhaarFile' : 'kycFile');
-
-      setState(() {
-        if (isPan) {
-          _isUploadingPanDoc = true;
-        } else {
-          _isUploadingAadhaarDoc = true;
-        }
-        _errors.remove(key);
-      });
-
-      final repo = ref.read(aadhaarKycRepositoryProvider);
-      final response = await repo.uploadAadhaarDocument(
-        filePath: file.path ?? '',
-        fileName: file.name,
-        bytes: file.bytes,
-      );
-
-      if (!mounted) return;
-
-      setState(() {
-        if (isPan) {
-          _isUploadingPanDoc = false;
-        } else {
-          _isUploadingAadhaarDoc = false;
-        }
-
-        if (response.isSuccess && response.responseData != null && response.responseData!.isNotEmpty) {
-          if (isPan) {
-            _panFileName = file.name;
-            _panDocUrl = response.responseData;
-          } else if (isSignatoryAadhaar) {
-            _aadhaarFileName = file.name;
-            _aadhaarSignatoryDocUrl = response.responseData;
-          } else {
-            _kycFileName = file.name;
-            _aadhaarDocUrl = response.responseData;
-          }
-          _errors.remove(key);
-        } else {
-          _errors[key] = response.statusMessage.isNotEmpty
-              ? response.statusMessage
-              : 'Failed to upload document. Please try again.';
-        }
-      });
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: source);
+      if (pickedFile == null) return;
+      final bytes = await pickedFile.readAsBytes();
+      await _uploadDocumentFile(pickedFile.path, pickedFile.name, bytes, isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
     } catch (e) {
       if (!mounted) return;
       final key = isPan ? 'panFile' : (isSignatoryAadhaar ? 'aadhaarFile' : 'kycFile');
@@ -270,6 +263,75 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         _errors[key] = 'Document upload failed: ${e.toString()}';
       });
     }
+  }
+
+  Future<void> _processPickFile({bool isPan = false, bool isSignatoryAadhaar = false}) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      );
+
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+      await _uploadDocumentFile(file.path ?? '', file.name, file.bytes, isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
+    } catch (e) {
+      if (!mounted) return;
+      final key = isPan ? 'panFile' : (isSignatoryAadhaar ? 'aadhaarFile' : 'kycFile');
+      setState(() {
+        _isUploadingAadhaarDoc = false;
+        _isUploadingPanDoc = false;
+        _errors[key] = 'Document upload failed: ${e.toString()}';
+      });
+    }
+  }
+
+  Future<void> _uploadDocumentFile(String path, String name, Uint8List? bytes, {bool isPan = false, bool isSignatoryAadhaar = false}) async {
+    final key = isPan ? 'panFile' : (isSignatoryAadhaar ? 'aadhaarFile' : 'kycFile');
+
+    setState(() {
+      if (isPan) {
+        _isUploadingPanDoc = true;
+      } else {
+        _isUploadingAadhaarDoc = true;
+      }
+      _errors.remove(key);
+    });
+
+    final repo = ref.read(aadhaarKycRepositoryProvider);
+    final response = await repo.uploadAadhaarDocument(
+      filePath: path,
+      fileName: name,
+      bytes: bytes,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      if (isPan) {
+        _isUploadingPanDoc = false;
+      } else {
+        _isUploadingAadhaarDoc = false;
+      }
+
+      if (response.isSuccess && response.responseData != null && response.responseData!.isNotEmpty) {
+        if (isPan) {
+          _panFileName = name;
+          _panDocUrl = response.responseData;
+        } else if (isSignatoryAadhaar) {
+          _aadhaarFileName = name;
+          _aadhaarSignatoryDocUrl = response.responseData;
+        } else {
+          _kycFileName = name;
+          _aadhaarDocUrl = response.responseData;
+        }
+        _errors.remove(key);
+      } else {
+        _errors[key] = response.statusMessage.isNotEmpty
+            ? response.statusMessage
+            : 'Failed to upload document. Please try again.';
+      }
+    });
   }
 
   void _verifyGst() {
@@ -413,7 +475,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       }
       final pin = _pincodeController.text.trim();
       if (pin.length != 6 || !RegExp(r'^\d{6}$').hasMatch(pin)) {
-        found['pincode'] = 'Enter a valid 6-digit PIN code.';
+        found['pincode'] = 'Enter a valid 6-digit PIN code. Only numbers are allowed.';
       }
     } else if (_step == 2) {
       // Aadhaar KYC is NON-MANDATORY. Allow skipping and continuing without validation errors.
@@ -754,9 +816,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               Expanded(
                 child: TextField(
                   controller: _mobileController,
-                  keyboardType: TextInputType.phone,
+                  keyboardType: TextInputType.number,
                   maxLength: 10,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
                   decoration: InputDecoration(
                     hintText: l10n.tenDigitNumber,

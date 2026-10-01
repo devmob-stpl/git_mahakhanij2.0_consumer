@@ -139,19 +139,19 @@ abstract class AppLocalizations {
   /// No description provided for @digitpDeliveries.
   ///
   /// In en, this message translates to:
-  /// **'DigiTP\nDeliveries'**
+  /// **'DigiTPs\nIssued'**
   String get digitpDeliveries;
 
   /// No description provided for @receivedMaterial.
   ///
   /// In en, this message translates to:
-  /// **'Received\nMaterial'**
+  /// **'DigiTPs\nReceived'**
   String get receivedMaterial;
 
   /// No description provided for @inTransitVehicles.
   ///
   /// In en, this message translates to:
-  /// **'In Transit\nVehicles'**
+  /// **'Vehicles\nIn Transit'**
   String get inTransitVehicles;
 
   /// No description provided for @coreServices.
@@ -1149,6 +1149,306 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings'**
   String get settingsScreenTitle;
+
+  /// No description provided for @cameraBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get cameraBtn;
+
+  /// No description provided for @galleryBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get galleryBtn;
+
+  /// No description provided for @fileDocumentBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'File Document'**
+  String get fileDocumentBtn;
+
+  /// No description provided for @aadhaarEkycInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar e-KYC Information'**
+  String get aadhaarEkycInfoTitle;
+
+  /// No description provided for @aadhaarNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Number'**
+  String get aadhaarNumberLabel;
+
+  /// No description provided for @aadhaarVerificationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Verification'**
+  String get aadhaarVerificationLabel;
+
+  /// No description provided for @aadhaarDocumentUrlLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Document URL'**
+  String get aadhaarDocumentUrlLabel;
+
+  /// No description provided for @closeBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get closeBtn;
+
+  /// No description provided for @verifyAadhaarBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Aadhaar'**
+  String get verifyAadhaarBtn;
+
+  /// No description provided for @aadhaarIdentityVerificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Identity Verification'**
+  String get aadhaarIdentityVerificationTitle;
+
+  /// No description provided for @aadhaarIdentityVerificationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your Aadhaar OTP or upload document photo'**
+  String get aadhaarIdentityVerificationDesc;
+
+  /// No description provided for @method1LiveOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Method 1: Live OTP Verification'**
+  String get method1LiveOtp;
+
+  /// No description provided for @twelveDigitAadhaarNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'12-Digit Aadhaar Number *'**
+  String get twelveDigitAadhaarNumber;
+
+  /// No description provided for @enterTwelveDigitAadhaar.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 12 digit Aadhaar'**
+  String get enterTwelveDigitAadhaar;
+
+  /// No description provided for @sendOtpBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Send OTP'**
+  String get sendOtpBtn;
+
+  /// No description provided for @sixDigitAadhaarOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'6-Digit Aadhaar OTP *'**
+  String get sixDigitAadhaarOtp;
+
+  /// No description provided for @enterSixDigitOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 6 digit OTP'**
+  String get enterSixDigitOtp;
+
+  /// No description provided for @verifyOtpBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify OTP'**
+  String get verifyOtpBtn;
+
+  /// No description provided for @method2UploadAadhaar.
+  ///
+  /// In en, this message translates to:
+  /// **'Method 2: Upload Aadhaar Card Document (PDF / Image)'**
+  String get method2UploadAadhaar;
+
+  /// No description provided for @uploadAadhaarDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Select document file to upload via Mahakhanij document server'**
+  String get uploadAadhaarDesc;
+
+  /// No description provided for @chooseAadhaarPdfOrImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Aadhaar PDF or Image'**
+  String get chooseAadhaarPdfOrImage;
+
+  /// No description provided for @uploadingToMahakhanijServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading to Mahakhanij server...'**
+  String get uploadingToMahakhanijServer;
+
+  /// No description provided for @replaceBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get replaceBtn;
+
+  /// No description provided for @uploadBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload'**
+  String get uploadBtn;
+
+  /// No description provided for @retryBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retryBtn;
+
+  /// No description provided for @aadhaarVerificationCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Verification Completed!'**
+  String get aadhaarVerificationCompleted;
+
+  /// No description provided for @aadhaarVerificationSuccessDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar credentials verified successfully with Government of Maharashtra.'**
+  String get aadhaarVerificationSuccessDesc;
+
+  /// No description provided for @doneBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get doneBtn;
+
+  /// No description provided for @reports.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get reports;
+
+  /// No description provided for @last30Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 30 Days'**
+  String get last30Days;
+
+  /// No description provided for @quarterly.
+  ///
+  /// In en, this message translates to:
+  /// **'Quarterly'**
+  String get quarterly;
+
+  /// No description provided for @fy2425.
+  ///
+  /// In en, this message translates to:
+  /// **'FY 24-25'**
+  String get fy2425;
+
+  /// No description provided for @filterByQuarry.
+  ///
+  /// In en, this message translates to:
+  /// **'FILTER BY QUARRY (PARTY)'**
+  String get filterByQuarry;
+
+  /// No description provided for @allQuarries.
+  ///
+  /// In en, this message translates to:
+  /// **'All Quarries'**
+  String get allQuarries;
+
+  /// No description provided for @errorLoadingPlots.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading plots'**
+  String get errorLoadingPlots;
+
+  /// No description provided for @noDataAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No data available'**
+  String get noDataAvailable;
+
+  /// No description provided for @totalReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Received'**
+  String get totalReceived;
+
+  /// No description provided for @digitpsReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'DigiTPs Received'**
+  String get digitpsReceived;
+
+  /// No description provided for @passes.
+  ///
+  /// In en, this message translates to:
+  /// **'Passes'**
+  String get passes;
+
+  /// No description provided for @mineralProcurementBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'MINERAL PROCUREMENT BREAKDOWN'**
+  String get mineralProcurementBreakdown;
+
+  /// No description provided for @byVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'By volume'**
+  String get byVolume;
+
+  /// No description provided for @noMaterialsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No materials found'**
+  String get noMaterialsFound;
+
+  /// No description provided for @errorLoadingReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading report: '**
+  String get errorLoadingReport;
+
+  /// No description provided for @units.
+  ///
+  /// In en, this message translates to:
+  /// **'Units'**
+  String get units;
+
+  /// No description provided for @notReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Received'**
+  String get notReceived;
+
+  /// No description provided for @all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
+  /// No description provided for @noDeliveriesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No Deliveries Found'**
+  String get noDeliveriesFound;
+
+  /// No description provided for @noDeliveriesFoundDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have any DigiTP passes.'**
+  String get noDeliveriesFoundDesc;
+
+  /// No description provided for @fetchingConsumerDigiTpRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching Consumer DigiTP records...'**
+  String get fetchingConsumerDigiTpRecords;
+
+  /// No description provided for @failedToLoadDigiTpList.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load DigiTP list'**
+  String get failedToLoadDigiTpList;
 }
 
 class _AppLocalizationsDelegate

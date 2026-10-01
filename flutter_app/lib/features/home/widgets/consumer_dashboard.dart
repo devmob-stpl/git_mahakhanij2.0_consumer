@@ -20,54 +20,54 @@ class ConsumerDashboard extends ConsumerWidget {
     final userName = user?.fullName ?? '';
 
     final dashboardCountAsync = ref.watch(consumerDashboardCountProvider);
-    final inTransitAsync = ref.watch(consumerDigiTpListProvider(1));
-    final deliveredAsync = ref.watch(consumerDigiTpListProvider(2));
+    final allAsync = ref.watch(consumerDigiTpListProvider(0));
 
-    final inTransitItems = inTransitAsync.valueOrNull?.items ?? [];
-    final deliveredItems = deliveredAsync.valueOrNull?.items ?? [];
+    final allItems = allAsync.valueOrNull?.items ?? [];
 
     final countData = dashboardCountAsync.valueOrNull?.responseData;
-    final inTransitCount = countData?.inTransitCount ?? inTransitItems.length;
-    final deliveredCount = countData?.deliveredCount ?? deliveredItems.length;
-    final totalCount = countData?.totalCount ?? (inTransitCount + deliveredCount);
+    final notReceivedCount = countData?.notReceivedCount ?? 0;
+    final inTransitCount = countData?.inTransitCount ?? 0;
+    final deliveredCount = countData?.deliveredCount ?? 0;
+    final totalCount = countData?.totalCount ?? (notReceivedCount + inTransitCount + deliveredCount);
 
     // Convert live items to DeliveryItemSummary for recent deliveries
     final List<DeliveryItemSummary> recentDeliveries = [];
 
-    for (final item in inTransitItems) {
-      recentDeliveries.add(
-        DeliveryItemSummary(
-          id: item.invoiceNo,
-          code: item.invoiceNo,
-          digiTpNumber: item.invoiceNo,
-          vehicleNo: item.vehicleNo,
-          purchasedFrom: item.plotName ?? '-',
-          status: item.invoiceStatus ?? '-',
-          destination: item.destination ?? '-',
-          mineralName: item.materialType ?? '-',
-          quantity: '${item.quantity ?? 0} ${item.mineralUnit ?? '-'}',
-          onTrackVehicle: () => context.push('/deliveries/${item.invoiceNo}/live-tracking?vehicleNo=${item.vehicleNo ?? item.invoiceNo}'),
-          onViewDigiTp: () => showDigiTpPassModal(context, item: item),
-        ),
-      );
-    }
-
-    for (final item in deliveredItems) {
-      recentDeliveries.add(
-        DeliveryItemSummary(
-          id: item.invoiceNo,
-          code: item.invoiceNo,
-          digiTpNumber: item.invoiceNo,
-          vehicleNo: item.vehicleNo,
-          purchasedFrom: item.ownerName ?? '-',
-          status: item.invoiceStatus ?? '-',
-          destination: item.destination ?? '-',
-          mineralName: item.materialType ?? '-',
-          quantity: '${item.quantity ?? 0} ${item.mineralUnit ?? '-'}',
-          rawItem: item,
-          onViewDigiTp: () => showDigiTpPassModal(context, item: item),
-        ),
-      );
+    for (final item in allItems) {
+      final isDelivered = (item.invoiceStatusId == 3) || (item.invoiceStatus?.toLowerCase() == 'delivered');
+      if (isDelivered) {
+        recentDeliveries.add(
+          DeliveryItemSummary(
+            id: item.invoiceNo,
+            code: item.invoiceNo,
+            digiTpNumber: item.invoiceNo,
+            vehicleNo: item.vehicleNo,
+            purchasedFrom: item.ownerName ?? item.plotName ?? '-',
+            status: item.invoiceStatus ?? '-',
+            destination: item.destination ?? '-',
+            mineralName: item.materialType ?? '-',
+            quantity: '${item.quantity ?? 0} ${item.mineralUnit ?? '-'}',
+            rawItem: item,
+            onViewDigiTp: () => showDigiTpPassModal(context, item: item),
+          ),
+        );
+      } else {
+        recentDeliveries.add(
+          DeliveryItemSummary(
+            id: item.invoiceNo,
+            code: item.invoiceNo,
+            digiTpNumber: item.invoiceNo,
+            vehicleNo: item.vehicleNo,
+            purchasedFrom: item.plotName ?? item.ownerName ?? '-',
+            status: item.invoiceStatus ?? '-',
+            destination: item.destination ?? '-',
+            mineralName: item.materialType ?? '-',
+            quantity: '${item.quantity ?? 0} ${item.mineralUnit ?? '-'}',
+            onTrackVehicle: () => context.push('/deliveries/${item.invoiceNo}/live-tracking?vehicleNo=${item.vehicleNo ?? item.invoiceNo}'),
+            onViewDigiTp: () => showDigiTpPassModal(context, item: item),
+          ),
+        );
+      }
     }
 
     return Scaffold(
@@ -84,12 +84,10 @@ class ConsumerDashboard extends ConsumerWidget {
               color: AppColors.primary700,
               onRefresh: () async {
                 ref.invalidate(consumerDashboardCountProvider);
-                ref.invalidate(consumerDigiTpListProvider(1));
-                ref.invalidate(consumerDigiTpListProvider(2));
+                ref.invalidate(consumerDigiTpListProvider(0));
                 await Future.wait([
                   ref.refresh(consumerDashboardCountProvider.future),
-                  ref.refresh(consumerDigiTpListProvider(1).future),
-                  ref.refresh(consumerDigiTpListProvider(2).future),
+                  ref.refresh(consumerDigiTpListProvider(0).future),
                 ]);
               },
               child: SingleChildScrollView(
@@ -132,6 +130,17 @@ class ConsumerDashboard extends ConsumerWidget {
                           bgColor: const Color(0xFFF7F0FD),
                           borderColor: const Color(0xFFEBD9FB),
                           textColor: const Color(0xFF7E22CE),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Not Received (notReceivedCount)
+                      Expanded(
+                        child: _buildStatCard(
+                          count: dashboardCountAsync.isLoading ? '...' : notReceivedCount.toString().padLeft(2, '0'),
+                          label: l10n.notReceived,
+                          bgColor: const Color(0xFFFEF2F2),
+                          borderColor: const Color(0xFFFCA5A5),
+                          textColor: const Color(0xFFDC2626),
                         ),
                       ),
                     ],

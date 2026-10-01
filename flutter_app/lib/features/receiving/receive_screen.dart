@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
@@ -83,8 +84,12 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
       if (!mounted) return;
 
       final repo = ref.read(consumerDigiTpRepositoryProvider);
+      final user = ref.read(sessionProvider).currentUser;
+      int resolvedConsumerId = user?.consumerId ?? 0;
+
       final response = await repo.getConsumerInvoiceDetails(
         invoiceNo: invoiceNo,
+        consumerId: resolvedConsumerId,
       );
 
       if (!mounted) return;
@@ -172,7 +177,10 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
         content: TextField(
           controller: controller,
           autofocus: true,
-          keyboardType: TextInputType.text,
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+          ],
           decoration: InputDecoration(
             hintText: AppLocalizations.of(context)!.enterDigiTpNumberHint,
             isDense: true,
@@ -187,6 +195,12 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
           ElevatedButton(
             onPressed: () {
               final text = controller.text.trim();
+              if (text.isEmpty || !RegExp(r'^\d+$').hasMatch(text)) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please enter a valid numeric DigiTP Number.')),
+                );
+                return;
+              }
               Navigator.of(ctx).pop();
               if (text.isNotEmpty) {
                 final result = ScanResult(
@@ -298,8 +312,8 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
       );
 
       // Invalidate DigiTP lists & dashboard count providers
-      ref.invalidate(consumerDigiTpListProvider(1));
       ref.invalidate(consumerDigiTpListProvider(2));
+      ref.invalidate(consumerDigiTpListProvider(3));
       ref.invalidate(consumerDashboardCountProvider);
     } else if (response.isAlreadyReceived) {
       // HTTP 409 Conflict: Already Received

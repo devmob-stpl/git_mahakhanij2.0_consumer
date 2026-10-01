@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../domain/scan_result.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../l10n/app_localizations.dart';
+import 'package:flutter/services.dart';
 
 class DigitpScanScreen extends StatefulWidget {
   final String? simulatedPayload;
@@ -75,6 +76,16 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
     if (_isProcessingScan) return;
     final trimmed = value.trim();
     if (trimmed.isEmpty) return;
+
+    if (!RegExp(r'^[0-9]+$').hasMatch(trimmed)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid numeric DigiTP number'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     _isProcessingScan = true;
 
@@ -191,7 +202,8 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
                   if (_showManualInput) ...[
                     TextField(
                       controller: _manualController,
-                      keyboardType: TextInputType.text,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: InputDecoration(
                         labelText: loc.enterInvoiceManually,
                         hintText: 'e.g. 491',

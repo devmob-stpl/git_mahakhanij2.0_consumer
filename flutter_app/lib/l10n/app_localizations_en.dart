@@ -27,13 +27,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcome => 'Welcome';
 
   @override
-  String get digitpDeliveries => 'DigiTP\nDeliveries';
+  String get digitpDeliveries => 'DigiTPs\nIssued';
 
   @override
-  String get receivedMaterial => 'Received\nMaterial';
+  String get receivedMaterial => 'DigiTPs\nReceived';
 
   @override
-  String get inTransitVehicles => 'In Transit\nVehicles';
+  String get inTransitVehicles => 'Vehicles\nIn Transit';
 
   @override
   String get coreServices => 'CORE SERVICES';
@@ -554,4 +554,160 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsScreenTitle => 'Settings';
+
+  @override
+  String get cameraBtn => 'Camera';
+
+  @override
+  String get galleryBtn => 'Gallery';
+
+  @override
+  String get fileDocumentBtn => 'File Document';
+
+  @override
+  String get aadhaarEkycInfoTitle => 'Aadhaar e-KYC Information';
+
+  @override
+  String get aadhaarNumberLabel => 'Aadhaar Number';
+
+  @override
+  String get aadhaarVerificationLabel => 'Aadhaar Verification';
+
+  @override
+  String get aadhaarDocumentUrlLabel => 'Aadhaar Document URL';
+
+  @override
+  String get closeBtn => 'Close';
+
+  @override
+  String get verifyAadhaarBtn => 'Verify Aadhaar';
+
+  @override
+  String get aadhaarIdentityVerificationTitle =>
+      'Aadhaar Identity Verification';
+
+  @override
+  String get aadhaarIdentityVerificationDesc =>
+      'Verify your Aadhaar OTP or upload document photo';
+
+  @override
+  String get method1LiveOtp => 'Method 1: Live OTP Verification';
+
+  @override
+  String get twelveDigitAadhaarNumber => '12-Digit Aadhaar Number *';
+
+  @override
+  String get enterTwelveDigitAadhaar => 'Enter 12 digit Aadhaar';
+
+  @override
+  String get sendOtpBtn => 'Send OTP';
+
+  @override
+  String get sixDigitAadhaarOtp => '6-Digit Aadhaar OTP *';
+
+  @override
+  String get enterSixDigitOtp => 'Enter 6 digit OTP';
+
+  @override
+  String get verifyOtpBtn => 'Verify OTP';
+
+  @override
+  String get method2UploadAadhaar =>
+      'Method 2: Upload Aadhaar Card Document (PDF / Image)';
+
+  @override
+  String get uploadAadhaarDesc =>
+      'Select document file to upload via Mahakhanij document server';
+
+  @override
+  String get chooseAadhaarPdfOrImage => 'Choose Aadhaar PDF or Image';
+
+  @override
+  String get uploadingToMahakhanijServer => 'Uploading to Mahakhanij server...';
+
+  @override
+  String get replaceBtn => 'Replace';
+
+  @override
+  String get uploadBtn => 'Upload';
+
+  @override
+  String get retryBtn => 'Retry';
+
+  @override
+  String get aadhaarVerificationCompleted => 'Aadhaar Verification Completed!';
+
+  @override
+  String get aadhaarVerificationSuccessDesc =>
+      'Aadhaar credentials verified successfully with Government of Maharashtra.';
+
+  @override
+  String get doneBtn => 'Done';
+
+  @override
+  String get reports => 'Reports';
+
+  @override
+  String get last30Days => 'Last 30 Days';
+
+  @override
+  String get quarterly => 'Quarterly';
+
+  @override
+  String get fy2425 => 'FY 24-25';
+
+  @override
+  String get filterByQuarry => 'FILTER BY QUARRY (PARTY)';
+
+  @override
+  String get allQuarries => 'All Quarries';
+
+  @override
+  String get errorLoadingPlots => 'Error loading plots';
+
+  @override
+  String get noDataAvailable => 'No data available';
+
+  @override
+  String get totalReceived => 'Total Received';
+
+  @override
+  String get digitpsReceived => 'DigiTPs Received';
+
+  @override
+  String get passes => 'Passes';
+
+  @override
+  String get mineralProcurementBreakdown => 'MINERAL PROCUREMENT BREAKDOWN';
+
+  @override
+  String get byVolume => 'By volume';
+
+  @override
+  String get noMaterialsFound => 'No materials found';
+
+  @override
+  String get errorLoadingReport => 'Error loading report: ';
+
+  @override
+  String get units => 'Units';
+
+  @override
+  String get notReceived => 'Not Received';
+
+  @override
+  String get all => 'All';
+
+  @override
+  String get noDeliveriesFound => 'No Deliveries Found';
+
+  @override
+  String get noDeliveriesFoundDesc => 'You do not have any DigiTP passes.';
+
+  @override
+  String get fetchingConsumerDigiTpRecords =>
+      'Fetching Consumer DigiTP records...';
+
+  @override
+  String get failedToLoadDigiTpList => 'Failed to load DigiTP list';
 }

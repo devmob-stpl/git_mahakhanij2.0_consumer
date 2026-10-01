@@ -11,6 +11,7 @@ abstract class ConsumerDigiTpRepository {
 
   Future<GetConsumerInvoiceDetailsResponse> getConsumerInvoiceDetails({
     required String invoiceNo,
+    required int consumerId,
   });
 
   Future<ReceiveInvoiceResponse> receiveInvoice({
@@ -75,9 +76,10 @@ class ConsumerDigiTpRepositoryImpl implements ConsumerDigiTpRepository {
   @override
   Future<GetConsumerInvoiceDetailsResponse> getConsumerInvoiceDetails({
     required String invoiceNo,
+    required int consumerId,
   }) async {
     try {
-      final url = ApiEndpoints.getConsumerInvoiceDetailsUrl(invoiceNo);
+      final url = ApiEndpoints.getConsumerInvoiceDetailsUrl(invoiceNo: invoiceNo, consumerId: consumerId);
       final response = await _dio.get(url);
 
       dynamic data = response.data;

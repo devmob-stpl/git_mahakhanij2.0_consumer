@@ -124,6 +124,7 @@ class ConsumerDigiTpItem {
 
 class ConsumerDigiTpCount {
   final int totalCount;
+  final int notReceivedCount;
   final int inTransitCount;
   final int deliveredCount;
   final int status;
@@ -131,6 +132,7 @@ class ConsumerDigiTpCount {
 
   const ConsumerDigiTpCount({
     this.totalCount = 0,
+    this.notReceivedCount = 0,
     this.inTransitCount = 0,
     this.deliveredCount = 0,
     this.status = 0,
@@ -142,6 +144,9 @@ class ConsumerDigiTpCount {
       totalCount: json['totalCount'] is int
           ? json['totalCount'] as int
           : (int.tryParse(json['totalCount']?.toString() ?? '') ?? 0),
+      notReceivedCount: json['notReceivedCount'] is int
+          ? json['notReceivedCount'] as int
+          : (int.tryParse(json['notReceivedCount']?.toString() ?? '') ?? 0),
       inTransitCount: json['inTransitCount'] is int
           ? json['inTransitCount'] as int
           : (int.tryParse(json['inTransitCount']?.toString() ?? '') ?? 0),
@@ -155,6 +160,7 @@ class ConsumerDigiTpCount {
 
   Map<String, dynamic> toJson() => {
     'totalCount': totalCount,
+    'notReceivedCount': notReceivedCount,
     'inTransitCount': inTransitCount,
     'deliveredCount': deliveredCount,
     'status': status,

@@ -10,6 +10,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../domain/vehicle_tracking_models.dart';
 import '../../providers/vehicle_tracking_provider.dart';
+import '../../providers/session_provider.dart';
 
 
 class LiveVehicleTrackingScreen extends ConsumerStatefulWidget {
@@ -116,7 +117,9 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
       setState(() {
         _activeVehicleNo = query;
       });
-      ref.invalidate(vehicleTrackingProvider(VehicleTrackingParams(vehicleNo: _activeVehicleNo, deliveryId: widget.deliveryId)));
+      final user = ref.read(sessionProvider).currentUser;
+      final resolvedConsumerId = user?.consumerId ?? 0;
+      ref.invalidate(vehicleTrackingProvider(VehicleTrackingParams(vehicleNo: _activeVehicleNo, deliveryId: widget.deliveryId, consumerId: resolvedConsumerId)));
     }
   }
 
@@ -136,7 +139,9 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
 
   @override
   Widget build(BuildContext context) {
-    final params = VehicleTrackingParams(vehicleNo: _activeVehicleNo, deliveryId: widget.deliveryId);
+    final user = ref.read(sessionProvider).currentUser;
+    final resolvedConsumerId = user?.consumerId ?? 0;
+    final params = VehicleTrackingParams(vehicleNo: _activeVehicleNo, deliveryId: widget.deliveryId, consumerId: resolvedConsumerId);
     
     ref.listen<AsyncValue<VehicleTrackingApiResponse>>(
       vehicleTrackingProvider(params),
@@ -497,6 +502,15 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
           if (srcLat != null && srcLng != null && destLat != null && destLng != null) {
             srcLatLng = LatLng(srcLat, srcLng);
             destLatLng = LatLng(destLat, destLng);
+            
+            polylines.add(
+              Polyline(
+                polylineId: const PolylineId('travel_route'),
+                points: [srcLatLng, destLatLng],
+                color: Colors.blue,
+                width: 4,
+              ),
+            );
           }
         }
       } catch (_) {}

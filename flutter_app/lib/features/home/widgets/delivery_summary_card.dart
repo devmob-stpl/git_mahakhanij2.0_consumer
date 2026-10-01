@@ -37,14 +37,19 @@ class DeliveryItemSummary {
     this.onViewDigiTp,
   });
 
+  bool get isNotReceived {
+    final s = status.toUpperCase();
+    return s.contains('NOT RECEIVED') || s == '1';
+  }
+
   bool get isInTransit {
     final s = status.toUpperCase();
-    return s.contains('TRANSIT') || s == 'DISPATCHED' || s == '1';
+    return s.contains('TRANSIT') || s == 'DISPATCHED' || s == '2';
   }
 
   bool get isDelivered {
     final s = status.toUpperCase();
-    return s.contains('RECEIV') || s.contains('DELIVER') || s == '2';
+    return (s.contains('RECEIV') && !s.contains('NOT')) || s.contains('DELIVER') || s == '3';
   }
 }
 
@@ -226,8 +231,8 @@ class DeliverySummaryCardWidget extends StatelessWidget {
 
   Widget _buildActionButton(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    if (item.isInTransit) {
-      // In-Transit DigiTP → Show both "View DigiTP" & "Track Vehicle" buttons
+    if (item.isInTransit || item.isNotReceived) {
+      // In-Transit or Not Received DigiTP → Show both "View DigiTP" & "Track Vehicle" buttons
       return Row(
         children: [
           Expanded(
@@ -327,7 +332,10 @@ class DeliverySummaryCardWidget extends StatelessWidget {
 
   _StatusConfig _getStatusBadge(String status, AppLocalizations loc) {
     final normalized = status.toUpperCase();
-    if (normalized.contains('TRANSIT') || normalized == 'DISPATCHED' || normalized == '1') {
+    if (normalized.contains('NOT RECEIVED') || normalized == '1') {
+      return _StatusConfig('Not Received', const Color(0xFFFEF2F2), const Color(0xFFFCA5A5), const Color(0xFFDC2626));
+    }
+    if (normalized.contains('TRANSIT') || normalized == 'DISPATCHED' || normalized == '2') {
       return _StatusConfig(loc.inTransit, const Color(0xFFF7F0FD), const Color(0xFFEBD9FB), const Color(0xFF7E22CE));
     }
     if (normalized.contains('ARRIV')) {
@@ -336,7 +344,7 @@ class DeliverySummaryCardWidget extends StatelessWidget {
     if (normalized.contains('PASS') || normalized.contains('APPROV')) {
       return _StatusConfig('Pass Issued', const Color(0xFFE0F2FE), const Color(0xFFBAE6FD), const Color(0xFF0369A1));
     }
-    if (normalized.contains('RECEIV') || normalized.contains('DELIVER') || normalized == '2') {
+    if ((normalized.contains('RECEIV') && !normalized.contains('NOT')) || normalized.contains('DELIVER') || normalized == '3') {
       return _StatusConfig(loc.delivered, const Color(0xFFDCFCE7), const Color(0xFFBBF7D0), const Color(0xFF15803D));
     }
     return _StatusConfig(status, const Color(0xFFF3F4F6), const Color(0xFFE5E7EB), const Color(0xFF525252));

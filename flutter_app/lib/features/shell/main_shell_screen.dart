@@ -30,6 +30,7 @@ class MainShellScreen extends ConsumerWidget {
         : [
             _TabConfig(label: loc.home, icon: Icons.home_outlined, activeIcon: Icons.home, branchIndex: 0),
             _TabConfig(label: loc.activityTab, icon: Icons.show_chart, activeIcon: Icons.show_chart, branchIndex: 2),
+            const _TabConfig(label: 'Reports', icon: Icons.insert_chart_outlined, activeIcon: Icons.insert_chart, branchIndex: 3),
             _TabConfig(label: loc.profile, icon: Icons.person, activeIcon: Icons.person, branchIndex: 4),
           ];
 

@@ -12,15 +12,15 @@ class InTransitVehicleListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Status 1 = In Transit vehicles/deliveries
-    final inTransitAsync = ref.watch(consumerDigiTpListProvider(1));
+    // Status 2 = In Transit vehicles/deliveries
+    final inTransitAsync = ref.watch(consumerDigiTpListProvider(2));
 
     return AppScaffold(
       title: 'In-Transit Vehicles',
       showBackButton: true,
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.invalidate(consumerDigiTpListProvider(1));
+          ref.invalidate(consumerDigiTpListProvider(2));
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -112,7 +112,7 @@ class InTransitVehicleListScreen extends ConsumerWidget {
                         label: 'Retry Fetching',
                         size: AppButtonSize.small,
                         variant: AppButtonVariant.primary,
-                        onPressed: () => ref.invalidate(consumerDigiTpListProvider(1)),
+                        onPressed: () => ref.invalidate(consumerDigiTpListProvider(2)),
                       ),
                     ],
                   ),
@@ -161,7 +161,7 @@ class InTransitVehicleListScreen extends ConsumerWidget {
                             size: AppButtonSize.small,
                             variant: AppButtonVariant.secondary,
                             icon: const Icon(Icons.refresh, size: 16),
-                            onPressed: () => ref.invalidate(consumerDigiTpListProvider(1)),
+                            onPressed: () => ref.invalidate(consumerDigiTpListProvider(2)),
                           ),
                         ],
                       ),

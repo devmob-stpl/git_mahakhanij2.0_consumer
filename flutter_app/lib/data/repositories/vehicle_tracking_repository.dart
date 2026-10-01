@@ -7,6 +7,7 @@ abstract class VehicleTrackingRepository {
   Future<VehicleTrackingApiResponse> getVehicleLocationAndTrip({
     required String vehicleNo,
     String? deliveryId,
+    int consumerId = 0,
   });
 }
 
@@ -26,6 +27,7 @@ class VehicleTrackingRepositoryImpl implements VehicleTrackingRepository {
   Future<VehicleTrackingApiResponse> getVehicleLocationAndTrip({
     required String vehicleNo,
     String? deliveryId,
+    int consumerId = 0,
   }) async {
     final cleanedVehicleNo = vehicleNo.trim();
     if (cleanedVehicleNo.isEmpty) {
@@ -55,7 +57,7 @@ class VehicleTrackingRepositoryImpl implements VehicleTrackingRepository {
       List<VehicleTripData>? tripList;
       if (deliveryId != null && deliveryId.isNotEmpty) {
         try {
-          final tripUrl = ApiEndpoints.getConsumerInvoiceDetailsUrl(deliveryId);
+          final tripUrl = ApiEndpoints.getConsumerInvoiceDetailsUrl(invoiceNo: deliveryId, consumerId: consumerId);
           final tripResponse = await _dio.get(tripUrl);
           
           dynamic tripData = tripResponse.data;

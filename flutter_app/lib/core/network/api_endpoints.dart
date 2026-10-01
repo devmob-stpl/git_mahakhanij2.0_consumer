@@ -66,8 +66,8 @@ class ApiEndpoints {
       '$consumerDigiTpList?consumerId=$consumerId&status=$status';
 
   static String get getConsumerInvoiceDetails => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/get-consumer-invoice-details';
-  static String getConsumerInvoiceDetailsUrl(dynamic invoiceNo) =>
-      '$getConsumerInvoiceDetails?invoiceNo=$invoiceNo';
+  static String getConsumerInvoiceDetailsUrl({required dynamic invoiceNo, required int consumerId}) =>
+      '$getConsumerInvoiceDetails?invoiceNo=$invoiceNo&consumerId=$consumerId';
 
   static String get receiveInvoice => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/receive-invoice';
 
@@ -152,5 +152,11 @@ class ApiEndpoints {
       'https://gps.mahakhanij.in/gps-data-provider/api/v2/vehicle-tracking/tracking/get-vehicle-current-location';
   static String getVehicleTrackingLocationUrl(String vehicleNo) =>
       '$vehicleTrackingLocation?VehicleNumber=$vehicleNo';
+
+  // Consumer Reports & Plots
+  static String get consumerPlots => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/consumer-plots';
+  static String getConsumerPlotsUrl(int consumerId) => '$consumerPlots?consumerId=$consumerId';
+  
+  static String get consumerInvoiceReport => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/consumer-invoice-report';
 }
 

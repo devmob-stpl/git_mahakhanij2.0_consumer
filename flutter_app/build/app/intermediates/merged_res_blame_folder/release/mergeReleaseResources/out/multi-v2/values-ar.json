@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.mahakhanij.consumerapp-mergeReleaseResources-53:/values-ar/values-ar.xml",
+            "outputFile": "com.mahakhanij.consumerapp-mergeReleaseResources-54:/values-ar/values-ar.xml",
             "map": [
                 {
                     "source": "C:\\Users\\suraja\\.gradle\\caches\\8.14\\transforms\\f14fca39d6bdaaccc76516e8fbe7e086\\transformed\\appcompat-1.7.1\\res\\values-ar\\values-ar.xml",
@@ -38,7 +38,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\suraja\\.gradle\\caches\\8.14\\transforms\\7d2c634f449bc9e5f14b1aac40f721d0\\transformed\\core-1.17.0\\res\\values-ar\\values-ar.xml",
+                    "source": "C:\\Users\\suraja\\.gradle\\caches\\8.14\\transforms\\0871892b9642f8ad4a8c23bebe65544c\\transformed\\core-1.18.0\\res\\values-ar\\values-ar.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",

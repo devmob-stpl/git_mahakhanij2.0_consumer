@@ -19,12 +19,6 @@ class WelcomeScreen extends StatelessWidget {
               child: Column(
                 children: [
                   const Spacer(),
-                  Image.asset(
-                    'assets/images/mahakhanij-logo.png',
-                    height: 72,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(height: 10),
                   Text(
                     l10n.revenueDeptMsg,
                     textAlign: TextAlign.center,

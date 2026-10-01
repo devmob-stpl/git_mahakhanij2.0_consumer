@@ -13,7 +13,7 @@ import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/digitp_modal.dart';
 import '../../l10n/app_localizations.dart';
 
-enum ActivityChip { live, delivered, enquiries }
+enum ActivityChip { all, live, delivered, enquiries }
 
 class ConsumerActivityScreen extends ConsumerStatefulWidget {
   final ActivityChip initialChip;
@@ -45,11 +45,13 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
 
   int _getStatusForChip(ActivityChip chip) {
     switch (chip) {
+      case ActivityChip.all:
+        return 0;
       case ActivityChip.delivered:
-        return 2;
+        return 3;
       case ActivityChip.live:
       default:
-        return 1;
+        return 2;
     }
   }
 
@@ -57,8 +59,13 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final enquiries = ref.watch(enquiriesProvider);
-    final inTransitAsync = ref.watch(consumerDigiTpListProvider(1));
-    final deliveredAsync = ref.watch(consumerDigiTpListProvider(2));
+    final allAsync = ref.watch(consumerDigiTpListProvider(0));
+    final inTransitAsync = ref.watch(consumerDigiTpListProvider(2));
+    final deliveredAsync = ref.watch(consumerDigiTpListProvider(3));
+
+    final allCount = (allAsync.valueOrNull?.responseData?.count?.totalCount != null && (allAsync.valueOrNull?.responseData?.count?.totalCount ?? 0) > 0) 
+        ? allAsync.valueOrNull!.responseData!.count!.totalCount
+        : (allAsync.valueOrNull?.items.length ?? 0);
 
     final inTransitCount = (inTransitAsync.valueOrNull?.responseData?.count?.inTransitCount != null && (inTransitAsync.valueOrNull?.responseData?.count?.inTransitCount ?? 0) > 0)
         ? inTransitAsync.valueOrNull!.responseData!.count!.inTransitCount
@@ -69,15 +76,16 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
         : (deliveredAsync.valueOrNull?.items.length ?? 0);
 
     final activeStatus = _getStatusForChip(_activeChip);
-    final activeAsync = activeStatus == 1 ? inTransitAsync : deliveredAsync;
+    final activeAsync = activeStatus == 0 ? allAsync : (activeStatus == 2 ? inTransitAsync : deliveredAsync);
 
     return AppScaffold(
       title: loc.digitpDeliveries.replaceAll('\n', ' '),
       showBackButton: Navigator.canPop(context),
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.invalidate(consumerDigiTpListProvider(1));
+          ref.invalidate(consumerDigiTpListProvider(0));
           ref.invalidate(consumerDigiTpListProvider(2));
+          ref.invalidate(consumerDigiTpListProvider(3));
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -90,6 +98,14 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
+                    _buildChip(
+                      chip: ActivityChip.all,
+                      icon: Icons.list_alt_outlined,
+                      label: loc.all,
+                      count: allCount,
+                      isLoading: allAsync.isLoading,
+                    ),
+                    const SizedBox(width: 8),
                     _buildChip(
                       chip: ActivityChip.live,
                       icon: Icons.local_shipping_outlined,
@@ -115,19 +131,19 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                 ...enquiries.map((enq) => _buildEnquiryCard(context, enq)),
               ],
 
-              // DIGITP LIST (IN TRANSIT status=1 OR DELIVERED status=2)
-              if (_activeChip == ActivityChip.live || _activeChip == ActivityChip.delivered) ...[
+              // DIGITP LIST (ALL status=0 OR IN TRANSIT status=2 OR DELIVERED status=3)
+              if (_activeChip == ActivityChip.all || _activeChip == ActivityChip.live || _activeChip == ActivityChip.delivered) ...[
                 activeAsync.when(
                   loading: () => Container(
                     padding: const EdgeInsets.symmetric(vertical: 40),
-                    child: const Center(
+                    child: Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           CircularProgressIndicator(strokeWidth: 3),
                           SizedBox(height: 12),
                           Text(
-                            'Fetching Consumer DigiTP records...',
+                            loc.fetchingConsumerDigiTpRecords,
                             style: TextStyle(fontSize: 13, color: AppColors.inkSecondary),
                           ),
                         ],
@@ -145,9 +161,9 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                       children: [
                         const Icon(Icons.error_outline, size: 36, color: Color(0xFFDC2626)),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Failed to load DigiTP list',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF991B1B)),
+                        Text(
+                          loc.failedToLoadDigiTpList,
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF991B1B)),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -169,10 +185,10 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                     final items = response.items;
 
                     if (items.isEmpty) {
-                      final titleStr = activeStatus == 1 ? loc.noActiveDeliveries : loc.noDeliveredItems;
-                      final subStr = activeStatus == 1
+                      final titleStr = activeStatus == 0 ? loc.noDeliveriesFound : (activeStatus == 2 ? loc.noActiveDeliveries : loc.noDeliveredItems);
+                      final subStr = activeStatus == 0 ? loc.noDeliveriesFoundDesc : (activeStatus == 2
                           ? loc.noDeliveriesInTransitDesc
-                          : loc.noDeliveriesReceivedDesc;
+                          : loc.noDeliveriesReceivedDesc);
 
                       return Container(
                         padding: const EdgeInsets.all(24),
@@ -192,7 +208,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
-                                activeStatus == 1 ? Icons.local_shipping_outlined : Icons.assignment_outlined,
+                                activeStatus == 2 ? Icons.local_shipping_outlined : Icons.assignment_outlined,
                                 size: 36,
                                 color: const Color(0xFF64748B),
                               ),
@@ -243,8 +259,8 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
 
   Widget _buildDigiTpCard(BuildContext context, ConsumerDigiTpItem item, int activeStatus) {
     final loc = AppLocalizations.of(context)!;
-    final statusLabel = item.invoiceStatus ?? (activeStatus == 1 ? loc.inTransit : loc.delivered);
-    final isDelivered = activeStatus == 2 || statusLabel.toLowerCase() == 'delivered' || statusLabel == loc.delivered;
+    final statusLabel = item.invoiceStatus ?? (activeStatus == 2 ? loc.inTransit : loc.delivered);
+    final isDelivered = activeStatus == 3 || statusLabel.toLowerCase() == 'delivered' || statusLabel == loc.delivered;
 
     final badgeBg = isDelivered ? const Color(0xFFF0FDF4) : const Color(0xFFF7F0FD);
     final badgeBorder = isDelivered ? const Color(0xFFBBF7D0) : const Color(0xFFEBD9FB);

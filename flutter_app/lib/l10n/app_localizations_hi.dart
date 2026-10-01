@@ -27,13 +27,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get welcome => 'स्वागत है';
 
   @override
-  String get digitpDeliveries => 'डिजी-टीपी\nवितरण';
+  String get digitpDeliveries => 'डिजी-टीपी\nजारी किए गए';
 
   @override
-  String get receivedMaterial => 'प्राप्त\nसामग्री';
+  String get receivedMaterial => 'डिजी-टीपी\nप्राप्त हुए';
 
   @override
-  String get inTransitVehicles => 'रास्ते में\nवाहन';
+  String get inTransitVehicles => 'मार्ग में\nवाहन';
 
   @override
   String get coreServices => 'मुख्य सेवाएँ';
@@ -554,4 +554,160 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get settingsScreenTitle => 'सेटिंग्स';
+
+  @override
+  String get cameraBtn => 'कैमरा';
+
+  @override
+  String get galleryBtn => 'गैलरी';
+
+  @override
+  String get fileDocumentBtn => 'फ़ाइल दस्तावेज़';
+
+  @override
+  String get aadhaarEkycInfoTitle => 'आधार ई-केवाईसी जानकारी';
+
+  @override
+  String get aadhaarNumberLabel => 'आधार संख्या';
+
+  @override
+  String get aadhaarVerificationLabel => 'आधार सत्यापन';
+
+  @override
+  String get aadhaarDocumentUrlLabel => 'आधार दस्तावेज़ URL';
+
+  @override
+  String get closeBtn => 'बंद करें';
+
+  @override
+  String get verifyAadhaarBtn => 'आधार सत्यापित करें';
+
+  @override
+  String get aadhaarIdentityVerificationTitle => 'आधार पहचान सत्यापन';
+
+  @override
+  String get aadhaarIdentityVerificationDesc =>
+      'अपना आधार OTP सत्यापित करें या दस्तावेज़ फ़ोटो अपलोड करें';
+
+  @override
+  String get method1LiveOtp => 'विधि 1: लाइव OTP सत्यापन';
+
+  @override
+  String get twelveDigitAadhaarNumber => '12-अंकीय आधार संख्या *';
+
+  @override
+  String get enterTwelveDigitAadhaar => '12 अंकों का आधार दर्ज करें';
+
+  @override
+  String get sendOtpBtn => 'OTP भेजें';
+
+  @override
+  String get sixDigitAadhaarOtp => '6-अंकीय आधार OTP *';
+
+  @override
+  String get enterSixDigitOtp => '6 अंकों का OTP दर्ज करें';
+
+  @override
+  String get verifyOtpBtn => 'OTP सत्यापित करें';
+
+  @override
+  String get method2UploadAadhaar =>
+      'विधि 2: आधार कार्ड दस्तावेज़ अपलोड करें (PDF / चित्र)';
+
+  @override
+  String get uploadAadhaarDesc =>
+      'महाखनिज दस्तावेज़ सर्वर के माध्यम से अपलोड करने के लिए दस्तावेज़ फ़ाइल चुनें';
+
+  @override
+  String get chooseAadhaarPdfOrImage => 'आधार PDF या चित्र चुनें';
+
+  @override
+  String get uploadingToMahakhanijServer =>
+      'महाखनिज सर्वर पर अपलोड हो रहा है...';
+
+  @override
+  String get replaceBtn => 'बदलें';
+
+  @override
+  String get uploadBtn => 'अपलोड करें';
+
+  @override
+  String get retryBtn => 'पुनः प्रयास करें';
+
+  @override
+  String get aadhaarVerificationCompleted => 'आधार सत्यापन पूर्ण हुआ!';
+
+  @override
+  String get aadhaarVerificationSuccessDesc =>
+      'महाराष्ट्र सरकार के साथ आधार क्रेडेंशियल्स सफलतापूर्वक सत्यापित किए गए।';
+
+  @override
+  String get doneBtn => 'पूर्ण';
+
+  @override
+  String get reports => 'रिपोर्ट';
+
+  @override
+  String get last30Days => 'पिछले 30 दिन';
+
+  @override
+  String get quarterly => 'त्रैमासिक';
+
+  @override
+  String get fy2425 => 'वित्तीय वर्ष 24-25';
+
+  @override
+  String get filterByQuarry => 'खदान (पार्टी) द्वारा फ़िल्टर करें';
+
+  @override
+  String get allQuarries => 'सभी खदानें';
+
+  @override
+  String get errorLoadingPlots => 'प्लॉट लोड करने में त्रुटि';
+
+  @override
+  String get noDataAvailable => 'कोई डेटा उपलब्ध नहीं';
+
+  @override
+  String get totalReceived => 'कुल प्राप्त';
+
+  @override
+  String get digitpsReceived => 'प्राप्त डिजी-टीपी';
+
+  @override
+  String get passes => 'पास';
+
+  @override
+  String get mineralProcurementBreakdown => 'खनिज खरीद विवरण';
+
+  @override
+  String get byVolume => 'मात्रा के अनुसार';
+
+  @override
+  String get noMaterialsFound => 'कोई सामग्री नहीं मिली';
+
+  @override
+  String get errorLoadingReport => 'रिपोर्ट लोड करने में त्रुटि: ';
+
+  @override
+  String get units => 'इकाई';
+
+  @override
+  String get notReceived => 'प्राप्त नहीं हुआ';
+
+  @override
+  String get all => 'सभी';
+
+  @override
+  String get noDeliveriesFound => 'कोई डिलीवरी नहीं मिली';
+
+  @override
+  String get noDeliveriesFoundDesc => 'आपके पास कोई डिजी-टीपी पास नहीं है।';
+
+  @override
+  String get fetchingConsumerDigiTpRecords =>
+      'उपभोक्ता डिजी-टीपी रिकॉर्ड प्राप्त कर रहे हैं...';
+
+  @override
+  String get failedToLoadDigiTpList => 'डिजी-टीपी सूची लोड करने में विफल';
 }
