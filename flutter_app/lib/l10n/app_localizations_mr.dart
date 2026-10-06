@@ -446,7 +446,7 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get enterPersonalContact =>
-      'तुमचे वैयक्तिक संपर्क आणि वितरण गंतव्य तपशील प्रविष्ट करा.';
+      'तुमचे वैयक्तिक संपर्क तपशील प्रविष्ट करा.';
 
   @override
   String get fullName => 'पूर्ण नाव';
@@ -474,7 +474,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get continueBtn => 'पुढे जा';
 
   @override
-  String get continueToKyc => 'KYC पडताळणीसाठी पुढे जा';
+  String get continueToKyc => 'पुढे जा';
 
   @override
   String get completeRegistration => 'नोंदणी पूर्ण करा';
@@ -708,4 +708,56 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get failedToLoadDigiTpList => 'DigiTP सूची लोड करण्यात अयशस्वी';
+
+  @override
+  String get orgKycVerification => 'संस्था केवायसी (KYC) पडताळणी';
+
+  @override
+  String get optionalLabel => 'ऐच्छिक';
+
+  @override
+  String get verifyIdentityOrSkip =>
+      'आधार OTP द्वारे ओळख सत्यापित करा किंवा तुमची नोंदणी पूर्ण करण्यासाठी वगळा.';
+
+  @override
+  String get aadhaarCardOtpVerification => 'आधार कार्ड OTP पडताळणी';
+
+  @override
+  String get enterTwelveDigitAadhaarToReceiveOtp =>
+      'OTP प्राप्त करण्यासाठी 12-अंकी आधार प्रविष्ट करा';
+
+  @override
+  String get aadhaarCardNumberLabel => 'आधार कार्ड नंबर';
+
+  @override
+  String get twelveDigitAadhaarHint => '12-अंकी आधार नंबर';
+
+  @override
+  String get enterSixDigitAadhaarOtpLabel => '6-अंकी आधार OTP प्रविष्ट करा';
+
+  @override
+  String get sixDigitOtpHint => '6-अंकी OTP';
+
+  @override
+  String get aadhaarIdentityVerified => 'आधार ओळख सत्यापित';
+
+  @override
+  String get aadhaarVerifiedNationalId => 'आधार सत्यापित राष्ट्रीय ओळखपत्र';
+
+  @override
+  String get uploadAadhaarCardOptional => 'आधार कार्ड अपलोड करा (ऐच्छिक)';
+
+  @override
+  String get frontOrCombinedAadhaar =>
+      'आधार कार्डची फ्रंट किंवा संयुक्त प्रत (PDF / Image)';
+
+  @override
+  String get aadhaarNonMandatoryNotice =>
+      'आधार पडताळणी अनिवार्य नाही. तुम्ही कोणत्याही वेळी ही पायरी वगळू शकता आणि नोंदणी पूर्ण करू शकता.';
+
+  @override
+  String get resendBtn => 'पुन्हा पाठवा';
+
+  @override
+  String get digitpsNotReceived => 'डिजी-टीपी\nप्राप्त नाही';
 }

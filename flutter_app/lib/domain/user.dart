@@ -34,6 +34,7 @@ class User {
   final Address? deliveryAddress;
   final GeoPoint? deliveryGeo;
   final String createdAt;
+  final int? appId;
 
   const User({
     required this.id,
@@ -48,6 +49,7 @@ class User {
     this.deliveryAddress,
     this.deliveryGeo,
     required this.createdAt,
+    this.appId,
   });
 
   bool get isOrganization => userType == UserType.organization;
@@ -74,6 +76,7 @@ class User {
           ? GeoPoint.fromJson(json['deliveryGeo'])
           : null,
       createdAt: json['createdAt'] ?? DateTime.now().toIso8601String(),
+      appId: json['appId'] is int ? json['appId'] as int : int.tryParse(json['appId']?.toString() ?? ''),
     );
   }
 
@@ -90,5 +93,6 @@ class User {
     if (deliveryAddress != null) 'deliveryAddress': deliveryAddress!.toJson(),
     if (deliveryGeo != null) 'deliveryGeo': deliveryGeo!.toJson(),
     'createdAt': createdAt,
+    if (appId != null) 'appId': appId,
   };
 }

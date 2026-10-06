@@ -446,8 +446,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get basicAndAddressDetails => 'मूल और पता विवरण';
 
   @override
-  String get enterPersonalContact =>
-      'अपना व्यक्तिगत संपर्क और वितरण गंतव्य विवरण दर्ज करें।';
+  String get enterPersonalContact => 'अपना व्यक्तिगत संपर्क विवरण दर्ज करें।';
 
   @override
   String get fullName => 'पूरा नाम';
@@ -475,7 +474,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get continueBtn => 'जारी रखें';
 
   @override
-  String get continueToKyc => 'केवाईसी सत्यापन के लिए आगे बढ़ें';
+  String get continueToKyc => 'आगे बढ़ें';
 
   @override
   String get completeRegistration => 'पंजीकरण पूरा करें';
@@ -710,4 +709,56 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get failedToLoadDigiTpList => 'डिजी-टीपी सूची लोड करने में विफल';
+
+  @override
+  String get orgKycVerification => 'संगठन केवाईसी (KYC) सत्यापन';
+
+  @override
+  String get optionalLabel => 'वैकल्पिक';
+
+  @override
+  String get verifyIdentityOrSkip =>
+      'आधार OTP के माध्यम से पहचान सत्यापित करें या अपना पंजीकरण पूरा करने के लिए छोड़ें।';
+
+  @override
+  String get aadhaarCardOtpVerification => 'आधार कार्ड OTP सत्यापन';
+
+  @override
+  String get enterTwelveDigitAadhaarToReceiveOtp =>
+      'OTP प्राप्त करने के लिए 12-अंकीय आधार दर्ज करें';
+
+  @override
+  String get aadhaarCardNumberLabel => 'आधार कार्ड नंबर';
+
+  @override
+  String get twelveDigitAadhaarHint => '12-अंकीय आधार नंबर';
+
+  @override
+  String get enterSixDigitAadhaarOtpLabel => '6-अंकीय आधार OTP दर्ज करें';
+
+  @override
+  String get sixDigitOtpHint => '6-अंकीय OTP';
+
+  @override
+  String get aadhaarIdentityVerified => 'आधार पहचान सत्यापित';
+
+  @override
+  String get aadhaarVerifiedNationalId => 'आधार सत्यापित राष्ट्रीय पहचान पत्र';
+
+  @override
+  String get uploadAadhaarCardOptional => 'आधार कार्ड अपलोड करें (वैकल्पिक)';
+
+  @override
+  String get frontOrCombinedAadhaar =>
+      'आधार कार्ड की फ्रंट या संयुक्त कॉपी (PDF / Image)';
+
+  @override
+  String get aadhaarNonMandatoryNotice =>
+      'आधार सत्यापन अनिवार्य नहीं है। आप किसी भी समय इस चरण को छोड़ सकते हैं और पंजीकरण पूरा कर सकते हैं।';
+
+  @override
+  String get resendBtn => 'पुनः भेजें';
+
+  @override
+  String get digitpsNotReceived => 'डिजी-टीपी\nप्राप्त नहीं';
 }

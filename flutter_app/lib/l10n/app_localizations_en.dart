@@ -447,8 +447,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get basicAndAddressDetails => 'Basic & Address details';
 
   @override
-  String get enterPersonalContact =>
-      'Enter your personal contact and delivery destination details.';
+  String get enterPersonalContact => 'Enter your personal contact details.';
 
   @override
   String get fullName => 'Full name';
@@ -476,7 +475,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get continueBtn => 'Continue';
 
   @override
-  String get continueToKyc => 'Continue to KYC Verification';
+  String get continueToKyc => 'Next';
 
   @override
   String get completeRegistration => 'Complete Registration';
@@ -710,4 +709,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failedToLoadDigiTpList => 'Failed to load DigiTP list';
+
+  @override
+  String get orgKycVerification => 'Organization KYC Verification';
+
+  @override
+  String get optionalLabel => 'Optional';
+
+  @override
+  String get verifyIdentityOrSkip =>
+      'Verify identity via Aadhaar OTP or skip to complete your registration.';
+
+  @override
+  String get aadhaarCardOtpVerification => 'Aadhaar Card OTP Verification';
+
+  @override
+  String get enterTwelveDigitAadhaarToReceiveOtp =>
+      'Enter 12-digit Aadhaar to receive OTP';
+
+  @override
+  String get aadhaarCardNumberLabel => 'Aadhaar card number';
+
+  @override
+  String get twelveDigitAadhaarHint => '12-digit Aadhaar number';
+
+  @override
+  String get enterSixDigitAadhaarOtpLabel => 'Enter 6-digit Aadhaar OTP';
+
+  @override
+  String get sixDigitOtpHint => '6-digit OTP';
+
+  @override
+  String get aadhaarIdentityVerified => 'Aadhaar Identity Verified';
+
+  @override
+  String get aadhaarVerifiedNationalId =>
+      'Aadhaar verified national identity card';
+
+  @override
+  String get uploadAadhaarCardOptional => 'Upload Aadhaar Card (Optional)';
+
+  @override
+  String get frontOrCombinedAadhaar =>
+      'Front or combined copy of Aadhaar card (PDF / Image)';
+
+  @override
+  String get aadhaarNonMandatoryNotice =>
+      'Aadhaar verification is non-mandatory. You can skip this step at any time and complete registration.';
+
+  @override
+  String get resendBtn => 'Resend';
+
+  @override
+  String get digitpsNotReceived => 'DigiTPs\nNot Received';
 }

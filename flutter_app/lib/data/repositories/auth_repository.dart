@@ -61,7 +61,8 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<LogoutApiResponse> logoutUser(String userId) async {
     try {
-      final url = ApiEndpoints.getLogoutUserUrl(userId: userId, appId: 1);
+      final appId = _currentUser?.appId ?? 1;
+      final url = ApiEndpoints.getLogoutUserUrl(userId: userId, appId: appId);
       final response = await _dio.get(url);
 
       dynamic data = response.data;
@@ -190,6 +191,15 @@ class AuthRepositoryImpl implements AuthRepository {
           final loginData = parsed.responseData!.first;
           final userData = parsed.responseData7!.first;
           final resolvedConsumerId = loginData.consumerId > 0 ? loginData.consumerId : loginData.userId;
+          
+          int? extractedAppId;
+          if (parsed.responseData1 != null && parsed.responseData1 is List && (parsed.responseData1 as List).isNotEmpty) {
+            final firstItem = (parsed.responseData1 as List).first;
+            if (firstItem is Map<String, dynamic> && firstItem['appId'] != null) {
+              extractedAppId = firstItem['appId'] is int ? firstItem['appId'] as int : int.tryParse(firstItem['appId'].toString());
+            }
+          }
+
           _currentUser = User(
             id: loginData.userId.toString(),
             consumerId: resolvedConsumerId > 0 ? resolvedConsumerId : null,
@@ -199,6 +209,7 @@ class AuthRepositoryImpl implements AuthRepository {
                 loginData.isConsumer) ? UserType.normalConsumer : UserType
                 .organization,
             createdAt: DateTime.now().toIso8601String(),
+            appId: extractedAppId,
           );
           await saveSession(_currentUser!, key);
         }
@@ -248,19 +259,8 @@ class AuthRepositoryImpl implements AuthRepository {
       if (data is Map<String, dynamic>) {
         final parsed = ConsumerSignUpResponse.fromJson(data);
         if (parsed.isSuccess) {
-          final mob = signUpData['mobileNo']?.toString() ?? '';
-          final name = signUpData['name']?.toString() ?? '';
-          final isOrg = signUpData['consumerType'] == 1;
-          _currentUser = User(
-            id: (parsed.responseData != null && parsed.responseData is Map && parsed.responseData['id'] != null)
-                ? parsed.responseData['id'].toString()
-                : '44434',
-            fullName: name,
-            mobileNumber: mob,
-            userType: isOrg ? UserType.organization : UserType.normalConsumer,
-            createdAt: DateTime.now().toIso8601String(),
-          );
-          await saveSession(_currentUser!, signUpData['otp']?.toString());
+          // Do not save session or auto-login on signup. 
+          // The user must explicitly login afterwards.
         }
         return parsed;
       }

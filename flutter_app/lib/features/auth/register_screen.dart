@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/config/app_config.dart';
 import '../../core/constants/app_colors.dart';
@@ -30,6 +31,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // Step 1: Basic & Contact Details
   final _fullNameController = TextEditingController();
   final _mobileController = TextEditingController();
+  final _emailController = TextEditingController();
 
   // Step 1: Organization Details
   final _orgNameController = TextEditingController();
@@ -50,7 +52,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   final _villageController = TextEditingController();
   final _addressController = TextEditingController();
-  final _pincodeController = TextEditingController();
 
   // Step 2: KYC Details & Aadhaar Verification API Flow
   final _aadhaarController = TextEditingController();
@@ -87,13 +88,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _resendTimer?.cancel();
     _fullNameController.dispose();
     _mobileController.dispose();
+    _emailController.dispose();
     _orgNameController.dispose();
     _gstController.dispose();
     _regNumberController.dispose();
     _cityController.dispose();
     _villageController.dispose();
     _addressController.dispose();
-    _pincodeController.dispose();
     _aadhaarController.dispose();
     _aadhaarOtpController.dispose();
     _panController.dispose();
@@ -124,6 +125,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final aadh = _aadhaarController.text.replaceAll(' ', '').trim();
     if (aadh.length != 12 || !RegExp(r'^\d{12}$').hasMatch(aadh)) {
       setState(() => _aadhaarError = 'Enter a valid 12-digit Aadhaar number.');
+      return;
+    }
+    
+    if (aadh.startsWith('0') || aadh.startsWith('1')) {
+      setState(() => _aadhaarError = 'Aadhaar number cannot start with 0 or 1.');
       return;
     }
 
@@ -163,7 +169,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         _aadhaarError = null;
         _startResendTimer();
       } else {
-        _aadhaarError = genRes.message ?? 'Failed to send OTP to Aadhaar-registered mobile number.';
+        String msg = genRes.message ?? 'Failed to send OTP to Aadhaar-registered mobile number.';
+        if (msg.trim().toLowerCase() == 'verification_failed') {
+          msg = 'Invalid Aadhaar number entered. Please verify and try again.';
+        }
+        _aadhaarError = msg;
       }
     });
   }
@@ -202,12 +212,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         _aadhaarVerifiedData = verifyRes;
         _aadhaarError = null;
       } else {
-        _aadhaarError = verifyRes.message ?? 'Aadhaar OTP verification failed. Invalid OTP.';
+        String msg = verifyRes.message ?? 'Aadhaar OTP verification failed. Invalid OTP.';
+        if (msg.toLowerCase() == 'verification_failed' || msg.toLowerCase().contains('invalid')) {
+          msg = 'Invalid OTP entered. Please try again.';
+        }
+        _aadhaarError = msg;
       }
     });
   }
 
   Future<void> _pickAndUploadDocument({bool isPan = false, bool isSignatoryAadhaar = false}) async {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -218,7 +233,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.camera_alt),
-                title: const Text('Camera'),
+                title: Text(l10n.cameraBtn),
                 onTap: () {
                   Navigator.pop(context);
                   _processPickImage(ImageSource.camera, isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
@@ -226,7 +241,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library),
-                title: const Text('Gallery'),
+                title: Text(l10n.galleryBtn),
                 onTap: () {
                   Navigator.pop(context);
                   _processPickImage(ImageSource.gallery, isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
@@ -234,7 +249,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.insert_drive_file),
-                title: const Text('File Document'),
+                title: Text(l10n.fileDocumentBtn),
                 onTap: () {
                   Navigator.pop(context);
                   _processPickFile(isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
@@ -400,13 +415,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       'consumerType': _userType == UserType.organization ? 1 : 0,
       'name': _fullNameController.text.trim(),
       'mobileNo': mobile,
-      'emailId': '',
+      'emailId': _emailController.text.trim(),
       'isTown': _areaClassification == 'URBAN',
       'districtId': _districtId ?? 0,
       'censusId': _censusId ?? 0,
       'talukaId': _talukaId ?? 0,
       'address': _addressController.text.trim(),
-      'pinCode': _pincodeController.text.trim(),
+      'pinCode': '',
       'aadharCardNo': _aadhaarController.text.replaceAll(' ', '').trim(),
       'aadharDoc': _aadhaarDocUrl ?? _aadhaarSignatoryDocUrl ?? '',
       'isAadharVerified': _isAadhaarVerified,
@@ -452,7 +467,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     if (_step == 1) {
       if (_fullNameController.text.trim().isEmpty) {
-        found['fullName'] = 'This field is required.';
+        found['fullName'] = 'Full Name is required.';
       }
       final mobile = _mobileController.text.trim();
       if (mobile.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
@@ -461,7 +476,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
       if (_userType == UserType.organization) {
         if (_orgNameController.text.trim().isEmpty) {
-          found['orgName'] = 'This field is required.';
+          found['orgName'] = 'Organization Name is required.';
         }
         if (!_noGst) {
           if (_gstController.text.trim().isEmpty) {
@@ -471,14 +486,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       }
 
       if (_addressController.text.trim().isEmpty) {
-        found['address'] = 'This field is required.';
+        found['address'] = 'Address is required.';
       }
-      final pin = _pincodeController.text.trim();
-      if (pin.length != 6 || !RegExp(r'^\d{6}$').hasMatch(pin)) {
-        found['pincode'] = 'Enter a valid 6-digit PIN code. Only numbers are allowed.';
+
+      // Location validations
+      if (_districtId == null) {
+        found['district'] = 'District is required.';
+      }
+      if (_talukaId == null) {
+        found['taluka'] = 'Taluka is required.';
+      }
+      if (_censusId == null) {
+        found['villageCity'] = _areaClassification == 'URBAN'
+            ? 'City/Corporation is required.'
+            : 'Village is required.';
       }
     } else if (_step == 2) {
-      // Aadhaar KYC is NON-MANDATORY. Allow skipping and continuing without validation errors.
+      if (_aadhaarController.text.trim().isNotEmpty && !_isAadhaarVerified) {
+        found['aadhaar'] = 'Please verify your Aadhaar number to proceed.';
+      }
     }
 
     return found;
@@ -553,17 +579,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     size: AppButtonSize.large,
                     onPressed: _isSubmitting ? null : _next,
                   ),
-                  if (_step == 2) ...[
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: _isSubmitting ? null : _next,
-                      child: Text(
-                        AppLocalizations.of(context)!.skipAadhaar,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.inkSecondary),
-                      ),
-                    ),
-                  ],
-
+                  // skipAadhaar button removed per user request
                 ],
               ),
             ),
@@ -794,6 +810,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           error: _errors['fullName'],
           inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]'))],
           keyboardType: TextInputType.name,
+          onChanged: (val) {
+            if (val.isNotEmpty && _errors.containsKey('fullName')) {
+              setState(() => _errors.remove('fullName'));
+            }
+          },
         ),
         const SizedBox(height: 16),
 
@@ -821,6 +842,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                   ],
+                  onChanged: (val) {
+                    if (val.isNotEmpty && _errors.containsKey('mobile')) {
+                      setState(() => _errors.remove('mobile'));
+                    }
+                  },
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
                   decoration: InputDecoration(
                     hintText: l10n.tenDigitNumber,
@@ -837,17 +863,29 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         if (_errors.containsKey('mobile')) ...[
           const SizedBox(height: 4),
           Text(_errors['mobile']!, style: const TextStyle(fontSize: 12, color: AppColors.danger700)),
-        ] else ...[
-          const SizedBox(height: 6),
-          Text(l10n.weWillSendVerification, style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary)),
         ],
+        const SizedBox(height: 6),
+        Text('We will send a 6-digit verification code to this number.', style: TextStyle(fontSize: 11, color: AppColors.inkSecondary)),
+        const SizedBox(height: 16),
+
+        _buildFieldLabel('Email (Optional)'),
+        const SizedBox(height: 6),
+        _buildTextField(_emailController, hint: 'example@email.com', keyboardType: TextInputType.emailAddress, error: _errors['email'], onChanged: (val) {
+          if (val.isNotEmpty && _errors.containsKey('email')) {
+            setState(() => _errors.remove('email'));
+          }
+        }),
         const SizedBox(height: 20),
 
         // Organization Specific Fields if org
         if (isOrg) ...[
           _buildFieldLabel(l10n.orgNameLabel),
           const SizedBox(height: 6),
-          _buildTextField(_orgNameController, hint: 'Shree Infra & Constructions Pvt Ltd', error: _errors['orgName']),
+          _buildTextField(_orgNameController, hint: 'Shree Infra & Constructions Pvt Ltd', error: _errors['orgName'], onChanged: (val) {
+            if (val.isNotEmpty && _errors.containsKey('orgName')) {
+              setState(() => _errors.remove('orgName'));
+            }
+          }),
           const SizedBox(height: 16),
 
           _buildFieldLabel(l10n.orgTypeLabel),
@@ -886,6 +924,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     hint: '15-character GSTIN (e.g. 27AAAAA0000A1Z5)',
                     error: _errors['gstNumber'],
                     uppercase: true,
+                    onChanged: (val) {
+                      if (val.isNotEmpty && _errors.containsKey('gstNumber')) {
+                        setState(() => _errors.remove('gstNumber'));
+                      }
+                    },
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -951,17 +994,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           const SizedBox(height: 20),
         ],
 
-        // Delivery Destination Section Header
-        Text(
-          l10n.whereDeliverMineral,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: AppColors.inkMuted,
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: 14),
+
 
         // Dynamic Location Dropdowns
         LocationDropdownSection(
@@ -969,6 +1002,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           initialDistrict: _district,
           initialTaluka: _taluka,
           initialVillageCity: _areaClassification == 'URBAN' ? _cityController.text : _villageController.text,
+          districtError: _errors['district'],
+          talukaError: _errors['taluka'],
+          villageCityError: _errors['villageCity'],
           onChanged: (locData) {
             setState(() {
               _areaClassification = locData.category;
@@ -977,6 +1013,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               _districtId = locData.district?.id;
               _talukaId = locData.taluka?.id;
               _censusId = locData.villageCity?.id;
+
+              if (_districtId != null) _errors.remove('district');
+              if (_talukaId != null) _errors.remove('taluka');
+              if (_censusId != null) _errors.remove('villageCity');
+
               if (locData.category == 'RURAL') { // Rural -> Village
                 _villageController.text = locData.villageCityName;
                 _cityController.text = '';
@@ -992,20 +1033,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         // Street Address
         _buildFieldLabel(l10n.addressLabel),
         const SizedBox(height: 6),
-        _buildTextField(_addressController, hint: l10n.addressHint, error: _errors['address'], keyboardType: TextInputType.streetAddress),
-        const SizedBox(height: 14),
-
-        // PIN code
-        _buildFieldLabel(l10n.pincodeLabel),
-        const SizedBox(height: 6),
-        _buildTextField(
-          _pincodeController, 
-          hint: l10n.pincodeHint, 
-          error: _errors['pincode'],
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          maxLength: 6,
-        ),
+        _buildTextField(_addressController, hint: l10n.addressHint, error: _errors['address'], keyboardType: TextInputType.streetAddress, onChanged: (val) {
+          if (val.isNotEmpty && _errors.containsKey('address')) {
+            setState(() => _errors.remove('address'));
+          }
+        }),
         const SizedBox(height: 24),
       ],
     );
@@ -1015,6 +1047,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // STEP 2: KYC Verification with Live Aadhaar Verification & Skip
   // -------------------------------------------------------------
   Widget _buildStep2Kyc() {
+    final l10n = AppLocalizations.of(context)!;
     final isOrg = _userType == UserType.organization;
 
     return Column(
@@ -1024,7 +1057,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              isOrg ? 'Organization KYC Verification' : 'Aadhaar KYC Verification',
+              isOrg ? l10n.orgKycVerification : l10n.aadhaarKyc,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
             ),
             Container(
@@ -1033,14 +1066,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 color: const Color(0xFFF1F5F9),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text('Optional', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.inkSecondary)),
+              child: Text(l10n.optionalLabel, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.inkSecondary)),
             ),
           ],
         ),
         const SizedBox(height: 4),
-        const Text(
-          'Verify identity via Aadhaar OTP or skip to complete your registration.',
-          style: TextStyle(fontSize: 13, color: AppColors.inkSecondary),
+        Text(
+          l10n.verifyIdentityOrSkip,
+          style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary),
         ),
         const SizedBox(height: 20),
 
@@ -1080,7 +1113,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _isAadhaarVerified ? 'Aadhaar Identity Verified' : 'Aadhaar Card OTP Verification',
+                            _isAadhaarVerified ? l10n.aadhaarIdentityVerified : l10n.aadhaarCardOtpVerification,
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
@@ -1088,7 +1121,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             ),
                           ),
                           Text(
-                            _isAadhaarVerified ? 'Aadhaar verified national identity card' : 'Enter 12-digit Aadhaar to receive OTP',
+                            _isAadhaarVerified ? l10n.aadhaarVerifiedNationalId : l10n.enterTwelveDigitAadhaarToReceiveOtp,
                             style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary),
                           ),
                         ],
@@ -1107,34 +1140,60 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: const Color(0xFFBBF7D0)),
                     ),
-                    child: Column(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.check_circle, size: 16, color: Color(0xFF15803D)),
-                            const SizedBox(width: 6),
-                            Text(
-                              _aadhaarVerifiedData?.fullName ?? 'Suraj Akil Atar',
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF15803D)),
-                            ),
-                          ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.check_circle, size: 16, color: Color(0xFF15803D)),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      _aadhaarVerifiedData?.fullName ?? 'Suraj Akil Atar',
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF15803D)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Aadhaar: ${_aadhaarVerifiedData?.aadharNumber ?? "XXXX-XXXX-2902"}',
+                                style: const TextStyle(fontSize: 12, color: Color(0xFF166534), fontFamily: 'monospace'),
+                              ),
+                              Text(
+                                'Address: ${_aadhaarVerifiedData?.loc ?? "at post tungat taluka pandharpur"}, ${_aadhaarVerifiedData?.dist ?? "Solapur"}, ${_aadhaarVerifiedData?.state ?? "Maharashtra"} - ${_aadhaarVerifiedData?.zip ?? "413304"}',
+                                style: const TextStyle(fontSize: 11, color: Color(0xFF166534)),
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Aadhaar: ${_aadhaarVerifiedData?.aadharNumber ?? "XXXX-XXXX-2902"}',
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF166534), fontFamily: 'monospace'),
-                        ),
-                        Text(
-                          'Address: ${_aadhaarVerifiedData?.loc ?? "at post tungat taluka pandharpur"}, ${_aadhaarVerifiedData?.dist ?? "Solapur"}, ${_aadhaarVerifiedData?.state ?? "Maharashtra"} - ${_aadhaarVerifiedData?.zip ?? "413304"}',
-                          style: const TextStyle(fontSize: 11, color: Color(0xFF166534)),
+                        IconButton(
+                          icon: const Icon(Icons.edit, size: 18, color: Color(0xFF15803D)),
+                          onPressed: () {
+                            setState(() {
+                              _aadhaarVerifiedData = null;
+                              _isAadhaarOtpSent = false;
+                              _aadhaarOtpController.clear();
+                              _aadhaarController.clear();
+                              _aadhaarError = null;
+                              _aadhaarClientId = null;
+                              _resendTimer?.cancel();
+                              _timerCountdown = 60;
+                            });
+                          },
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
                         ),
                       ],
                     ),
                   ),
                 ] else ...[
                   // Aadhaar Number Input Row
-                  _buildFieldLabel('Aadhaar card number'),
+                  _buildFieldLabel(l10n.aadhaarCardNumberLabel),
                   const SizedBox(height: 6),
                   Row(
                     children: [
@@ -1144,9 +1203,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           keyboardType: TextInputType.number,
                           maxLength: 12,
                           enabled: !_isAadhaarOtpSent,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
                           decoration: InputDecoration(
-                            hintText: '12-digit Aadhaar number',
+                            hintText: l10n.twelveDigitAadhaarHint,
                             hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
                             counterText: '',
                             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -1170,8 +1230,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 _isAadhaarOtpSent
                                     ? (_timerCountdown > 0
                                         ? '00:${_timerCountdown.toString().padLeft(2, '0')}'
-                                        : 'Resend')
-                                    : 'Send OTP',
+                                        : l10n.resendBtn)
+                                    : l10n.sendOtpBtn,
                                 style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                               ),
                       ),
@@ -1180,7 +1240,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                   if (_isAadhaarOtpSent) ...[
                     const SizedBox(height: 14),
-                    _buildFieldLabel('Enter 6-digit Aadhaar OTP'),
+                    _buildFieldLabel(l10n.enterSixDigitAadhaarOtpLabel),
                     const SizedBox(height: 6),
                     Row(
                       children: [
@@ -1191,7 +1251,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             maxLength: 6,
                             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
                             decoration: InputDecoration(
-                              hintText: '6-digit OTP',
+                              hintText: l10n.sixDigitOtpHint,
                               hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
                               counterText: '',
                               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -1211,7 +1271,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           ),
                           child: _isVerifyingAadhaarOtp
                               ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                              : const Text('Verify OTP', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                              : Text(l10n.verifyOtpBtn, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
                         ),
                       ],
                     ),
@@ -1248,8 +1308,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
           // Upload Aadhaar Card (Optional Document)
           _buildUploadCard(
-            title: 'Upload Aadhaar Card (Optional)',
-            hint: 'Front or combined copy of Aadhaar card (PDF / Image)',
+            title: l10n.uploadAadhaarCardOptional,
+            hint: l10n.frontOrCombinedAadhaar,
             fileName: _kycFileName,
             docUrl: _aadhaarDocUrl,
             isLoading: _isUploadingAadhaarDoc,
@@ -1266,15 +1326,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: const Color(0xFFBBF7D0)),
             ),
-            child: const Row(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.shield_outlined, size: 18, color: Color(0xFF15803D)),
-                SizedBox(width: 8),
+                const Icon(Icons.shield_outlined, size: 18, color: Color(0xFF15803D)),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Aadhaar verification is non-mandatory. You can skip this step at any time and complete registration.',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF166534), height: 1.3),
+                    l10n.aadhaarNonMandatoryNotice,
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF166534), height: 1.3),
                   ),
                 ),
               ],
@@ -1337,6 +1397,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     List<TextInputFormatter>? inputFormatters,
     TextInputType? keyboardType,
     int? maxLength,
+    ValueChanged<String>? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1351,9 +1412,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             controller: controller,
             textCapitalization: uppercase ? TextCapitalization.characters : TextCapitalization.words,
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
-            inputFormatters: inputFormatters,
+            inputFormatters: [
+              FilteringTextInputFormatter.deny(
+                RegExp(r'(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]|[\u2700-\u27bf])'),
+              ),
+              ...?inputFormatters,
+            ],
             keyboardType: keyboardType,
             maxLength: maxLength,
+            onChanged: onChanged,
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
@@ -1381,6 +1448,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     required VoidCallback onPick,
   }) {
     final hasFile = docUrl != null && docUrl.isNotEmpty;
+    final l10n = AppLocalizations.of(context)!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1436,8 +1504,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       const SizedBox(height: 2),
                       Text(
                         isLoading
-                            ? 'Uploading document to Mahakhanij server...'
-                            : (hasFile ? 'Document uploaded & verified' : hint),
+                            ? l10n.uploadingToMahakhanijServer
+                            : (hasFile ? l10n.aadhaarVerificationCompleted : hint),
                         style: TextStyle(
                           fontSize: 11,
                           color: isLoading ? AppColors.primary700 : AppColors.inkSecondary,
@@ -1446,18 +1514,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ),
                       if (hasFile) ...[
                         const SizedBox(height: 2),
-                        Text(
-                          docUrl,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 10, color: Color(0xFF166534), fontFamily: 'monospace'),
+                        GestureDetector(
+                          onTap: () async {
+                            final url = Uri.tryParse(docUrl);
+                            if (url != null && await canLaunchUrl(url)) {
+                              await launchUrl(url, mode: LaunchMode.externalApplication);
+                            }
+                          },
+                          child: Text(
+                            docUrl,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 10, color: Color(0xFF2563EB), decoration: TextDecoration.underline, fontFamily: 'monospace'),
+                          ),
                         ),
                       ],
                     ],
                   ),
                 ),
                 Text(
-                  isLoading ? 'Uploading...' : (hasFile ? 'Replace' : 'Upload'),
+                  isLoading ? '${l10n.uploadBtn}...' : (hasFile ? l10n.replaceBtn : l10n.uploadBtn),
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary700),
                 ),
               ],
@@ -1473,9 +1549,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
               GestureDetector(
                 onTap: onPick,
-                child: const Text(
-                  'Retry',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.danger700, decoration: TextDecoration.underline),
+                child: Text(
+                  l10n.retryBtn,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.danger700, decoration: TextDecoration.underline),
                 ),
               ),
             ],

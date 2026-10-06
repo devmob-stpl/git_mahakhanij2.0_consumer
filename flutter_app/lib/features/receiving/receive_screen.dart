@@ -180,6 +180,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
           keyboardType: TextInputType.number,
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(10),
           ],
           decoration: InputDecoration(
             hintText: AppLocalizations.of(context)!.enterDigiTpNumberHint,

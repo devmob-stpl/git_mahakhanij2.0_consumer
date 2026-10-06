@@ -81,7 +81,12 @@ class AppTextField extends StatelessWidget {
           readOnly: readOnly,
           enabled: enabled,
           onTap: onTap,
-          inputFormatters: inputFormatters,
+          inputFormatters: [
+            FilteringTextInputFormatter.deny(
+              RegExp(r'(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]|[\u2700-\u27bf])'),
+            ),
+            ...?inputFormatters,
+          ],
           maxLength: maxLength,
           decoration: InputDecoration(
             hintText: hint,

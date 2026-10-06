@@ -5,7 +5,6 @@ import '../../core/constants/app_colors.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../providers/consumer_report_provider.dart';
 import '../../providers/session_provider.dart';
-import '../../domain/report_models.dart';
 import '../../l10n/app_localizations.dart';
 
 class ConsumerReportsScreen extends ConsumerStatefulWidget {

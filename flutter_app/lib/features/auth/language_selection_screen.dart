@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/locale_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../shared/widgets/app_button.dart';
+import '../../l10n/app_localizations.dart';
 
 class LanguageSelectionScreen extends ConsumerStatefulWidget {
   const LanguageSelectionScreen({super.key});
@@ -141,7 +142,7 @@ class _LanguageSelectionScreenState extends ConsumerState<LanguageSelectionScree
               }),
               const Spacer(),
               AppButton(
-                label: 'Continue',
+                label: lookupAppLocalizations(Locale(_selectedLocale)).continueBtn,
                 isLoading: _isLoading,
                 fullWidth: true,
                 size: AppButtonSize.large,

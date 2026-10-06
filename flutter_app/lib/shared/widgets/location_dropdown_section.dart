@@ -39,6 +39,9 @@ class LocationDropdownSection extends ConsumerStatefulWidget {
   final String? initialVillageCity;
   final bool showCategorySelector;
   final ValueChanged<LocationSelectionData> onChanged;
+  final String? districtError;
+  final String? talukaError;
+  final String? villageCityError;
 
   const LocationDropdownSection({
     super.key,
@@ -51,6 +54,9 @@ class LocationDropdownSection extends ConsumerStatefulWidget {
     this.initialVillageCity,
     this.showCategorySelector = true,
     required this.onChanged,
+    this.districtError,
+    this.talukaError,
+    this.villageCityError,
   });
 
   @override
@@ -142,28 +148,14 @@ class _LocationDropdownSectionState
     if (!mounted) return;
 
     TalukaModel? matchedTaluka;
-    if (widget.initialTalukaId != null && widget.initialTalukaId! > 0) {
-      matchedTaluka = talukas.firstWhere(
-        (t) => t.id == widget.initialTalukaId,
-        orElse: () => talukas.firstWhere(
-          (t) =>
-              widget.initialTaluka != null &&
-              t.taluka.trim().toLowerCase() ==
-                  widget.initialTaluka!.trim().toLowerCase(),
-          orElse: () => talukas.isNotEmpty
-              ? talukas.first
-              : TalukaModel(id: 232, taluka: 'Haveli', districtId: districtId),
-        ),
-      );
-    } else if (widget.initialTaluka != null && widget.initialTaluka!.isNotEmpty) {
-      matchedTaluka = talukas.firstWhere(
-        (t) =>
-            t.taluka.trim().toLowerCase() ==
-            widget.initialTaluka!.trim().toLowerCase(),
-        orElse: () => talukas.isNotEmpty
-            ? talukas.first
-            : TalukaModel(id: 232, taluka: 'Haveli', districtId: districtId),
-      );
+    try {
+      if (widget.initialTalukaId != null && widget.initialTalukaId! > 0) {
+        matchedTaluka = talukas.firstWhere((t) => t.id == widget.initialTalukaId);
+      } else if (widget.initialTaluka != null && widget.initialTaluka!.isNotEmpty) {
+        matchedTaluka = talukas.firstWhere((t) => t.taluka.trim().toLowerCase() == widget.initialTaluka!.trim().toLowerCase());
+      }
+    } catch (_) {
+      matchedTaluka = null;
     }
 
 
@@ -198,39 +190,14 @@ class _LocationDropdownSectionState
     if (!mounted) return;
 
     VillageCityModel? matchedItem;
-    if (widget.initialCensusId != null && widget.initialCensusId! > 0) {
-      matchedItem = items.firstWhere(
-        (v) => v.id == widget.initialCensusId,
-        orElse: () => items.firstWhere(
-          (v) =>
-              widget.initialVillageCity != null &&
-              v.name.trim().toLowerCase() ==
-                  widget.initialVillageCity!.trim().toLowerCase(),
-          orElse: () => items.isNotEmpty
-              ? items.first
-              : VillageCityModel(
-                  id: widget.initialCensusId!,
-                  name: widget.initialVillageCity ?? 'Location #',
-                  districtId: districtId,
-                  talukaId: talukaId,
-                  isTown: isTown),
-        ),
-      );
-    } else if (widget.initialVillageCity != null &&
-        widget.initialVillageCity!.isNotEmpty) {
-      matchedItem = items.firstWhere(
-        (v) =>
-            v.name.trim().toLowerCase() ==
-            widget.initialVillageCity!.trim().toLowerCase(),
-        orElse: () => items.isNotEmpty
-            ? items.first
-            : VillageCityModel(
-                id: 101,
-                name: widget.initialVillageCity!,
-                districtId: districtId,
-                talukaId: talukaId,
-                isTown: isTown),
-      );
+    try {
+      if (widget.initialCensusId != null && widget.initialCensusId! > 0) {
+        matchedItem = items.firstWhere((v) => v.id == widget.initialCensusId);
+      } else if (widget.initialVillageCity != null && widget.initialVillageCity!.isNotEmpty) {
+        matchedItem = items.firstWhere((v) => v.name.trim().toLowerCase() == widget.initialVillageCity!.trim().toLowerCase());
+      }
+    } catch (_) {
+      matchedItem = null;
     }
 
 
@@ -339,12 +306,12 @@ class _LocationDropdownSectionState
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
                       color: !_isTown
-                          ? const Color(0xFFECFDF5)
+                          ? const Color(0xFFEFF6FF)
                           : const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: !_isTown
-                            ? const Color(0xFF059669)
+                            ? const Color(0xFF2563EB)
                             : const Color(0xFFCBD5E1),
                         width: !_isTown ? 1.5 : 1,
                       ),
@@ -355,7 +322,7 @@ class _LocationDropdownSectionState
                         Icon(Icons.holiday_village_outlined,
                             size: 16,
                             color: !_isTown
-                                ? const Color(0xFF059669)
+                                ? const Color(0xFF2563EB)
                                 : const Color(0xFF64748B)),
                         const SizedBox(width: 6),
                         Text(
@@ -364,7 +331,7 @@ class _LocationDropdownSectionState
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: !_isTown
-                                ? const Color(0xFF059669)
+                                ? const Color(0xFF2563EB)
                                 : const Color(0xFF64748B),
                           ),
                         ),
@@ -431,6 +398,7 @@ class _LocationDropdownSectionState
                           borderRadius: BorderRadius.circular(10),
                           borderSide: const BorderSide(
                               color: Color(0xFF2563EB), width: 1.5)),
+                      errorText: widget.districtError,
                     ),
                     items: _districts.map((d) {
                       return DropdownMenuItem<DistrictModel>(
@@ -514,6 +482,7 @@ class _LocationDropdownSectionState
                                 borderRadius: BorderRadius.circular(10),
                                 borderSide: const BorderSide(
                                     color: Color(0xFF2563EB), width: 1.5)),
+                            errorText: widget.talukaError,
                           ),
                           items: _talukas.map((t) {
                             return DropdownMenuItem<TalukaModel>(
@@ -599,6 +568,7 @@ class _LocationDropdownSectionState
                                 borderRadius: BorderRadius.circular(10),
                                 borderSide: const BorderSide(
                                     color: Color(0xFF2563EB), width: 1.5)),
+                            errorText: widget.villageCityError,
                           ),
                           items: _villageCities.map((v) {
                             return DropdownMenuItem<VillageCityModel>(

@@ -138,10 +138,10 @@ class LocationRepositoryImpl implements LocationRepository {
         }
       }
     } catch (_) {
-      // Fallback
+      // Return empty list instead of static data if API returns no data (e.g. 404)
     }
 
-    return _fallbackVillageCities(districtId, talukaId, isTown);
+    return [];
   }
 
   @override
@@ -213,25 +213,5 @@ class LocationRepositoryImpl implements LocationRepository {
     ];
   }
 
-  static List<VillageCityModel> _fallbackVillageCities(int districtId, int talukaId, bool isTown) {
-    if (isTown) {
-      return [
-        VillageCityModel(id: 101, name: 'Wagholi', districtId: districtId, talukaId: talukaId, isTown: true),
-        VillageCityModel(id: 102, name: 'Kharadi', districtId: districtId, talukaId: talukaId, isTown: true),
-        VillageCityModel(id: 103, name: 'Alsangikar', districtId: districtId, talukaId: talukaId, isTown: true),
-        VillageCityModel(id: 104, name: 'Vashind', districtId: districtId, talukaId: talukaId, isTown: true),
-        VillageCityModel(id: 105, name: 'Kasauli', districtId: districtId, talukaId: talukaId, isTown: true),
-        VillageCityModel(id: 106, name: 'Talegaon Dabhade', districtId: districtId, talukaId: talukaId, isTown: true),
-      ];
-    } else {
-      return [
-        VillageCityModel(id: 201, name: 'Pune City', districtId: districtId, talukaId: talukaId, isTown: false),
-        VillageCityModel(id: 202, name: 'Pimpri-Chinchwad', districtId: districtId, talukaId: talukaId, isTown: false),
-        VillageCityModel(id: 203, name: 'Thane City (M Corp.)', districtId: districtId, talukaId: talukaId, isTown: false),
-        VillageCityModel(id: 204, name: 'Kalyan-Dombivli', districtId: districtId, talukaId: talukaId, isTown: false),
-        VillageCityModel(id: 205, name: 'Navi Mumbai', districtId: districtId, talukaId: talukaId, isTown: false),
-        VillageCityModel(id: 206, name: 'Akola (M Corp.)', districtId: districtId, talukaId: talukaId, isTown: false),
-      ];
-    }
-  }
+
 }

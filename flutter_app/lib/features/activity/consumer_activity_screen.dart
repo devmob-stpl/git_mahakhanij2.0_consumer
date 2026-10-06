@@ -13,7 +13,7 @@ import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/digitp_modal.dart';
 import '../../l10n/app_localizations.dart';
 
-enum ActivityChip { all, live, delivered, enquiries }
+enum ActivityChip { all, notReceived, live, delivered, enquiries }
 
 class ConsumerActivityScreen extends ConsumerStatefulWidget {
   final ActivityChip initialChip;
@@ -47,6 +47,8 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
     switch (chip) {
       case ActivityChip.all:
         return 0;
+      case ActivityChip.notReceived:
+        return 1;
       case ActivityChip.delivered:
         return 3;
       case ActivityChip.live:
@@ -60,6 +62,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
     final loc = AppLocalizations.of(context)!;
     final enquiries = ref.watch(enquiriesProvider);
     final allAsync = ref.watch(consumerDigiTpListProvider(0));
+    final notReceivedAsync = ref.watch(consumerDigiTpListProvider(1));
     final inTransitAsync = ref.watch(consumerDigiTpListProvider(2));
     final deliveredAsync = ref.watch(consumerDigiTpListProvider(3));
 
@@ -75,8 +78,12 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
         ? deliveredAsync.valueOrNull!.responseData!.count!.deliveredCount
         : (deliveredAsync.valueOrNull?.items.length ?? 0);
 
+    final notReceivedCount = (notReceivedAsync.valueOrNull?.responseData?.count?.notReceivedCount != null && (notReceivedAsync.valueOrNull?.responseData?.count?.notReceivedCount ?? 0) > 0)
+        ? notReceivedAsync.valueOrNull!.responseData!.count!.notReceivedCount
+        : (notReceivedAsync.valueOrNull?.items.length ?? 0);
+
     final activeStatus = _getStatusForChip(_activeChip);
-    final activeAsync = activeStatus == 0 ? allAsync : (activeStatus == 2 ? inTransitAsync : deliveredAsync);
+    final activeAsync = activeStatus == 0 ? allAsync : (activeStatus == 1 ? notReceivedAsync : (activeStatus == 2 ? inTransitAsync : deliveredAsync));
 
     return AppScaffold(
       title: loc.digitpDeliveries.replaceAll('\n', ' '),
@@ -84,6 +91,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(consumerDigiTpListProvider(0));
+          ref.invalidate(consumerDigiTpListProvider(1));
           ref.invalidate(consumerDigiTpListProvider(2));
           ref.invalidate(consumerDigiTpListProvider(3));
         },
@@ -104,6 +112,14 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                       label: loc.all,
                       count: allCount,
                       isLoading: allAsync.isLoading,
+                    ),
+                    const SizedBox(width: 8),
+                    _buildChip(
+                      chip: ActivityChip.notReceived,
+                      icon: Icons.pending_actions_outlined,
+                      label: loc.notReceived,
+                      count: notReceivedCount,
+                      isLoading: notReceivedAsync.isLoading,
                     ),
                     const SizedBox(width: 8),
                     _buildChip(
@@ -131,8 +147,8 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                 ...enquiries.map((enq) => _buildEnquiryCard(context, enq)),
               ],
 
-              // DIGITP LIST (ALL status=0 OR IN TRANSIT status=2 OR DELIVERED status=3)
-              if (_activeChip == ActivityChip.all || _activeChip == ActivityChip.live || _activeChip == ActivityChip.delivered) ...[
+              // DIGITP LIST (ALL status=0 OR NOT RECEIVED status=1 OR IN TRANSIT status=2 OR DELIVERED status=3)
+              if (_activeChip == ActivityChip.all || _activeChip == ActivityChip.notReceived || _activeChip == ActivityChip.live || _activeChip == ActivityChip.delivered) ...[
                 activeAsync.when(
                   loading: () => Container(
                     padding: const EdgeInsets.symmetric(vertical: 40),
@@ -185,10 +201,10 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                     final items = response.items;
 
                     if (items.isEmpty) {
-                      final titleStr = activeStatus == 0 ? loc.noDeliveriesFound : (activeStatus == 2 ? loc.noActiveDeliveries : loc.noDeliveredItems);
-                      final subStr = activeStatus == 0 ? loc.noDeliveriesFoundDesc : (activeStatus == 2
+                      final titleStr = activeStatus == 0 ? loc.noDeliveriesFound : (activeStatus == 1 ? loc.noDeliveriesFound : (activeStatus == 2 ? loc.noActiveDeliveries : loc.noDeliveredItems));
+                      final subStr = activeStatus == 0 ? loc.noDeliveriesFoundDesc : (activeStatus == 1 ? loc.noDeliveriesFoundDesc : (activeStatus == 2
                           ? loc.noDeliveriesInTransitDesc
-                          : loc.noDeliveriesReceivedDesc);
+                          : loc.noDeliveriesReceivedDesc));
 
                       return Container(
                         padding: const EdgeInsets.all(24),
@@ -259,7 +275,10 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
 
   Widget _buildDigiTpCard(BuildContext context, ConsumerDigiTpItem item, int activeStatus) {
     final loc = AppLocalizations.of(context)!;
-    final statusLabel = item.invoiceStatus ?? (activeStatus == 2 ? loc.inTransit : loc.delivered);
+    String statusLabel = item.invoiceStatus ?? (activeStatus == 1 ? loc.notReceived : (activeStatus == 2 ? loc.inTransit : loc.delivered));
+    if (statusLabel.toUpperCase() == 'NOT RECEIVED') {
+      statusLabel = 'Not Received';
+    }
     final isDelivered = activeStatus == 3 || statusLabel.toLowerCase() == 'delivered' || statusLabel == loc.delivered;
 
     final badgeBg = isDelivered ? const Color(0xFFF0FDF4) : const Color(0xFFF7F0FD);

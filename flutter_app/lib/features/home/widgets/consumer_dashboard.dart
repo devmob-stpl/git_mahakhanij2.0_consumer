@@ -98,50 +98,58 @@ class ConsumerDashboard extends ConsumerWidget {
                   children: [
 
                   // 1. Core Module Stat Cards (3 columns - summary display only)
-                  Row(
+                  Column(
                     children: [
-                      // DigiTP Deliveries (totalCount)
-                      Expanded(
-                        child: _buildStatCard(
-                          count: dashboardCountAsync.isLoading ? '...' : totalCount.toString().padLeft(2, '0'),
-                          label: l10n.digitpDeliveries,
-                          bgColor: const Color(0xFFEEF5FD),
-                          borderColor: const Color(0xFFD6E5F8),
-                          textColor: const Color(0xFF134280),
-                        ),
+                      Row(
+                        children: [
+                          // DigiTP Deliveries (totalCount)
+                          Expanded(
+                            child: _buildStatCard(
+                              count: dashboardCountAsync.isLoading ? '...' : totalCount.toString().padLeft(2, '0'),
+                              label: l10n.digitpDeliveries,
+                              bgColor: const Color(0xFFEEF5FD),
+                              borderColor: const Color(0xFFD6E5F8),
+                              textColor: const Color(0xFF134280),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Received Material (deliveredCount)
+                          Expanded(
+                            child: _buildStatCard(
+                              count: dashboardCountAsync.isLoading ? '...' : deliveredCount.toString().padLeft(2, '0'),
+                              label: l10n.receivedMaterial,
+                              bgColor: const Color(0xFFF0FDF4),
+                              borderColor: const Color(0xFFBBF7D0),
+                              textColor: const Color(0xFF15803D),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      // Received Material (deliveredCount)
-                      Expanded(
-                        child: _buildStatCard(
-                          count: dashboardCountAsync.isLoading ? '...' : deliveredCount.toString().padLeft(2, '0'),
-                          label: l10n.receivedMaterial,
-                          bgColor: const Color(0xFFF0FDF4),
-                          borderColor: const Color(0xFFBBF7D0),
-                          textColor: const Color(0xFF15803D),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // In Transit Vehicles (inTransitCount)
-                      Expanded(
-                        child: _buildStatCard(
-                          count: dashboardCountAsync.isLoading ? '...' : inTransitCount.toString().padLeft(2, '0'),
-                          label: l10n.inTransitVehicles,
-                          bgColor: const Color(0xFFF7F0FD),
-                          borderColor: const Color(0xFFEBD9FB),
-                          textColor: const Color(0xFF7E22CE),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Not Received (notReceivedCount)
-                      Expanded(
-                        child: _buildStatCard(
-                          count: dashboardCountAsync.isLoading ? '...' : notReceivedCount.toString().padLeft(2, '0'),
-                          label: l10n.notReceived,
-                          bgColor: const Color(0xFFFEF2F2),
-                          borderColor: const Color(0xFFFCA5A5),
-                          textColor: const Color(0xFFDC2626),
-                        ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          // In Transit Vehicles (inTransitCount)
+                          Expanded(
+                            child: _buildStatCard(
+                              count: dashboardCountAsync.isLoading ? '...' : inTransitCount.toString().padLeft(2, '0'),
+                              label: l10n.inTransitVehicles,
+                              bgColor: const Color(0xFFF7F0FD),
+                              borderColor: const Color(0xFFEBD9FB),
+                              textColor: const Color(0xFF7E22CE),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Not Received (notReceivedCount)
+                          Expanded(
+                            child: _buildStatCard(
+                              count: dashboardCountAsync.isLoading ? '...' : notReceivedCount.toString().padLeft(2, '0'),
+                              label: l10n.digitpsNotReceived,
+                              bgColor: const Color(0xFFFEF2F2),
+                              borderColor: const Color(0xFFFCA5A5),
+                              textColor: const Color(0xFFDC2626),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -281,7 +289,6 @@ class ConsumerDashboard extends ConsumerWidget {
     required Color textColor,
   }) {
     return Container(
-      height: 86,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: bgColor,
@@ -290,7 +297,7 @@ class ConsumerDashboard extends ConsumerWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Text(
             count,
@@ -301,6 +308,7 @@ class ConsumerDashboard extends ConsumerWidget {
               letterSpacing: -0.5,
             ),
           ),
+          const SizedBox(height: 8),
           Text(
             label,
             style: const TextStyle(

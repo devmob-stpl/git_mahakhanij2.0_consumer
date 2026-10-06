@@ -943,7 +943,7 @@ abstract class AppLocalizations {
   /// No description provided for @enterPersonalContact.
   ///
   /// In en, this message translates to:
-  /// **'Enter your personal contact and delivery destination details.'**
+  /// **'Enter your personal contact details.'**
   String get enterPersonalContact;
 
   /// No description provided for @fullName.
@@ -997,7 +997,7 @@ abstract class AppLocalizations {
   /// No description provided for @continueToKyc.
   ///
   /// In en, this message translates to:
-  /// **'Continue to KYC Verification'**
+  /// **'Next'**
   String get continueToKyc;
 
   /// No description provided for @completeRegistration.
@@ -1449,6 +1449,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to load DigiTP list'**
   String get failedToLoadDigiTpList;
+
+  /// No description provided for @orgKycVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization KYC Verification'**
+  String get orgKycVerification;
+
+  /// No description provided for @optionalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get optionalLabel;
+
+  /// No description provided for @verifyIdentityOrSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify identity via Aadhaar OTP or skip to complete your registration.'**
+  String get verifyIdentityOrSkip;
+
+  /// No description provided for @aadhaarCardOtpVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Card OTP Verification'**
+  String get aadhaarCardOtpVerification;
+
+  /// No description provided for @enterTwelveDigitAadhaarToReceiveOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 12-digit Aadhaar to receive OTP'**
+  String get enterTwelveDigitAadhaarToReceiveOtp;
+
+  /// No description provided for @aadhaarCardNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar card number'**
+  String get aadhaarCardNumberLabel;
+
+  /// No description provided for @twelveDigitAadhaarHint.
+  ///
+  /// In en, this message translates to:
+  /// **'12-digit Aadhaar number'**
+  String get twelveDigitAadhaarHint;
+
+  /// No description provided for @enterSixDigitAadhaarOtpLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 6-digit Aadhaar OTP'**
+  String get enterSixDigitAadhaarOtpLabel;
+
+  /// No description provided for @sixDigitOtpHint.
+  ///
+  /// In en, this message translates to:
+  /// **'6-digit OTP'**
+  String get sixDigitOtpHint;
+
+  /// No description provided for @aadhaarIdentityVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Identity Verified'**
+  String get aadhaarIdentityVerified;
+
+  /// No description provided for @aadhaarVerifiedNationalId.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar verified national identity card'**
+  String get aadhaarVerifiedNationalId;
+
+  /// No description provided for @uploadAadhaarCardOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Aadhaar Card (Optional)'**
+  String get uploadAadhaarCardOptional;
+
+  /// No description provided for @frontOrCombinedAadhaar.
+  ///
+  /// In en, this message translates to:
+  /// **'Front or combined copy of Aadhaar card (PDF / Image)'**
+  String get frontOrCombinedAadhaar;
+
+  /// No description provided for @aadhaarNonMandatoryNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar verification is non-mandatory. You can skip this step at any time and complete registration.'**
+  String get aadhaarNonMandatoryNotice;
+
+  /// No description provided for @resendBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend'**
+  String get resendBtn;
+
+  /// No description provided for @digitpsNotReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'DigiTPs\nNot Received'**
+  String get digitpsNotReceived;
 }
 
 class _AppLocalizationsDelegate

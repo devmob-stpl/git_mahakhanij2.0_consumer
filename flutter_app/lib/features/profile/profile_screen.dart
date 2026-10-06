@@ -16,6 +16,7 @@ import '../../shared/widgets/app_text_field.dart';
 import '../../shared/widgets/location_dropdown_section.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 enum KycStep { view, upload, success }
 
@@ -37,7 +38,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   late final TextEditingController _talukaController;
   late final TextEditingController _districtController;
   late final TextEditingController _cityVillageController;
-  late final TextEditingController _pincodeController;
 
   bool _isTown = true;
   int? _selectedDistrictId;
@@ -53,6 +53,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _isProfileAadhaarGenerating = false;
   bool _isProfileAadhaarVerifying = false;
   String? _profileAadhaarError;
+  Timer? _profileAadhaarResendTimer;
+  int _profileAadhaarTimerCountdown = 60;
 
   String? _profileAadhaarDocUrl;
   String? _profileAadhaarDocError;
@@ -83,7 +85,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _talukaController = TextEditingController();
     _districtController = TextEditingController();
     _cityVillageController = TextEditingController();
-    _pincodeController = TextEditingController();
   }
 
   @override
@@ -97,9 +98,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _talukaController.dispose();
     _districtController.dispose();
     _cityVillageController.dispose();
-    _pincodeController.dispose();
     _profileAadhaarController.dispose();
     _profileAadhaarOtpController.dispose();
+    _profileAadhaarResendTimer?.cancel();
     super.dispose();
   }
 
@@ -112,7 +113,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _mobileController.text = profile.mobileNo.isNotEmpty ? profile.mobileNo : _mobileController.text;
     _emailController.text = profile.emailId ?? '';
     _line1Controller.text = profile.address ?? '';
-    _pincodeController.text = profile.pinCode ?? '';
     _isTown = profile.isTown;
     _selectedDistrictId = profile.districtId;
     _selectedTalukaId = profile.talukaId;
@@ -162,6 +162,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       setModalState(() => _profileAadhaarError = 'Enter a valid 12-digit Aadhaar number.');
       return;
     }
+    
+    if (aadh.startsWith('0') || aadh.startsWith('1')) {
+      setModalState(() => _profileAadhaarError = 'Aadhaar number cannot start with 0 or 1.');
+      return;
+    }
 
     setModalState(() {
       _profileAadhaarError = null;
@@ -194,8 +199,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _isProfileAadhaarOtpSent = true;
         _profileAadhaarClientId = genRes.clientId;
         _profileAadhaarError = null;
+        
+        _profileAadhaarTimerCountdown = 60;
+        _profileAadhaarResendTimer?.cancel();
+        _profileAadhaarResendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+          if (!mounted) {
+            timer.cancel();
+            return;
+          }
+          setModalState(() {
+            if (_profileAadhaarTimerCountdown > 0) {
+              _profileAadhaarTimerCountdown--;
+            } else {
+              timer.cancel();
+            }
+          });
+        });
       } else {
-        _profileAadhaarError = genRes.message ?? 'Failed to send OTP to Aadhaar-registered mobile number.';
+        String msg = genRes.message ?? 'Failed to send OTP to Aadhaar-registered mobile number.';
+        if (msg.trim().toLowerCase() == 'verification_failed') {
+          msg = 'Invalid Aadhaar number entered. Please verify and try again.';
+        }
+        _profileAadhaarError = msg;
       }
     });
   }
@@ -230,8 +255,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _isProfileAadhaarVerifying = false;
       if (res.isSuccess) {
         _kycStep = KycStep.success;
+        if (_activeProfileData != null) {
+          _activeProfileData = _activeProfileData!.copyWith(isAadharVerified: true);
+        }
+        setState(() {});
+        _handleSaveProfile();
       } else {
-        _profileAadhaarError = res.message ?? 'Invalid Aadhaar OTP. Please check and try again.';
+        String msg = res.message ?? 'Invalid Aadhaar OTP. Please check and try again.';
+        if (msg.toLowerCase() == 'verification_failed' || msg.toLowerCase().contains('invalid')) {
+          msg = 'Invalid OTP entered. Please try again.';
+        }
+        _profileAadhaarError = msg;
       }
     });
   }
@@ -365,7 +399,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       'talukaId': _selectedTalukaId ?? 0,
       'censusId': _selectedCensusId ?? 0,
       'address': _line1Controller.text.trim(),
-      'pinCode': _pincodeController.text.trim(),
+      'pinCode': '',
       'aadharCardNo': _profileAadhaarController.text.replaceAll(' ', '').trim(),
       'aadharDoc': _profileAadhaarDocUrl ?? '',
       'isAadharVerified': isAadhaarVerified,
@@ -518,9 +552,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               label: loc.twelveDigitAadhaarNumber,
                               controller: _profileAadhaarController,
                               keyboardType: TextInputType.number,
+                              maxLength: 12,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                               hint: loc.enterTwelveDigitAadhaar,
+                              readOnly: _isProfileAadhaarOtpSent,
                               suffixIcon: _isProfileAadhaarOtpSent
-                                  ? const Icon(Icons.check_circle, color: Color(0xFF15803D))
+                                  ? IconButton(
+                                      icon: const Icon(Icons.edit, color: Color(0xFF15803D)),
+                                      onPressed: () {
+                                        setModalState(() {
+                                          _isProfileAadhaarOtpSent = false;
+                                          _profileAadhaarOtpController.clear();
+                                          _profileAadhaarError = null;
+                                        });
+                                      },
+                                    )
                                   : ElevatedButton(
                                       onPressed: (_isProfileAadhaarChecking || _isProfileAadhaarGenerating)
                                           ? null
@@ -543,6 +589,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 label: loc.sixDigitAadhaarOtp,
                                 controller: _profileAadhaarOtpController,
                                 keyboardType: TextInputType.number,
+                                maxLength: 6,
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                 hint: loc.enterSixDigitOtp,
                                 suffixIcon: ElevatedButton(
                                   onPressed: _isProfileAadhaarVerifying ? null : () => _handleProfileVerifyAadhaarOtp(setModalState),
@@ -558,6 +606,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       : Text(loc.verifyOtpBtn, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
                                 ),
                               ),
+                              if (_profileAadhaarTimerCountdown > 0) ...[
+                                const SizedBox(height: 6),
+                                Text('Resend OTP in 00:${_profileAadhaarTimerCountdown.toString().padLeft(2, '0')}', style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary)),
+                              ] else ...[
+                                const SizedBox(height: 6),
+                                InkWell(
+                                  onTap: _isProfileAadhaarGenerating ? null : () => _handleProfileSendAadhaarOtp(setModalState),
+                                  child: Text(
+                                    loc.resendBtn,
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF2563EB)),
+                                  ),
+                                ),
+                              ],
                             ],
                             if (_profileAadhaarError != null) ...[
                               const SizedBox(height: 6),
@@ -584,7 +645,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              loc.method2UploadAadhaar,
+                              '${loc.method2UploadAadhaar} (Optional)',
                               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink),
                             ),
                             const SizedBox(height: 4),
@@ -808,7 +869,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           }
 
           final profile = response.responseData;
-          final isAadhaarVerified = profile?.isAadharVerified ?? false;
+          final isAadhaarVerified = _activeProfileData?.isAadharVerified ?? profile?.isAadharVerified ?? false;
 
           return Stack(
             children: [
@@ -870,10 +931,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   '+91 ${_mobileController.text}',
                                   style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, fontFamily: 'monospace'),
                                 ),
-                                Text(
-                                  'Consumer ID: ${profile?.id ?? 412}',
-                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 11, fontFamily: 'monospace'),
-                                ),
+
                               ],
                             ),
                           ),
@@ -973,6 +1031,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       _buildChecklistRow(
                                         icon: Icons.person_outline,
                                         label: 'Aadhaar Authentication',
+                                        subtitle: isAadhaarVerified ? (profile?.aadharCardNo ?? '') : null,
                                         isVerified: isAadhaarVerified,
                                       ),
                                     ],
@@ -990,7 +1049,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                           side: const BorderSide(color: Color(0xFFCBD5E1)),
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                         ),
-                                        onPressed: () => _openKycModal(KycStep.view),
+                                        onPressed: () async {
+                                          if (profile?.aadharDoc != null && profile!.aadharDoc!.isNotEmpty) {
+                                            final url = Uri.tryParse(profile.aadharDoc!);
+                                            if (url != null && await canLaunchUrl(url)) {
+                                              await launchUrl(url, mode: LaunchMode.externalApplication);
+                                            }
+                                          } else {
+                                            _openKycModal(KycStep.view);
+                                          }
+                                        },
                                         child: Text(loc.viewDocument, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.ink)),
                                       ),
                                     ),
@@ -1043,7 +1111,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   controller: _mobileController,
                                   enabled: false,
                                   prefixIcon: const Icon(Icons.phone_outlined, size: 18),
-                                  helperText: 'Verified via Government OTP (Locked)',
                                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                   keyboardType: TextInputType.phone,
                                   maxLength: 10,
@@ -1127,15 +1194,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                                                           });
                                   },
                                 ),
-                                const SizedBox(height: 14),
-                                AppTextField(
-                                  label: '${loc.profilePincode} *',
-                                  controller: _pincodeController,
-                                  keyboardType: TextInputType.number,
-                                  prefixIcon: const Icon(Icons.pin_drop_outlined, size: 18),
-                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                  maxLength: 6,
-                                ),
                               ],
                             ),
                           ),
@@ -1191,20 +1249,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildChecklistRow({required IconData icon, required String label, required bool isVerified}) {
+  Widget _buildChecklistRow({required IconData icon, required String label, String? subtitle, required bool isVerified}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 16, color: isVerified ? const Color(0xFF059669) : AppColors.inkMuted),
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Icon(icon, size: 16, color: isVerified ? const Color(0xFF059669) : AppColors.inkMuted),
+              ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.ink),
-                  overflow: TextOverflow.ellipsis,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.ink),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary, fontFamily: 'monospace'),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],

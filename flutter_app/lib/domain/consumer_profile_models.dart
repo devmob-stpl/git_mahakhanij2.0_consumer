@@ -51,6 +51,38 @@ class ConsumerProfileData {
     this.isGstVerified,
   });
 
+  ConsumerProfileData copyWith({
+    bool? isAadharVerified,
+    String? aadharCardNo,
+  }) {
+    return ConsumerProfileData(
+      id: id,
+      consumerType: consumerType,
+      name: name,
+      mobileNo: mobileNo,
+      emailId: emailId,
+      isTown: isTown,
+      districtId: districtId,
+      talukaId: talukaId,
+      censusId: censusId,
+      districtName: districtName,
+      talukaName: talukaName,
+      cityName: cityName,
+      villageName: villageName,
+      address: address,
+      pinCode: pinCode,
+      aadharCardNo: aadharCardNo ?? this.aadharCardNo,
+      aadharDoc: aadharDoc,
+      isAadharVerified: isAadharVerified ?? this.isAadharVerified,
+      panNo: panNo,
+      panDoc: panDoc,
+      isPanVerified: isPanVerified,
+      gstNo: gstNo,
+      gstDoc: gstDoc,
+      isGstVerified: isGstVerified,
+    );
+  }
+
   factory ConsumerProfileData.fromJson(Map<String, dynamic> json) {
     return ConsumerProfileData(
       id: json['id'] is int ? json['id'] as int : int.tryParse(json['id']?.toString() ?? '') ?? 0,
