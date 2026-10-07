@@ -204,7 +204,7 @@ class _ConsumerProjectRegistrationScreenState extends ConsumerState<ConsumerProj
                 setState(() {
                   _district = data.districtName;
                   _taluka = data.talukaName;
-                  _category = data.category;
+                  _category = data.category ?? 'URBAN';
                   _villageOrCity = data.villageCityName;
                   _districtId = data.district?.id;
                   _talukaId = data.taluka?.id;

@@ -30,7 +30,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _mobileController = TextEditingController(text: widget.initialMobile ?? '');
+    _mobileController = TextEditingController();
     _mobileFocusNode.addListener(_onFocusChange);
   }
 
@@ -148,9 +148,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } else {
       setState(() {
         _isLoading = false;
-        _error = response.statusMessage.isNotEmpty
+        _error = (response.statusMessage.isNotEmpty && !response.statusMessage.startsWith('Login Failed'))
             ? response.statusMessage
-            : 'Invalid OTP. Please try again.';
+            : AppLocalizations.of(context)!.invalidOtpServer;
         for (final c in _digitControllers) {
           c.clear();
         }
@@ -254,66 +254,89 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       // Mobile Number Input Box
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 36),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF3F5F8),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: _error != null
-                                  ? AppColors.danger700
-                                  : (_mobileFocusNode.hasFocus && !_isOtpSent
-                                      ? primaryBlue
-                                      : const Color(0xFFCBD5E1)),
-                              width: (_mobileFocusNode.hasFocus && !_isOtpSent && _error == null) ? 1.5 : 1.0,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _mobileController,
-                                  focusNode: _mobileFocusNode,
-                                  keyboardType: TextInputType.phone,
-                                  maxLength: 10,
-                                  enabled: !_isLoading && !_isOtpSent,
-                                  onChanged: (_) {
-                                    if (_error != null) setState(() => _error = null);
-                                  },
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF1E293B),
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText: l10n.mobileNumberHint,
-                                    hintStyle: const TextStyle(
-                                      color: Color(0xFF94A3B8),
-                                      fontSize: 15,
+                        child: _isOtpSent
+                            ? Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      _mobileController.text,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF1E293B), // AppColors.ink equivalent
+                                      ),
                                     ),
-                                    counterText: '',
-                                    border: InputBorder.none,
-                                    contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 14,
+                                    GestureDetector(
+                                      onTap: _resetOtpState,
+                                      child: const Text(
+                                        'Change',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: primaryBlue,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
                                     ),
+                                  ],
+                                ),
+                              )
+                            : Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF3F5F8),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: _error != null
+                                        ? AppColors.danger700
+                                        : (_mobileFocusNode.hasFocus
+                                            ? primaryBlue
+                                            : const Color(0xFFCBD5E1)),
+                                    width: (_mobileFocusNode.hasFocus && _error == null) ? 1.5 : 1.0,
                                   ),
+                                ),
+                                child: Row(
+                                  children: [
+
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _mobileController,
+                                        focusNode: _mobileFocusNode,
+                                        keyboardType: TextInputType.phone,
+                                        maxLength: 10,
+                                        enabled: !_isLoading,
+                                        onChanged: (_) {
+                                          if (_error != null) setState(() => _error = null);
+                                        },
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF1E293B),
+                                        ),
+                                        decoration: InputDecoration(
+                                          hintText: l10n.mobileNumberHint,
+                                          hintStyle: const TextStyle(
+                                            color: Color(0xFF94A3B8),
+                                            fontSize: 15,
+                                          ),
+                                          counterText: '',
+                                          border: InputBorder.none,
+                                          contentPadding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 14,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              if (_isOtpSent)
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 12),
-                                  child: GestureDetector(
-                                    onTap: _resetOtpState,
-                                    child: const Icon(
-                                      Icons.cancel,
-                                      color: Color(0xFFEF4444),
-                                      size: 22,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
                       ),
 
                       // OTP Boxes Row (visible when OTP is sent)
@@ -373,7 +396,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                             _focusNodes[index + 1].requestFocus();
                                           } else {
                                             _focusNodes[index].unfocus();
-                                            _handleVerifyOtp();
                                           }
                                         } else {
                                           if (index > 0) {

@@ -7,7 +7,7 @@ class AppConfig {
   static const String appVersion = '2.0.0';
 
   /// Toggle this to false when connecting to the live Government backend API
-  static const bool useMockData = true;
+  static const bool useMockData = false;
 
   /// Toggle to control visibility of Organization flow (set to false to hide organization screens, options, and navigation).
   static const bool enableOrganizationFlow = false;

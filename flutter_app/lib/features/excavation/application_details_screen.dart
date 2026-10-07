@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../domain/temporary_excavation.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../providers/excavation_provider.dart';
@@ -1437,13 +1438,13 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
                 color: const Color(0xFFF1F5F9),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.file_download_outlined, color: Color(0xFF334155), size: 16),
-                  SizedBox(width: 4),
+                  const Icon(Icons.file_download_outlined, color: Color(0xFF334155), size: 16),
+                  const SizedBox(width: 4),
                   Text(
-                    'View',
-                    style: TextStyle(
+                    AppLocalizations.of(context)!.viewBtn,
+                    style: const TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF334155),

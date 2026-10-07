@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../providers/session_provider.dart';
+import '../../l10n/app_localizations.dart';
 
 class OtpScreen extends ConsumerStatefulWidget {
   final String mobileNumber;
@@ -121,9 +122,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         context.go('/home');
       } else {
         setState(() {
-          _error = response.statusMessage.isNotEmpty
+          final loc = AppLocalizations.of(context)!;
+          _error = (response.statusMessage.isNotEmpty && !response.statusMessage.startsWith('Login Failed'))
               ? response.statusMessage
-              : 'Login Failed with MobileNo: ${widget.mobileNumber}';
+              : loc.invalidOtpServer;
           for (final c in _digitControllers) {
             c.clear();
           }
@@ -309,7 +311,6 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                                 _focusNodes[index + 1].requestFocus();
                               } else {
                                 _focusNodes[index].unfocus();
-                                _handleVerify();
                               }
                             } else {
                               if (index > 0) {

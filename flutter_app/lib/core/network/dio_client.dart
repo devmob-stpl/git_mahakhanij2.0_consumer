@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/app_config.dart';
+import '../config/globals.dart';
 
 /// Production-ready Dio HTTP Client
 /// Handles JWT Bearer token attachment, request timeouts, and error interceptors.
@@ -32,6 +34,17 @@ class DioClient {
           return handler.next(options);
         },
         onError: (DioException error, handler) async {
+          if (error.type == DioExceptionType.connectionError ||
+              error.type == DioExceptionType.connectionTimeout) {
+            scaffoldMessengerKey.currentState?.showSnackBar(
+              const SnackBar(
+                content: Text('No Internet Connection'),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+
           if (error.response?.statusCode == 401 || error.response?.statusCode == 403) {
             await _secureStorage.delete(key: 'auth_user');
             await _secureStorage.delete(key: 'auth_token');

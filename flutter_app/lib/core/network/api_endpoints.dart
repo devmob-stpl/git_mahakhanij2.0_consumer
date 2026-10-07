@@ -4,7 +4,7 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   /// Environment selection switch (Default: Demo)
-  static ApiEnvironment activeEnvironment = ApiEnvironment.demo;
+  static ApiEnvironment activeEnvironment = ApiEnvironment.live;
 
   // ===========================================================================
   // BASE URL CONFIGURATION
@@ -50,7 +50,7 @@ class ApiEndpoints {
   static String getLoginMobileUrl({required String mobileNo, required String key}) =>
       '$loginMobile?MobileNo=$mobileNo&key=$key&version=1&RegistraionId=1&LoginDeviceTypeId=1';
 
-  static String get checkAadhaarExists => '$mineralMappingBaseUrl/mineral-mapping/consumer-project/is-exists-consumer-aadharcard-no';
+  static String get checkAadhaarExists => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/is-exists-consumer-aadharcard-no';
   static String getCheckAadhaarExistsUrl(String aadharNo) => '$checkAadhaarExists?AadharCardNo=$aadharNo';
 
   static String get generateAadhaarOtp => '$mineralMappingBaseUrl/mineral-mapping/aadhar-verification/generate-otp';
@@ -107,6 +107,8 @@ class ApiEndpoints {
   static String get supervisors => '$baseUrl/supervisors';
 
   // Master Location Endpoints
+  static String get getStatesUrl => '$masterBaseUrl/master/states/GetState';
+  
   static String getDistrictsUrl([int stateId = 1]) =>
       '$masterBaseUrl/master/districts/GetDistrictByStateId/$stateId';
   static String getTalukasUrl(int districtId) =>
@@ -115,11 +117,9 @@ class ApiEndpoints {
     required int districtId,
     required int talukaId,
     required bool isTown,
-    int stateId = 1,
-    int noPage = 1,
-    int rowsPerPage = 1000,
+    int userId = 0,
   }) =>
-      '$masterBaseUrl/master/census/getCensusDataCode?StateId=$stateId&DistrictId=$districtId&TalukaId=$talukaId&IsTown=$isTown&NoPage=$noPage&RowsPerPage=$rowsPerPage';
+      'https://mahaservice.mahakhanij.in/service.asmx/GetCensusVillageTownDetails_1_7?DistrictId=$districtId&TalukaId=$talukaId&IsTown=${isTown ? 1 : 0}&UserId=$userId&VillageUpdatedDate=&TownUpdatedDate=&PlotId=0&ReceiverPlotUpdatedDate=';
 
   // Minerals & Stock Points
   static String get minerals => '$baseUrl/minerals';

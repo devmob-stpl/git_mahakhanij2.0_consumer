@@ -9,12 +9,14 @@ final locationRepositoryProvider = Provider<LocationRepository>((ref) {
 });
 
 abstract class LocationRepository {
-  Future<List<DistrictModel>> getDistricts();
+  Future<List<StateModel>> getStates();
+  Future<List<DistrictModel>> getDistricts([int stateId = 1]);
   Future<List<TalukaModel>> getTalukas(int districtId);
   Future<List<VillageCityModel>> getVillageCities({
     required int districtId,
     required int talukaId,
     required bool isTown,
+    int userId = 0,
   });
   Future<({String districtName, String talukaName, String villageName})> resolveLocationNames({
     required int? districtId,
@@ -32,18 +34,19 @@ class LocationRepositoryImpl implements LocationRepository {
     ),
   );
 
-  List<DistrictModel>? _cachedDistricts;
+  List<StateModel>? _cachedStates;
+  final Map<int, List<DistrictModel>> _cachedDistricts = {};
   final Map<int, List<TalukaModel>> _cachedTalukas = {};
   final Map<String, List<VillageCityModel>> _cachedCensus = {};
 
   @override
-  Future<List<DistrictModel>> getDistricts() async {
-    if (_cachedDistricts != null && _cachedDistricts!.isNotEmpty) {
-      return _cachedDistricts!;
+  Future<List<StateModel>> getStates() async {
+    if (_cachedStates != null && _cachedStates!.isNotEmpty) {
+      return _cachedStates!;
     }
 
     try {
-      final url = ApiEndpoints.getDistrictsUrl();
+      final url = ApiEndpoints.getStatesUrl;
       final response = await _dio.get(url);
 
       dynamic data = response.data;
@@ -53,19 +56,49 @@ class LocationRepositoryImpl implements LocationRepository {
 
       if (data is Map<String, dynamic> && data['responseData'] is List) {
         final list = (data['responseData'] as List)
-            .map((item) => DistrictModel.fromJson(item as Map<String, dynamic>))
+            .map((item) => StateModel.fromJson(item as Map<String, dynamic>))
+            .where((s) => s.state.trim().isNotEmpty)
+            .toList();
+        
+        list.sort((a, b) => a.state.compareTo(b.state));
+        _cachedStates = list;
+        return _cachedStates!;
+      }
+    } catch (_) {
+    }
+    
+    return [];
+  }
+
+  @override
+  Future<List<DistrictModel>> getDistricts([int stateId = 1]) async {
+    if (_cachedDistricts.containsKey(stateId) && _cachedDistricts[stateId]!.isNotEmpty) {
+      return _cachedDistricts[stateId]!;
+    }
+
+    try {
+      final url = ApiEndpoints.getDistrictsUrl(stateId);
+      final response = await _dio.get(url);
+
+      dynamic data = response.data;
+      if (data is String) {
+        data = jsonDecode(data);
+      }
+
+      if (data is Map && data['responseData'] is List) {
+        final list = (data['responseData'] as List)
+            .map((item) => DistrictModel.fromJson(Map<String, dynamic>.from(item as Map)))
             .where((d) => d.district.trim().isNotEmpty)
             .toList();
         
         list.sort((a, b) => a.district.compareTo(b.district));
-        _cachedDistricts = list;
-        return _cachedDistricts!;
+        _cachedDistricts[stateId] = list;
+        return _cachedDistricts[stateId]!;
       }
     } catch (_) {
-      // Fallback in case of network issue
     }
 
-    return _fallbackDistricts;
+    return [];
   }
 
   @override
@@ -83,9 +116,9 @@ class LocationRepositoryImpl implements LocationRepository {
         data = jsonDecode(data);
       }
 
-      if (data is Map<String, dynamic> && data['responseData'] is List) {
+      if (data is Map && data['responseData'] is List) {
         final list = (data['responseData'] as List)
-            .map((item) => TalukaModel.fromJson(item as Map<String, dynamic>))
+            .map((item) => TalukaModel.fromJson(Map<String, dynamic>.from(item as Map)))
             .where((t) => t.taluka.trim().isNotEmpty)
             .toList();
 
@@ -94,10 +127,9 @@ class LocationRepositoryImpl implements LocationRepository {
         return list;
       }
     } catch (_) {
-      // Fallback
     }
 
-    return _fallbackTalukas(districtId);
+    return [];
   }
 
   @override
@@ -105,6 +137,7 @@ class LocationRepositoryImpl implements LocationRepository {
     required int districtId,
     required int talukaId,
     required bool isTown,
+    int userId = 0,
   }) async {
     final cacheKey = '$districtId-$talukaId-$isTown';
     if (_cachedCensus.containsKey(cacheKey)) {
@@ -116,19 +149,33 @@ class LocationRepositoryImpl implements LocationRepository {
         districtId: districtId,
         talukaId: talukaId,
         isTown: isTown,
+        userId: userId,
       );
       final response = await _dio.get(url);
 
       dynamic data = response.data;
       if (data is String) {
+        if (data.trim().startsWith('<?xml') || data.trim().startsWith('<string')) {
+          final start = data.indexOf('{');
+          final end = data.lastIndexOf('}');
+          if (start != -1 && end != -1) {
+            data = data.substring(start, end + 1);
+          }
+        }
         data = jsonDecode(data);
       }
 
-      if (data is Map<String, dynamic> && data['responseData'] is Map) {
-        final respMap = data['responseData'] as Map<String, dynamic>;
-        if (respMap['data'] is List) {
-          final list = (respMap['data'] as List)
-              .map((item) => VillageCityModel.fromJson(item as Map<String, dynamic>))
+      if (data is Map) {
+        List<dynamic>? listData;
+        if (data.containsKey('data1')) {
+          listData = data['data1'] as List?;
+        } else if (data['responseData'] != null && data['responseData'] is Map && (data['responseData'] as Map)['data'] is List) {
+          listData = (data['responseData'] as Map)['data'] as List;
+        }
+        
+        if (listData != null) {
+          final list = listData
+              .map((item) => VillageCityModel.fromJson(Map<String, dynamic>.from(item as Map)))
               .where((v) => v.name.trim().isNotEmpty)
               .toList();
 
@@ -137,7 +184,7 @@ class LocationRepositoryImpl implements LocationRepository {
           return list;
         }
       }
-    } catch (_) {
+    } catch (e) {
       // Return empty list instead of static data if API returns no data (e.g. 404)
     }
 
@@ -188,30 +235,5 @@ class LocationRepositoryImpl implements LocationRepository {
       villageName: villageName,
     );
   }
-
-  // Baseline fallback list for smooth experience
-  static final List<DistrictModel> _fallbackDistricts = [
-    const DistrictModel(id: 1, district: 'Pune', stateId: 1),
-    const DistrictModel(id: 35, district: 'Thane', stateId: 1),
-    const DistrictModel(id: 31, district: 'Mumbai Suburban', stateId: 1),
-    const DistrictModel(id: 24, district: 'Nashik', stateId: 1),
-    const DistrictModel(id: 8, district: 'Ahilyanagar', stateId: 1),
-    const DistrictModel(id: 17, district: 'Akola', stateId: 1),
-    const DistrictModel(id: 29, district: 'Nagpur', stateId: 1),
-    const DistrictModel(id: 7, district: 'Solapur', stateId: 1),
-    const DistrictModel(id: 9, district: 'Kolhapur', stateId: 1),
-    const DistrictModel(id: 37, district: 'Palghar', stateId: 1),
-  ];
-
-  static List<TalukaModel> _fallbackTalukas(int districtId) {
-    return [
-      TalukaModel(id: 232, taluka: 'Haveli', districtId: districtId),
-      TalukaModel(id: 233, taluka: 'Khed', districtId: districtId),
-      TalukaModel(id: 234, taluka: 'Maval', districtId: districtId),
-      TalukaModel(id: 235, taluka: 'Mulshi', districtId: districtId),
-      TalukaModel(id: 236, taluka: 'Thane', districtId: districtId),
-    ];
-  }
-
 
 }

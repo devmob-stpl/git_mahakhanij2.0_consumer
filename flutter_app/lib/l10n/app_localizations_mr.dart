@@ -366,6 +366,15 @@ class AppLocalizationsMr extends AppLocalizations {
   String get materialReceivedSuccess => 'सामग्री यशस्वीरित्या प्राप्त झाली!';
 
   @override
+  String get govtOfMaharashtra => 'महाराष्ट्र शासन';
+
+  @override
+  String get revenueDepartment => 'महसूल विभाग';
+
+  @override
+  String get minorMineralTransportSystem => 'गौणखनिज वाहतूक प्रणाली';
+
+  @override
   String get revenueDeptMsg => 'महसूल विभाग, महाराष्ट्र शासन';
 
   @override
@@ -506,7 +515,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get ruralVillage => 'ग्रामीण (गाव)';
 
   @override
-  String get districtLabel => 'जिल्हा *';
+  String get districtLabel => 'जिल्हा';
 
   @override
   String get selectDistrictHint => 'जिल्हा निवडा';
@@ -515,7 +524,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get loadingDistricts => 'जिल्हे लोड करत आहे...';
 
   @override
-  String get talukaLabel => 'तालुका *';
+  String get talukaLabel => 'तालुका';
 
   @override
   String get talukaHint => 'उदा. हवेली';
@@ -713,7 +722,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get orgKycVerification => 'संस्था केवायसी (KYC) पडताळणी';
 
   @override
-  String get optionalLabel => 'ऐच्छिक';
+  String get optionalLabel => 'पर्यायी';
 
   @override
   String get verifyIdentityOrSkip =>
@@ -745,7 +754,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get aadhaarVerifiedNationalId => 'आधार सत्यापित राष्ट्रीय ओळखपत्र';
 
   @override
-  String get uploadAadhaarCardOptional => 'आधार कार्ड अपलोड करा (ऐच्छिक)';
+  String get uploadAadhaarCardOptional => 'आधार कार्ड अपलोड करा (पर्यायी)';
 
   @override
   String get frontOrCombinedAadhaar =>
@@ -760,4 +769,49 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get digitpsNotReceived => 'डिजी-टीपी\nप्राप्त नाही';
+
+  @override
+  String get enterFullName => 'पूर्ण नाव प्रविष्ट करा';
+
+  @override
+  String get emailOptional => 'ई-मेल (पर्यायी)';
+
+  @override
+  String get enterEmail => 'ई-मेल प्रविष्ट करा';
+
+  @override
+  String get stateLabel => 'राज्य';
+
+  @override
+  String get loadingStates => 'Loading States...';
+
+  @override
+  String get selectStateHint => 'Select State';
+
+  @override
+  String get consumerLabel => 'Consumer';
+
+  @override
+  String get organizationLabel => 'Organization';
+
+  @override
+  String get actionRequiredLabel => 'Action Required';
+
+  @override
+  String get aadhaarAuthenticationLabel => 'Aadhaar Authentication';
+
+  @override
+  String get approvedLabel => 'Approved';
+
+  @override
+  String get invalidOtpServer => 'Invalid OTP entered. Please try again.';
+
+  @override
+  String get maharashtraState => 'महाराष्ट्र';
+
+  @override
+  String get viewBtn => 'पहा';
+
+  @override
+  String get logoutBtn => 'लॉगआउट';
 }

@@ -54,6 +54,7 @@ class ConsumerProfileData {
   ConsumerProfileData copyWith({
     bool? isAadharVerified,
     String? aadharCardNo,
+    String? aadharDoc,
   }) {
     return ConsumerProfileData(
       id: id,
@@ -72,7 +73,7 @@ class ConsumerProfileData {
       address: address,
       pinCode: pinCode,
       aadharCardNo: aadharCardNo ?? this.aadharCardNo,
-      aadharDoc: aadharDoc,
+      aadharDoc: aadharDoc ?? this.aadharDoc,
       isAadharVerified: isAadharVerified ?? this.isAadharVerified,
       panNo: panNo,
       panDoc: panDoc,

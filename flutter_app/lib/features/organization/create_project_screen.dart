@@ -492,7 +492,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                       setState(() {
                         _district = data.districtName;
                         _taluka = data.talukaName;
-                        _category = data.category;
+                        _category = data.category ?? 'URBAN';
                         _districtId = data.district?.id;
                         _talukaId = data.taluka?.id;
                         _censusId = data.villageCity?.id;

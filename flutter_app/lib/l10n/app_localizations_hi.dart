@@ -367,6 +367,15 @@ class AppLocalizationsHi extends AppLocalizations {
   String get materialReceivedSuccess => 'सामग्री सफलतापूर्वक प्राप्त हुई!';
 
   @override
+  String get govtOfMaharashtra => 'Government of Maharashtra';
+
+  @override
+  String get revenueDepartment => 'Revenue Department';
+
+  @override
+  String get minorMineralTransportSystem => 'Minor Mineral Transport System';
+
+  @override
   String get revenueDeptMsg => 'राजस्व विभाग, महाराष्ट्र सरकार';
 
   @override
@@ -507,7 +516,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get ruralVillage => 'ग्रामीण (गाँव)';
 
   @override
-  String get districtLabel => 'जिला *';
+  String get districtLabel => 'जिला';
 
   @override
   String get selectDistrictHint => 'जिला चुनें';
@@ -516,7 +525,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get loadingDistricts => 'जिले लोड हो रहे हैं...';
 
   @override
-  String get talukaLabel => 'तालुका *';
+  String get talukaLabel => 'तालुका';
 
   @override
   String get talukaHint => 'उदा. हवेली';
@@ -689,7 +698,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get errorLoadingReport => 'रिपोर्ट लोड करने में त्रुटि: ';
 
   @override
-  String get units => 'इकाई';
+  String get units => 'युनिट्स';
 
   @override
   String get notReceived => 'प्राप्त नहीं हुआ';
@@ -761,4 +770,50 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get digitpsNotReceived => 'डिजी-टीपी\nप्राप्त नहीं';
+
+  @override
+  String get enterFullName => 'पूरा नाम दर्ज करें';
+
+  @override
+  String get emailOptional => 'ईमेल (वैकल्पिक)';
+
+  @override
+  String get enterEmail => 'ईमेल दर्ज करें';
+
+  @override
+  String get stateLabel => 'राज्य';
+
+  @override
+  String get loadingStates => 'राज्य लोड हो रहे हैं...';
+
+  @override
+  String get selectStateHint => 'राज्य चुनें';
+
+  @override
+  String get consumerLabel => 'उपभोक्ता';
+
+  @override
+  String get organizationLabel => 'संस्था';
+
+  @override
+  String get actionRequiredLabel => 'कार्रवाई आवश्यक';
+
+  @override
+  String get aadhaarAuthenticationLabel => 'आधार प्रमाणीकरण';
+
+  @override
+  String get approvedLabel => 'स्वीकृत';
+
+  @override
+  String get invalidOtpServer =>
+      'अवैध OTP दर्ज किया गया। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get maharashtraState => 'Maharashtra';
+
+  @override
+  String get viewBtn => 'View';
+
+  @override
+  String get logoutBtn => 'Logout';
 }

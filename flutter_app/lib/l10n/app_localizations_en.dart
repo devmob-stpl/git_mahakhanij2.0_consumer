@@ -368,6 +368,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get materialReceivedSuccess => 'Material Received Successfully!';
 
   @override
+  String get govtOfMaharashtra => 'Government of Maharashtra';
+
+  @override
+  String get revenueDepartment => 'Revenue Department';
+
+  @override
+  String get minorMineralTransportSystem => 'Minor Mineral Transport System';
+
+  @override
   String get revenueDeptMsg => 'Revenue Department, Government of Maharashtra';
 
   @override
@@ -507,7 +516,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ruralVillage => 'Rural (Village)';
 
   @override
-  String get districtLabel => 'District *';
+  String get districtLabel => 'District';
 
   @override
   String get selectDistrictHint => 'Select District';
@@ -516,7 +525,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loadingDistricts => 'Loading Districts...';
 
   @override
-  String get talukaLabel => 'Taluka *';
+  String get talukaLabel => 'Taluka';
 
   @override
   String get talukaHint => 'e.g. Haveli';
@@ -762,4 +771,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get digitpsNotReceived => 'DigiTPs\nNot Received';
+
+  @override
+  String get enterFullName => 'Enter Full Name';
+
+  @override
+  String get emailOptional => 'Email (Optional)';
+
+  @override
+  String get enterEmail => 'Enter E-mail';
+
+  @override
+  String get stateLabel => 'State';
+
+  @override
+  String get loadingStates => 'Loading States...';
+
+  @override
+  String get selectStateHint => 'Select State';
+
+  @override
+  String get consumerLabel => 'Consumer';
+
+  @override
+  String get organizationLabel => 'Organization';
+
+  @override
+  String get actionRequiredLabel => 'Action Required';
+
+  @override
+  String get aadhaarAuthenticationLabel => 'Aadhaar Authentication';
+
+  @override
+  String get approvedLabel => 'Approved';
+
+  @override
+  String get invalidOtpServer => 'Invalid OTP entered. Please try again.';
+
+  @override
+  String get maharashtraState => 'Maharashtra';
+
+  @override
+  String get viewBtn => 'View';
+
+  @override
+  String get logoutBtn => 'Logout';
 }

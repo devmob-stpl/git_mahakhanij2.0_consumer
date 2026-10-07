@@ -6,6 +6,11 @@ import '../../core/constants/app_colors.dart';
 import '../../domain/user.dart';
 import '../../providers/session_provider.dart';
 import '../../l10n/app_localizations.dart';
+import '../../providers/consumer_dashboard_count_provider.dart';
+import '../../providers/consumer_digitp_provider.dart';
+import '../../providers/consumer_report_provider.dart';
+import '../../providers/consumer_profile_provider.dart';
+import '../../providers/consumer_projects_provider.dart';
 
 class MainShellScreen extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
@@ -64,6 +69,26 @@ class MainShellScreen extends ConsumerWidget {
               return Expanded(
                 child: InkWell(
                   onTap: () {
+                    switch (tab.branchIndex) {
+                      case 0:
+                        ref.invalidate(consumerDashboardCountProvider);
+                        ref.invalidate(consumerDigiTpListProvider);
+                        break;
+                      case 1:
+                        ref.invalidate(consumerProjectsProvider);
+                        break;
+                      case 2:
+                        ref.invalidate(consumerDigiTpListProvider);
+                        break;
+                      case 3:
+                        ref.invalidate(consumerPlotsProvider);
+                        ref.invalidate(consumerReportProvider);
+                        break;
+                      case 4:
+                        ref.invalidate(consumerProfileProvider);
+                        break;
+                    }
+
                     navigationShell.goBranch(
                       tab.branchIndex,
                       initialLocation: tab.branchIndex == navigationShell.currentIndex,

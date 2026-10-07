@@ -796,6 +796,24 @@ abstract class AppLocalizations {
   /// **'Material Received Successfully!'**
   String get materialReceivedSuccess;
 
+  /// No description provided for @govtOfMaharashtra.
+  ///
+  /// In en, this message translates to:
+  /// **'Government of Maharashtra'**
+  String get govtOfMaharashtra;
+
+  /// No description provided for @revenueDepartment.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue Department'**
+  String get revenueDepartment;
+
+  /// No description provided for @minorMineralTransportSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Minor Mineral Transport System'**
+  String get minorMineralTransportSystem;
+
   /// No description provided for @revenueDeptMsg.
   ///
   /// In en, this message translates to:
@@ -1057,7 +1075,7 @@ abstract class AppLocalizations {
   /// No description provided for @districtLabel.
   ///
   /// In en, this message translates to:
-  /// **'District *'**
+  /// **'District'**
   String get districtLabel;
 
   /// No description provided for @selectDistrictHint.
@@ -1075,7 +1093,7 @@ abstract class AppLocalizations {
   /// No description provided for @talukaLabel.
   ///
   /// In en, this message translates to:
-  /// **'Taluka *'**
+  /// **'Taluka'**
   String get talukaLabel;
 
   /// No description provided for @talukaHint.
@@ -1545,6 +1563,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'DigiTPs\nNot Received'**
   String get digitpsNotReceived;
+
+  /// No description provided for @enterFullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Full Name'**
+  String get enterFullName;
+
+  /// No description provided for @emailOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Email (Optional)'**
+  String get emailOptional;
+
+  /// No description provided for @enterEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter E-mail'**
+  String get enterEmail;
+
+  /// No description provided for @stateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'State'**
+  String get stateLabel;
+
+  /// No description provided for @loadingStates.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading States...'**
+  String get loadingStates;
+
+  /// No description provided for @selectStateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select State'**
+  String get selectStateHint;
+
+  /// No description provided for @consumerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Consumer'**
+  String get consumerLabel;
+
+  /// No description provided for @organizationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization'**
+  String get organizationLabel;
+
+  /// No description provided for @actionRequiredLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Action Required'**
+  String get actionRequiredLabel;
+
+  /// No description provided for @aadhaarAuthenticationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Authentication'**
+  String get aadhaarAuthenticationLabel;
+
+  /// No description provided for @approvedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get approvedLabel;
+
+  /// No description provided for @invalidOtpServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid OTP entered. Please try again.'**
+  String get invalidOtpServer;
+
+  /// No description provided for @maharashtraState.
+  ///
+  /// In en, this message translates to:
+  /// **'Maharashtra'**
+  String get maharashtraState;
+
+  /// No description provided for @viewBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get viewBtn;
+
+  /// No description provided for @logoutBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get logoutBtn;
 }
 
 class _AppLocalizationsDelegate

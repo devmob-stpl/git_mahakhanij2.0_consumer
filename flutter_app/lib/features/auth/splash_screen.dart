@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../providers/session_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -48,6 +49,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     const primaryBlue = Color(0xFF2563EB);
 
     return Scaffold(
@@ -76,30 +78,30 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                             fit: BoxFit.contain,
                           ),
                           const SizedBox(height: 12),
-                          const Text(
-                            'महाराष्ट्र शासन',
+                          Text(
+                            l10n.govtOfMaharashtra,
                             textAlign: TextAlign.center,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF1E293B),
                             ),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
-                            'महसूल विभाग',
+                          Text(
+                            l10n.revenueDepartment,
                             textAlign: TextAlign.center,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF0F172A),
                             ),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
-                            'गौणखनिज वाहतूक प्रणाली',
+                          Text(
+                            l10n.minorMineralTransportSystem,
                             textAlign: TextAlign.center,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF334155),

@@ -153,14 +153,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           color: AppColors.danger600,
                         ),
                       )
-                    : const Row(
+                    : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.logout, size: 18, color: AppColors.danger600),
-                          SizedBox(width: 8),
+                          const Icon(Icons.logout, size: 18, color: AppColors.danger600),
+                          const SizedBox(width: 8),
                           Text(
-                            'Sign Out',
-                            style: TextStyle(
+                            AppLocalizations.of(context)!.logoutBtn,
+                            style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: AppColors.danger600,

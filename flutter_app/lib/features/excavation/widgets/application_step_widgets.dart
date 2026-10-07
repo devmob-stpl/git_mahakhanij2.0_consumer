@@ -918,7 +918,7 @@ class LocationStepWidget extends StatelessWidget {
             talukaController.text = data.talukaName;
             villageController.text = data.villageCityName;
             if (data.category != category) {
-              onCategoryChanged(data.category);
+              onCategoryChanged(data.category ?? 'URBAN');
             }
             onChanged();
           },

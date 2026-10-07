@@ -9,8 +9,12 @@ import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_badge.dart';
 import '../../shared/widgets/app_button.dart';
 
-// In-memory mock enquiries state matching prototype
+import '../../core/config/app_config.dart';
+
+// In-memory mock enquiries state matching prototype (Returns empty when useMockData is false)
 final enquiriesProvider = StateProvider<List<Enquiry>>((ref) {
+  if (!AppConfig.useMockData) return [];
+  
   return const [
     Enquiry(
       id: 'enq-9204',

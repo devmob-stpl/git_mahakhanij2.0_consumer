@@ -1,7 +1,10 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../core/config/globals.dart';
 import '../../domain/user.dart';
 import '../../domain/auth_api_models.dart';
 import '../../core/config/app_config.dart';
@@ -130,6 +133,27 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<UserKeyApiResponse> sendVerificationCode(String mobileNumber) async {
     try {
       final url = ApiEndpoints.getUserKeyUrl(mobileNumber);
+
+      // Pre-flight internet check
+      try {
+        final result = await InternetAddress.lookup(Uri.parse(url).host);
+        if (result.isEmpty || result[0].rawAddress.isEmpty) {
+          throw const SocketException('No Internet');
+        }
+      } on SocketException catch (_) {
+        scaffoldMessengerKey.currentState?.showSnackBar(
+          const SnackBar(
+            content: Text('No Internet Connection'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return const UserKeyApiResponse(
+          statusCode: 'NoInternet',
+          statusMessage: 'No Internet Connection',
+        );
+      }
+
       final response = await _dio.get(url);
 
       dynamic data = response.data;
@@ -159,7 +183,7 @@ class AuthRepositoryImpl implements AuthRepository {
       }
       return UserKeyApiResponse(
         statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: 'Unable to connect to Mahakhanij server. Please check network connection.',
+        statusMessage: 'Unable to login. Please check internet connection.',
       );
     } catch (e) {
       return UserKeyApiResponse(
@@ -177,6 +201,27 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final url = ApiEndpoints.getLoginMobileUrl(
           mobileNo: mobileNumber, key: key);
+          
+      // Pre-flight internet check
+      try {
+        final result = await InternetAddress.lookup(Uri.parse(url).host);
+        if (result.isEmpty || result[0].rawAddress.isEmpty) {
+          throw const SocketException('No Internet');
+        }
+      } on SocketException catch (_) {
+        scaffoldMessengerKey.currentState?.showSnackBar(
+          const SnackBar(
+            content: Text('No Internet Connection'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return const VerifyCodeApiResponse(
+          statusCode: 'NoInternet',
+          statusMessage: 'No Internet Connection',
+        );
+      }
+
       final response = await _dio.get(url);
 
       dynamic data = response.data;
@@ -246,8 +291,30 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<ConsumerSignUpResponse> consumerSignUp(Map<String, dynamic> signUpData) async {
     try {
+      final url = ApiEndpoints.consumerSignUp;
+
+      // Pre-flight internet check
+      try {
+        final result = await InternetAddress.lookup(Uri.parse(url).host);
+        if (result.isEmpty || result[0].rawAddress.isEmpty) {
+          throw const SocketException('No Internet');
+        }
+      } on SocketException catch (_) {
+        scaffoldMessengerKey.currentState?.showSnackBar(
+          const SnackBar(
+            content: Text('No Internet Connection'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return const ConsumerSignUpResponse(
+          statusCode: 'NoInternet',
+          statusMessage: 'No Internet Connection',
+        );
+      }
+
       final response = await _dio.post(
-        ApiEndpoints.consumerSignUp,
+        url,
         data: signUpData,
       );
 

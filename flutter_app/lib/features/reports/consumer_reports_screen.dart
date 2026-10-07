@@ -7,6 +7,13 @@ import '../../providers/consumer_report_provider.dart';
 import '../../providers/session_provider.dart';
 import '../../l10n/app_localizations.dart';
 
+class TimeTab {
+  final String label;
+  final DateTime fromDate;
+  final DateTime toDate;
+  TimeTab(this.label, this.fromDate, this.toDate);
+}
+
 class ConsumerReportsScreen extends ConsumerStatefulWidget {
   const ConsumerReportsScreen({super.key});
 
@@ -23,7 +30,25 @@ class _ConsumerReportsScreenState extends ConsumerState<ConsumerReportsScreen> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    _selectedTime ??= loc.last30Days;
+    final now = DateTime.now();
+    
+    // Generate dynamic tabs
+    final List<TimeTab> timeTabs = [
+      TimeTab(loc.last30Days, now.subtract(const Duration(days: 30)), now),
+      TimeTab(loc.quarterly, now.subtract(const Duration(days: 90)), now),
+    ];
+    
+    // Add only current financial year dynamically
+    int currentFyStartYear = now.month >= 4 ? now.year : now.year - 1;
+    final yearRangeString = '${currentFyStartYear.toString().substring(2)}-${(currentFyStartYear + 1).toString().substring(2)}';
+    final label = loc.fy2425.replaceAll('24-25', yearRangeString);
+    timeTabs.add(TimeTab(
+      label,
+      DateTime(currentFyStartYear, 4, 1),
+      DateTime(currentFyStartYear + 1, 3, 31, 23, 59, 59),
+    ));
+
+    _selectedTime ??= timeTabs.first.label;
 
     final consumerId = ref.watch(sessionProvider).currentUser?.consumerId ?? 0;
     
@@ -63,11 +88,7 @@ class _ConsumerReportsScreenState extends ConsumerState<ConsumerReportsScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
-                      children: [
-                        _buildTimeTab(loc.last30Days, loc),
-                        _buildTimeTab(loc.quarterly, loc),
-                        _buildTimeTab(loc.fy2425, loc),
-                      ],
+                      children: timeTabs.map((tab) => _buildDynamicTimeTab(tab)).toList(),
                     ),
                   ),
                 ),
@@ -242,51 +263,42 @@ class _ConsumerReportsScreenState extends ConsumerState<ConsumerReportsScreen> {
     return colors[index % colors.length];
   }
 
-  Widget _buildTimeTab(String label, AppLocalizations loc) {
-    final isSelected = _selectedTime == label;
+  Widget _buildDynamicTimeTab(TimeTab tab) {
+    final isSelected = _selectedTime == tab.label;
     return Expanded(
       child: GestureDetector(
         onTap: () {
           setState(() {
-            _selectedTime = label;
-            final now = DateTime.now();
-            if (label == loc.last30Days) {
-              _fromDate = now.subtract(const Duration(days: 30));
-              _toDate = now;
-            } else if (label == loc.quarterly) {
-              _fromDate = now.subtract(const Duration(days: 90));
-              _toDate = now;
-            } else if (label == loc.fy2425) {
-              _fromDate = DateTime(2024, 4, 1);
-              _toDate = DateTime(2025, 3, 31);
-            }
+            _selectedTime = tab.label;
+            _fromDate = tab.fromDate;
+            _toDate = tab.toDate;
           });
         },
         child: Container(
           decoration: BoxDecoration(
             color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    )
-                  ]
-                : null,
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? AppColors.neutral900 : AppColors.neutral500,
-            ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : null,
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          tab.label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? AppColors.neutral900 : AppColors.neutral500,
           ),
         ),
       ),
+    )
     );
   }
 

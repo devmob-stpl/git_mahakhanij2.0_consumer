@@ -166,7 +166,7 @@ class _CreatePackageScreenState extends ConsumerState<CreatePackageScreen> {
               showCategorySelector: true,
               onChanged: (data) {
                 setState(() {
-                  _category = data.category;
+                  _category = data.category ?? 'URBAN';
                   _districtController.text = data.districtName;
                   _talukaController.text = data.talukaName;
                   _cityController.text = data.villageCityName;

@@ -16,7 +16,7 @@ class AadhaarExistResponse {
     bool isSuccess = false;
     int idVal = 0;
     if (resData is Map<String, dynamic>) {
-      isSuccess = resData['isSuccess'] == true || resData['isSuccess']?.toString().toLowerCase() == 'true';
+      isSuccess = resData['isSuccess'] == true || resData['isSuccess']?.toString().toLowerCase() == 'true' || resData['isAadharVerified'] == true;
       idVal = resData['id'] is int ? resData['id'] as int : int.tryParse(resData['id']?.toString() ?? '') ?? 0;
     }
     return AadhaarExistResponse(

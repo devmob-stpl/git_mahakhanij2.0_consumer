@@ -7,14 +7,114 @@ import '../../../providers/consumer_digitp_provider.dart';
 import '../../../providers/consumer_dashboard_count_provider.dart';
 import '../../../providers/session_provider.dart';
 import '../../../shared/widgets/digitp_modal.dart';
+import 'dart:convert';
+import 'package:dio/dio.dart';
+import '../../../core/network/api_endpoints.dart';
+import '../../../core/network/dio_client.dart';
 import 'home_header.dart';
 import 'delivery_summary_card.dart';
 
-class ConsumerDashboard extends ConsumerWidget {
+class ConsumerDashboard extends ConsumerStatefulWidget {
   const ConsumerDashboard({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ConsumerDashboard> createState() => _ConsumerDashboardState();
+}
+
+class _ConsumerDashboardState extends ConsumerState<ConsumerDashboard> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAppBlockStatus();
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkAppBlockStatus();
+    }
+  }
+
+  Future<void> _checkAppBlockStatus() async {
+    final user = ref.read(sessionProvider).currentUser;
+    if (user == null) return;
+
+    final appId = user.appId ?? 0;
+
+    try {
+      final url = '${ApiEndpoints.mineralProjectBaseUrl}/mineral-project/sand-policy-Login/get-user-app-details?userId=${user.id}&AppId=$appId';
+      final dio = DioClient().dio;
+      final response = await dio.get(url);
+      if (response.statusCode == 200) {
+        final data = response.data;
+        final map = data is String ? jsonDecode(data) : data;
+        if (map != null && map['responseData'] != null) {
+          final isBlock = map['responseData']['isBlock'] == true;
+          if (isBlock && mounted) {
+            _showBlockDialogAndLogout();
+          }
+        }
+      }
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionError || 
+          e.type == DioExceptionType.unknown || 
+          e.type == DioExceptionType.connectionTimeout) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No Internet Connection'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (_) {
+      // Ignore other errors to avoid blocking UI
+    }
+  }
+
+  void _showBlockDialogAndLogout() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('App Blocked'),
+        content: const Text('Your account has been blocked. You will be logged out.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ref.read(sessionProvider.notifier).logout();
+              context.go('/login');
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(consumerDashboardCountProvider, (previous, next) {
+      // Trigger when transitioning to a refreshing state (tab switch) 
+      // or when it's the very first load
+      if ((previous != null && next.isRefreshing && !previous.isRefreshing) || 
+          (previous == null)) {
+        _checkAppBlockStatus();
+      }
+    });
+
     final l10n = AppLocalizations.of(context)!;
     final user = ref.watch(sessionProvider).currentUser;
     final userName = user?.fullName ?? '';
@@ -105,7 +205,7 @@ class ConsumerDashboard extends ConsumerWidget {
                           // DigiTP Deliveries (totalCount)
                           Expanded(
                             child: _buildStatCard(
-                              count: dashboardCountAsync.isLoading ? '...' : totalCount.toString().padLeft(2, '0'),
+                              count: dashboardCountAsync.isLoading ? '...' : (totalCount == 0 ? '0' : totalCount.toString().padLeft(2, '0')),
                               label: l10n.digitpDeliveries,
                               bgColor: const Color(0xFFEEF5FD),
                               borderColor: const Color(0xFFD6E5F8),
@@ -116,7 +216,7 @@ class ConsumerDashboard extends ConsumerWidget {
                           // Received Material (deliveredCount)
                           Expanded(
                             child: _buildStatCard(
-                              count: dashboardCountAsync.isLoading ? '...' : deliveredCount.toString().padLeft(2, '0'),
+                              count: dashboardCountAsync.isLoading ? '...' : (deliveredCount == 0 ? '0' : deliveredCount.toString().padLeft(2, '0')),
                               label: l10n.receivedMaterial,
                               bgColor: const Color(0xFFF0FDF4),
                               borderColor: const Color(0xFFBBF7D0),
@@ -131,7 +231,7 @@ class ConsumerDashboard extends ConsumerWidget {
                           // In Transit Vehicles (inTransitCount)
                           Expanded(
                             child: _buildStatCard(
-                              count: dashboardCountAsync.isLoading ? '...' : inTransitCount.toString().padLeft(2, '0'),
+                              count: dashboardCountAsync.isLoading ? '...' : (inTransitCount == 0 ? '0' : inTransitCount.toString().padLeft(2, '0')),
                               label: l10n.inTransitVehicles,
                               bgColor: const Color(0xFFF7F0FD),
                               borderColor: const Color(0xFFEBD9FB),
@@ -142,7 +242,7 @@ class ConsumerDashboard extends ConsumerWidget {
                           // Not Received (notReceivedCount)
                           Expanded(
                             child: _buildStatCard(
-                              count: dashboardCountAsync.isLoading ? '...' : notReceivedCount.toString().padLeft(2, '0'),
+                              count: dashboardCountAsync.isLoading ? '...' : (notReceivedCount == 0 ? '0' : notReceivedCount.toString().padLeft(2, '0')),
                               label: l10n.digitpsNotReceived,
                               bgColor: const Color(0xFFFEF2F2),
                               borderColor: const Color(0xFFFCA5A5),

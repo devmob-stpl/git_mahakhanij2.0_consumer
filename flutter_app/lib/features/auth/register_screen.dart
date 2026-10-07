@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/config/app_config.dart';
 import '../../core/constants/app_colors.dart';
@@ -264,12 +265,37 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _processPickImage(ImageSource source, {bool isPan = false, bool isSignatoryAadhaar = false}) async {
     try {
+      if (source == ImageSource.gallery) {
+        final storageStatus = await Permission.storage.request();
+        final photosStatus = await Permission.photos.request();
+        if (!storageStatus.isGranted && !photosStatus.isGranted && !storageStatus.isLimited && !photosStatus.isLimited) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Storage/Photos permission is required to select from gallery.')));
+          return;
+        }
+      } else if (source == ImageSource.camera) {
+        final cameraStatus = await Permission.camera.request();
+        if (!cameraStatus.isGranted) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Camera permission is required to take pictures.')));
+          return;
+        }
+      }
+      
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(source: source);
       if (pickedFile == null) return;
       final bytes = await pickedFile.readAsBytes();
       await _uploadDocumentFile(pickedFile.path, pickedFile.name, bytes, isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
     } catch (e) {
+      if (e.toString().contains('access_denied')) {
+        if (!mounted) return;
+        setState(() {
+          _isUploadingAadhaarDoc = false;
+          _isUploadingPanDoc = false;
+        });
+        return;
+      }
       if (!mounted) return;
       final key = isPan ? 'panFile' : (isSignatoryAadhaar ? 'aadhaarFile' : 'kycFile');
       setState(() {
@@ -282,6 +308,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _processPickFile({bool isPan = false, bool isSignatoryAadhaar = false}) async {
     try {
+      final storageStatus = await Permission.storage.request();
+      if (!storageStatus.isGranted && !storageStatus.isLimited) {
+        // Fallback for Android 13+ where storage might be denied but photos/media is allowed,
+        // although FilePicker usually manages this on its own, we do an explicit check.
+        final photosStatus = await Permission.photos.request();
+        if (!photosStatus.isGranted && !photosStatus.isLimited) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Storage permission is required to pick documents.')));
+          return;
+        }
+      }
+
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
@@ -291,6 +329,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       final file = result.files.first;
       await _uploadDocumentFile(file.path ?? '', file.name, file.bytes, isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
     } catch (e) {
+      if (e.toString().contains('access_denied')) {
+        if (!mounted) return;
+        setState(() {
+          _isUploadingAadhaarDoc = false;
+          _isUploadingPanDoc = false;
+        });
+        return;
+      }
       if (!mounted) return;
       final key = isPan ? 'panFile' : (isSignatoryAadhaar ? 'aadhaarFile' : 'kycFile');
       setState(() {
@@ -394,7 +440,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   void _next() async {
     final found = _validateStep();
     if (found.isNotEmpty) {
-      setState(() => _errors = found);
+      setState(() {
+        _errors = found;
+        if (found.containsKey('aadhaar') && _userType == UserType.normalConsumer) {
+          _aadhaarError = found['aadhaar'];
+        }
+      });
       return;
     }
 
@@ -489,11 +540,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         found['address'] = 'Address is required.';
       }
 
+      if (_emailController.text.trim().isNotEmpty) {
+        final emailValid = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(_emailController.text.trim());
+        if (!emailValid) {
+          found['email'] = 'Enter a valid email address.';
+        }
+      }
+
       // Location validations
       if (_districtId == null) {
         found['district'] = 'District is required.';
       }
-      if (_talukaId == null) {
+      if (_talukaId == null && _areaClassification != 'URBAN') {
         found['taluka'] = 'Taluka is required.';
       }
       if (_censusId == null) {
@@ -810,6 +868,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           error: _errors['fullName'],
           inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]'))],
           keyboardType: TextInputType.name,
+          hint: l10n.enterFullName,
           onChanged: (val) {
             if (val.isNotEmpty && _errors.containsKey('fullName')) {
               setState(() => _errors.remove('fullName'));
@@ -829,11 +888,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ),
           child: Row(
             children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 14),
-                child: Text('+91', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.inkSecondary)),
-              ),
-              Container(width: 1, height: 24, color: AppColors.line),
+
               Expanded(
                 child: TextField(
                   controller: _mobileController,
@@ -864,13 +919,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           const SizedBox(height: 4),
           Text(_errors['mobile']!, style: const TextStyle(fontSize: 12, color: AppColors.danger700)),
         ],
-        const SizedBox(height: 6),
-        Text('We will send a 6-digit verification code to this number.', style: TextStyle(fontSize: 11, color: AppColors.inkSecondary)),
         const SizedBox(height: 16),
 
-        _buildFieldLabel('Email (Optional)'),
+        _buildFieldLabel(l10n.emailOptional),
         const SizedBox(height: 6),
-        _buildTextField(_emailController, hint: 'example@email.com', keyboardType: TextInputType.emailAddress, error: _errors['email'], onChanged: (val) {
+        _buildTextField(_emailController, hint: l10n.enterEmail, keyboardType: TextInputType.emailAddress, error: _errors['email'], onChanged: (val) {
           if (val.isNotEmpty && _errors.containsKey('email')) {
             setState(() => _errors.remove('email'));
           }
@@ -1007,7 +1060,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           villageCityError: _errors['villageCity'],
           onChanged: (locData) {
             setState(() {
-              _areaClassification = locData.category;
+              _areaClassification = locData.category ?? 'URBAN';
               _district = locData.districtName;
               _taluka = locData.talukaName;
               _districtId = locData.district?.id;
@@ -1060,21 +1113,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               isOrg ? l10n.orgKycVerification : l10n.aadhaarKyc,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(l10n.optionalLabel, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.inkSecondary)),
-            ),
           ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          l10n.verifyIdentityOrSkip,
-          style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary),
-        ),
+
         const SizedBox(height: 20),
 
         if (!isOrg) ...[
@@ -1175,6 +1216,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           icon: const Icon(Icons.edit, size: 18, color: Color(0xFF15803D)),
                           onPressed: () {
                             setState(() {
+                              _isAadhaarVerified = false;
                               _aadhaarVerifiedData = null;
                               _isAadhaarOtpSent = false;
                               _aadhaarOtpController.clear();
@@ -1204,6 +1246,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           maxLength: 12,
                           enabled: !_isAadhaarOtpSent,
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          onChanged: (val) {
+                            if (_aadhaarError != null) {
+                              setState(() => _aadhaarError = null);
+                            }
+                          },
                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
                           decoration: InputDecoration(
                             hintText: l10n.twelveDigitAadhaarHint,
@@ -1454,7 +1501,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
-          onTap: isLoading ? null : onPick,
+          onTap: isLoading
+              ? null
+              : (hasFile
+                  ? () async {
+                      final url = Uri.tryParse(docUrl);
+                      if (url != null) {
+                        try {
+                          await launchUrl(url, mode: LaunchMode.externalApplication);
+                        } catch (_) {}
+                      }
+                    }
+                  : onPick),
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.all(14),
@@ -1512,29 +1570,38 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           fontWeight: isLoading ? FontWeight.w600 : FontWeight.normal,
                         ),
                       ),
-                      if (hasFile) ...[
-                        const SizedBox(height: 2),
-                        GestureDetector(
-                          onTap: () async {
-                            final url = Uri.tryParse(docUrl);
-                            if (url != null && await canLaunchUrl(url)) {
-                              await launchUrl(url, mode: LaunchMode.externalApplication);
-                            }
-                          },
-                          child: Text(
-                            docUrl,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 10, color: Color(0xFF2563EB), decoration: TextDecoration.underline, fontFamily: 'monospace'),
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
-                Text(
-                  isLoading ? '${l10n.uploadBtn}...' : (hasFile ? l10n.replaceBtn : l10n.uploadBtn),
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary700),
+                if (hasFile)
+                  GestureDetector(
+                    onTap: () async {
+                      final url = Uri.tryParse(docUrl);
+                      if (url != null) {
+                        try {
+                          await launchUrl(url, mode: LaunchMode.externalApplication);
+                        } catch (_) {}
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                      child: Text(
+                        l10n.viewBtn,
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary700),
+                      ),
+                    ),
+                  ),
+                if (hasFile)
+                  const Text('|', style: TextStyle(color: AppColors.line, fontSize: 12)),
+                GestureDetector(
+                  onTap: hasFile && !isLoading ? onPick : null,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8.0, top: 8.0, bottom: 8.0),
+                    child: Text(
+                      isLoading ? '${l10n.uploadBtn}...' : (hasFile ? l10n.replaceBtn : l10n.uploadBtn),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary700),
+                    ),
+                  ),
                 ),
               ],
             ),
