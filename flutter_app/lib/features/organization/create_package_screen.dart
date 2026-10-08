@@ -11,6 +11,7 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../shared/widgets/location_dropdown_section.dart';
 import '../../providers/operating_context_provider.dart';
+import 'package:mahakhanij_consumer/l10n/app_localizations.dart';
 
 class CreatePackageScreen extends ConsumerStatefulWidget {
   final Project? project;
@@ -56,7 +57,7 @@ class _CreatePackageScreenState extends ConsumerState<CreatePackageScreen> {
   void _handleSubmit() {
     if (_nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a package name')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errEnterPackageName)),
       );
       return;
     }
@@ -95,7 +96,7 @@ class _CreatePackageScreenState extends ConsumerState<CreatePackageScreen> {
     ref.read(operatingContextProvider.notifier).refresh();
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Package "${newPkg.name}" created successfully!')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.msgPackageCreated + ' ${newPkg.name}')),
     );
     context.pop();
   }

@@ -4,7 +4,7 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   /// Environment selection switch (Default: Demo)
-  static ApiEnvironment activeEnvironment = ApiEnvironment.live;
+  static ApiEnvironment activeEnvironment = ApiEnvironment.demo;
 
   // ===========================================================================
   // BASE URL CONFIGURATION

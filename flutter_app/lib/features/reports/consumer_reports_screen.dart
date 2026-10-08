@@ -174,7 +174,7 @@ class _ConsumerReportsScreenState extends ConsumerState<ConsumerReportsScreen> {
                       children: [
                         Expanded(child: _buildTotalReceivedCard(
                           reportData.summary?.totalReceivedQuantity ?? 0.0,
-                          reportData.materialWiseData.isNotEmpty ? reportData.materialWiseData.first.materialUnit ?? loc.units : loc.units,
+                          reportData.materialWiseData.isNotEmpty ? reportData.materialWiseData.first.materialUnit ?? '':'',
                           loc,
                         )),
                         const SizedBox(width: 12),
@@ -231,7 +231,7 @@ class _ConsumerReportsScreenState extends ConsumerState<ConsumerReportsScreen> {
                                 item.receivedQuantity.toInt(),
                                 double.parse(pct.toStringAsFixed(1)),
                                 color,
-                                unit: item.materialUnit ?? loc.units,
+                                unit: item.materialUnit ?? '',
                                 isLast: index == reportData.materialWiseData.length - 1,
                               );
                             }),
@@ -375,7 +375,7 @@ class _ConsumerReportsScreenState extends ConsumerState<ConsumerReportsScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.neutral900)),
-              Text('${NumberFormat('#,##0').format(amount)} $unit ($percentage%)', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.neutral900)),
+              Text('${NumberFormat('#,##0').format(amount)} $unit', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.neutral900)),
             ],
           ),
           const SizedBox(height: 8),

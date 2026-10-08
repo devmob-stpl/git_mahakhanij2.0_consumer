@@ -8,6 +8,7 @@ import '../../core/config/globals.dart';
 import '../../domain/user.dart';
 import '../../domain/auth_api_models.dart';
 import '../../core/config/app_config.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/network/api_endpoints.dart';
 import '../mock_db.dart';
 
@@ -141,16 +142,18 @@ class AuthRepositoryImpl implements AuthRepository {
           throw const SocketException('No Internet');
         }
       } on SocketException catch (_) {
+        final ctx = scaffoldMessengerKey.currentContext;
+        final msg = ctx != null ? AppLocalizations.of(ctx)?.noInternetConnection ?? 'No Internet Connection' : 'No Internet Connection';
         scaffoldMessengerKey.currentState?.showSnackBar(
-          const SnackBar(
-            content: Text('No Internet Connection'),
+          SnackBar(
+            content: Text(msg),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
         );
-        return const UserKeyApiResponse(
+        return UserKeyApiResponse(
           statusCode: 'NoInternet',
-          statusMessage: 'No Internet Connection',
+          statusMessage: msg,
         );
       }
 
@@ -209,16 +212,18 @@ class AuthRepositoryImpl implements AuthRepository {
           throw const SocketException('No Internet');
         }
       } on SocketException catch (_) {
+        final ctx = scaffoldMessengerKey.currentContext;
+        final msg = ctx != null ? AppLocalizations.of(ctx)?.noInternetConnection ?? 'No Internet Connection' : 'No Internet Connection';
         scaffoldMessengerKey.currentState?.showSnackBar(
-          const SnackBar(
-            content: Text('No Internet Connection'),
+          SnackBar(
+            content: Text(msg),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
         );
-        return const VerifyCodeApiResponse(
+        return VerifyCodeApiResponse(
           statusCode: 'NoInternet',
-          statusMessage: 'No Internet Connection',
+          statusMessage: msg,
         );
       }
 
@@ -300,16 +305,18 @@ class AuthRepositoryImpl implements AuthRepository {
           throw const SocketException('No Internet');
         }
       } on SocketException catch (_) {
+        final ctx = scaffoldMessengerKey.currentContext;
+        final msg = ctx != null ? AppLocalizations.of(ctx)?.noInternetConnection ?? 'No Internet Connection' : 'No Internet Connection';
         scaffoldMessengerKey.currentState?.showSnackBar(
-          const SnackBar(
-            content: Text('No Internet Connection'),
+          SnackBar(
+            content: Text(msg),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
         );
-        return const ConsumerSignUpResponse(
+        return ConsumerSignUpResponse(
           statusCode: 'NoInternet',
-          statusMessage: 'No Internet Connection',
+          statusMessage: msg,
         );
       }
 

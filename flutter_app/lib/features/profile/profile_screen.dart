@@ -260,10 +260,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _isProfileAadhaarVerifying = false;
       if (res.isSuccess) {
         if (_activeProfileData != null) {
-          _activeProfileData = _activeProfileData!.copyWith(isAadharVerified: true);
+          final newName = (res.fullName != null && res.fullName!.trim().isNotEmpty) ? res.fullName! : _activeProfileData!.name;
+          _activeProfileData = _activeProfileData!.copyWith(
+            name: newName,
+            isAadharVerified: true, 
+            aadharCardNo: _profileAadhaarController.text.replaceAll(' ', '').trim(),
+          );
+          _nameController.text = newName;
         }
         setState(() {});
-        _handleSaveProfile();
       } else {
         String msg = res.message ?? 'Invalid Aadhaar OTP. Please check and try again.';
         if (msg.toLowerCase() == 'verification_failed' || msg.toLowerCase().contains('invalid')) {
@@ -317,20 +322,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _processProfilePickImage(ImageSource source, StateSetter setModalState) async {
     try {
-      if (source == ImageSource.gallery) {
-        final storageStatus = await Permission.storage.request();
-        final photosStatus = await Permission.photos.request();
-        if (!storageStatus.isGranted && !photosStatus.isGranted && !storageStatus.isLimited && !photosStatus.isLimited) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Storage/Photos permission is required to select from gallery.')));
-          return;
-        }
-      } else if (source == ImageSource.camera) {
-        final cameraStatus = await Permission.camera.request();
-        if (!cameraStatus.isGranted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Camera permission is required to take pictures.')));
-          return;
-        }
-      }
 
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(source: source);
@@ -354,14 +345,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _processProfilePickFile(StateSetter setModalState) async {
     try {
-      final storageStatus = await Permission.storage.request();
-      if (!storageStatus.isGranted && !storageStatus.isLimited) {
-        final photosStatus = await Permission.photos.request();
-        if (!photosStatus.isGranted && !photosStatus.isLimited) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Storage permission is required to pick documents.')));
-          return;
-        }
-      }
 
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -409,12 +392,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _profileAadhaarDocError = null;
         if (_activeProfileData != null) {
           _activeProfileData = _activeProfileData!.copyWith(
-            isAadharVerified: true,
             aadharDoc: _profileAadhaarDocUrl,
           );
         }
         setState(() {});
-        _handleSaveProfile();
       } else {
         _profileAadhaarDocError = uploadRes.statusMessage;
       }
@@ -424,10 +405,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _handleSaveProfile() async {
     final user = ref.read(sessionProvider).currentUser;
     final mobile = _mobileController.text.trim();
+    final l10n = AppLocalizations.of(context)!;
 
     if (_nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your full name.')),
+        SnackBar(content: Text(l10n.pleaseEnterFullName)),
       );
       return;
     }
@@ -436,7 +418,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final emailValid = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(_emailController.text.trim());
       if (!emailValid) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter a valid email address.')),
+          SnackBar(content: Text(l10n.pleaseEnterValidEmail)),
         );
         return;
       }
@@ -502,6 +484,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   void _openKycModal(KycStep initialStep) {
     final loc = AppLocalizations.of(context)!;
+    final mobileNo = ref.read(sessionProvider).currentUser?.mobileNumber ?? '';
+    final isServerVerified = ref.read(consumerProfileProvider(mobileNo)).value?.responseData?.isAadharVerified == true;
     setState(() => _kycStep = initialStep);
     showModalBottomSheet(
       context: context,
@@ -548,13 +532,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         _activeProfileData?.isAadharVerified == true ? 'VERIFIED' : 'PENDING',
                       ),
                       const SizedBox(height: 10),
-                      if (_profileAadhaarDocUrl != null) ...[
-                        _buildKycDetailRow(
-                          loc.aadhaarDocumentUrlLabel,
-                          _profileAadhaarDocUrl!.length > 25 ? '...${_profileAadhaarDocUrl!.substring(_profileAadhaarDocUrl!.length - 25)}' : _profileAadhaarDocUrl!,
-                        ),
-                        const SizedBox(height: 10),
-                      ],
+
                       const SizedBox(height: 20),
 
                       Row(
@@ -607,7 +585,40 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 children: [
                                   const Icon(Icons.check_circle, color: Color(0xFF15803D), size: 20),
                                   const SizedBox(width: 8),
-                                  const Text('Aadhaar OTP Verified', style: TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w600)),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(_profileAadhaarController.text.isNotEmpty ? _profileAadhaarController.text : (_activeProfileData?.aadharCardNo ?? 'Aadhaar OTP Verified'), style: const TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w600)),
+                                        if (_activeProfileData?.name.isNotEmpty == true) ...[
+                                          const SizedBox(height: 2),
+                                          Text(_activeProfileData!.name, style: const TextStyle(color: Color(0xFF15803D), fontSize: 12, fontWeight: FontWeight.w500)),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  if (!isServerVerified)
+                                    GestureDetector(
+                                      onTap: () {
+                                        setModalState(() {
+                                          if (_activeProfileData != null) {
+                                            _activeProfileData = _activeProfileData!.copyWith(isAadharVerified: false, aadharCardNo: '');
+                                          }
+                                          _profileAadhaarController.clear();
+                                          _profileAadhaarOtpController.clear();
+                                          _isProfileAadhaarOtpSent = false;
+                                          _profileAadhaarError = null;
+                                          _profileAadhaarDocUrl = null;
+                                        });
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                                        child: Text(
+                                          loc.replaceBtn,
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary700),
+                                        ),
+                                      ),
+                                    ),
                                 ],
                               ),
                             ],
@@ -724,7 +735,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '${loc.method2UploadAadhaar} (Optional)',
+                              loc.method2UploadAadhaar,
                               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink),
                             ),
                             const SizedBox(height: 4),
@@ -771,15 +782,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                             const SizedBox(height: 2),
                                             Text(loc.uploadingToMahakhanijServer, style: TextStyle(fontSize: 10.5, color: AppColors.primary700)),
                                           ],
-                                          if (_profileAadhaarDocUrl != null) ...[
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              _profileAadhaarDocUrl!,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(fontSize: 9.5, color: Color(0xFF166534), fontFamily: 'monospace'),
-                                            ),
-                                          ],
+
                                         ],
                                       ),
                                     ),
@@ -840,6 +843,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               child: Text(loc.closeBtn, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.inkSecondary)),
                             ),
                           ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 44),
+                                backgroundColor: AppColors.primary700,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: _isSaving ? null : () {
+                                _handleSaveProfile();
+                                Navigator.pop(modalContext);
+                              },
+                              child: _isSaving 
+                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                : Text(loc.saveBtn, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                            ),
+                          ),
                         ],
                       ),
                     ] else if (_kycStep == KycStep.success) ...[
@@ -892,14 +913,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final profileAsync = ref.watch(consumerProfileProvider(mobileNo));
 
     return AppScaffold(
-      title: loc.profileScreenTitle,
+      title: loc.aadhaarKyc,
       showBackButton: false,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.settings_outlined, color: AppColors.ink),
-          onPressed: () => context.push('/settings'),
-        ),
-      ],
       body: profileAsync.when(
         loading: () => const Center(
           child: Column(
@@ -956,68 +971,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 1) Top Navy Identity Hero Card (#102d5e)
-                    Container(
-                      color: const Color(0xFF2563EB),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 54,
-                            height: 54,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                            ),
-                            child: Center(
-                              child: Text(
-                                _nameController.text.isNotEmpty ? _nameController.text[0].toUpperCase() : 'C',
-                                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        _nameController.text.isNotEmpty ? _nameController.text : 'Consumer Account',
-                                        style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        isOrg ? loc.organizationLabel : loc.consumerLabel,
-                                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '+91 ${_mobileController.text}',
-                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, fontFamily: 'monospace'),
-                                ),
-
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -1110,7 +1063,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       _buildChecklistRow(
                                         icon: Icons.person_outline,
                                         label: loc.aadhaarAuthenticationLabel,
-                                        subtitle: isAadhaarVerified ? (profile?.aadharCardNo ?? '') : null,
+                                        subtitle: isAadhaarVerified ? '${profile?.aadharCardNo ?? ''}\n${profile?.name ?? ''}' : null,
                                         isVerified: isAadhaarVerified,
                                       ),
                                     ],
@@ -1160,132 +1113,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 18),
-
-                          // 3) Personal & Account Details Form
-                          Text(
-                            loc.personalDetails,
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: AppColors.line),
-                            ),
-                            child: Column(
-                              children: [
-                                AppTextField(
-                                  label: '${loc.profileName} *',
-                                  controller: _nameController,
-                                  prefixIcon: const Icon(Icons.person_outline, size: 18),
-                                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]'))],
-                                  keyboardType: TextInputType.name,
-                                ),
-                                const SizedBox(height: 12),
-                                AppTextField(
-                                  label: '${loc.profileMobile} *',
-                                  controller: _mobileController,
-                                  enabled: false,
-                                  prefixIcon: const Icon(Icons.phone_outlined, size: 18),
-                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                  keyboardType: TextInputType.phone,
-                                  maxLength: 10,
-                                ),
-                                const SizedBox(height: 12),
-                                AppTextField(
-                                  label: loc.profileEmail,
-                                  controller: _emailController,
-                                  keyboardType: TextInputType.emailAddress,
-                                  prefixIcon: const Icon(Icons.mail_outline, size: 18),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-
-                          // 4) Address & Location Details
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                loc.residentialDetails,
-                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: _isTown == true ? const Color(0xFFEFF6FF) : const Color(0xFFECFDF5),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: _isTown == true ? const Color(0xFFBFDBFE) : const Color(0xFFA7F3D0),
-                                  ),
-                                ),
-                                child: Text(
-                                  _isTown == true ? loc.urban.toUpperCase() : (_isTown == false ? loc.rural.toUpperCase() : ''),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: _isTown == true ? const Color(0xFF2563EB) : const Color(0xFF047857),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: AppColors.line),
-                            ),
-                            child: Column(
-                              children: [
-                                AppTextField(
-                                  label: '${loc.profileAddress} *',
-                                  controller: _line1Controller,
-                                  prefixIcon: const Icon(Icons.location_on_outlined, size: 18),
-                                  keyboardType: TextInputType.streetAddress,
-                                ),
-                                const SizedBox(height: 14),
-                                LocationDropdownSection(
-                                  key: ValueKey('loc_${_activeProfileData?.id ?? 'new'}'),
-                                  initialCategory: _isTown == null ? null : (_isTown! ? 'URBAN' : 'RURAL'),
-                                  initialDistrictId: _selectedDistrictId,
-                                  initialTalukaId: _selectedTalukaId,
-                                  initialCensusId: _selectedCensusId,
-                                  initialDistrict: _districtController.text,
-                                  initialTaluka: _talukaController.text,
-                                  initialVillageCity: _cityVillageController.text,
-                                  showCategorySelector: true,
-                                  onChanged: (data) {
-                                    setState(() {
-                                      _selectedDistrictId = data.districtId;
-                                      _selectedTalukaId = data.talukaId;
-                                      _selectedCensusId = data.censusId;
-                                      _districtController.text = data.districtName;
-                                      _talukaController.text = data.talukaName;
-                                      _cityVillageController.text = data.villageCityName;
-                                      _isTown = data.category == null ? null : data.isTown;
-                                                                          });
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Save Button
-                          AppButton(
-                            label: _isSaving ? 'Saving Changes...' : loc.saveChanges,
-                            fullWidth: true,
-                            size: AppButtonSize.large,
-                            onPressed: _isSaving ? null : _handleSaveProfile,
-                          ),
-                          const SizedBox(height: 32),
                         ],
                       ),
                     ),
@@ -1308,14 +1135,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
                       ],
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.check_circle, color: Colors.white, size: 18),
-                        SizedBox(width: 8),
+                        const Icon(Icons.check_circle, color: Colors.white, size: 18),
+                        const SizedBox(width: 8),
                         Text(
-                          'Profile details updated successfully!',
-                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                          loc.aadhaarDetailsSavedSuccessfully,
+                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),

@@ -198,7 +198,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
               final text = controller.text.trim();
               if (text.isEmpty || !RegExp(r'^\d+$').hasMatch(text)) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please enter a valid numeric DigiTP Number.')),
+                  SnackBar(content: Text(AppLocalizations.of(context)!.errEnterValidDigitp)),
                 );
                 return;
               }
@@ -308,7 +308,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
           content: Text(response.statusMessage.isNotEmpty
               ? response.statusMessage
               : 'Invoice received successfully.'),
-          backgroundColor: const Color(0xFF15803D),
+          backgroundColor: const Color(0xFF2563EB),
         ),
       );
 

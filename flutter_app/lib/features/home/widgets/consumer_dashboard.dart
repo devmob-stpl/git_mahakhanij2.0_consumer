@@ -70,8 +70,8 @@ class _ConsumerDashboardState extends ConsumerState<ConsumerDashboard> with Widg
           e.type == DioExceptionType.connectionTimeout) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No Internet Connection'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.noInternetConnection),
               behavior: SnackBarBehavior.floating,
               backgroundColor: Colors.red,
             ),

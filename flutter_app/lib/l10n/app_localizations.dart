@@ -592,6 +592,12 @@ abstract class AppLocalizations {
   /// **'Pincode'**
   String get profilePincode;
 
+  /// No description provided for @saveBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get saveBtn;
+
   /// No description provided for @saveChanges.
   ///
   /// In en, this message translates to:
@@ -1123,7 +1129,7 @@ abstract class AppLocalizations {
   /// No description provided for @cityCorporationHint.
   ///
   /// In en, this message translates to:
-  /// **'e.g. Pune City (PMC)'**
+  /// **'e.g. Pune City'**
   String get cityCorporationHint;
 
   /// No description provided for @villageRuralHint.
@@ -1653,6 +1659,534 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Logout'**
   String get logoutBtn;
+
+  /// No description provided for @logoutErrorMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Network/API error during logout:'**
+  String get logoutErrorMsg;
+
+  /// No description provided for @logoutFailedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Logout failed. Please try again.'**
+  String get logoutFailedMsg;
+
+  /// No description provided for @preferencesHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'PREFERENCES'**
+  String get preferencesHeader;
+
+  /// No description provided for @changeLanguageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Language'**
+  String get changeLanguageLabel;
+
+  /// No description provided for @storagePhotosPermissionReq.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage/Photos permission is required to select from gallery.'**
+  String get storagePhotosPermissionReq;
+
+  /// No description provided for @cameraPermissionReq.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera permission is required to take pictures.'**
+  String get cameraPermissionReq;
+
+  /// No description provided for @storagePermissionReq.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage permission is required to pick documents.'**
+  String get storagePermissionReq;
+
+  /// No description provided for @registrationSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Registration successful! Please sign in with your mobile number.'**
+  String get registrationSuccess;
+
+  /// No description provided for @registrationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Registration failed. Please try again.'**
+  String get registrationFailed;
+
+  /// No description provided for @fullNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name is required.'**
+  String get fullNameRequired;
+
+  /// No description provided for @validMobileRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid 10-digit Indian mobile number.'**
+  String get validMobileRequired;
+
+  /// No description provided for @orgNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization Name is required.'**
+  String get orgNameRequired;
+
+  /// No description provided for @gstinRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your organization GSTIN.'**
+  String get gstinRequired;
+
+  /// No description provided for @addressRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Address is required.'**
+  String get addressRequired;
+
+  /// No description provided for @validEmailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address without consecutive dots or dots at the start.'**
+  String get validEmailRequired;
+
+  /// No description provided for @districtRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'District is required.'**
+  String get districtRequired;
+
+  /// No description provided for @talukaRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Taluka is required.'**
+  String get talukaRequired;
+
+  /// No description provided for @cityCorpRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'City/Corporation is required.'**
+  String get cityCorpRequired;
+
+  /// No description provided for @villageRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Village is required.'**
+  String get villageRequired;
+
+  /// No description provided for @aadhaarVerificationRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please verify your Aadhaar number to proceed.'**
+  String get aadhaarVerificationRequired;
+
+  /// No description provided for @surveyNumberRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Survey number is required.'**
+  String get surveyNumberRequired;
+
+  /// No description provided for @validGstRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid 15-character GSTIN.'**
+  String get validGstRequired;
+
+  /// No description provided for @changeLanguageLaterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You can always change this later in settings.'**
+  String get changeLanguageLaterHint;
+
+  /// No description provided for @changeBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get changeBtn;
+
+  /// No description provided for @aadhaarDetailsSavedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar verification details saved successfully'**
+  String get aadhaarDetailsSavedSuccessfully;
+
+  /// No description provided for @noInternetConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'No Internet Connection'**
+  String get noInternetConnection;
+
+  /// No description provided for @unableToLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to login. Please check internet connection.'**
+  String get unableToLogin;
+
+  /// No description provided for @loginFailedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Login failed. Please try again.'**
+  String get loginFailedMsg;
+
+  /// No description provided for @pleaseEnterFullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your full name.'**
+  String get pleaseEnterFullName;
+
+  /// No description provided for @pleaseEnterValidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email address.'**
+  String get pleaseEnterValidEmail;
+
+  /// No description provided for @profileSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save profile. Please try again.'**
+  String get profileSaveError;
+
+  /// No description provided for @aadhaarSendOtpError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send Aadhaar OTP. Please try again.'**
+  String get aadhaarSendOtpError;
+
+  /// No description provided for @msgRegSuccessSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Registration successful! Please sign in with your mobile number.'**
+  String get msgRegSuccessSignIn;
+
+  /// No description provided for @errEnterMandatoryFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter all mandatory fields.'**
+  String get errEnterMandatoryFields;
+
+  /// No description provided for @msgRegSuccessLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Registration successful! Please login with your mobile number.'**
+  String get msgRegSuccessLogin;
+
+  /// No description provided for @errEnterSiteName.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter site name (e.g. My Residence Construction)'**
+  String get errEnterSiteName;
+
+  /// No description provided for @errEnterDeliveryAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter delivery address'**
+  String get errEnterDeliveryAddress;
+
+  /// No description provided for @msgEnquirySubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Enquiry submitted to quarry operator!'**
+  String get msgEnquirySubmitted;
+
+  /// No description provided for @msgDownloadingFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading '**
+  String get msgDownloadingFile;
+
+  /// No description provided for @msgDownloadingAppFee.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading Application Fee Demand Note...'**
+  String get msgDownloadingAppFee;
+
+  /// No description provided for @msgDownloadingGrasReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading GRAS Fee Receipt...'**
+  String get msgDownloadingGrasReceipt;
+
+  /// No description provided for @msgDownloadingRoyaltyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading Royalty Demand Note...'**
+  String get msgDownloadingRoyaltyNote;
+
+  /// No description provided for @msgDownloadingPermitOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading Official Excavation Permit Order...'**
+  String get msgDownloadingPermitOrder;
+
+  /// No description provided for @msgDraftSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft saved successfully.'**
+  String get msgDraftSaved;
+
+  /// No description provided for @errUploadMandatoryDocs.
+  ///
+  /// In en, this message translates to:
+  /// **'Please upload all mandatory documents (*) before proceeding.'**
+  String get errUploadMandatoryDocs;
+
+  /// No description provided for @errAcceptDeclaration.
+  ///
+  /// In en, this message translates to:
+  /// **'Please accept statutory minor minerals declaration.'**
+  String get errAcceptDeclaration;
+
+  /// No description provided for @msgAppSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Application successfully submitted with fee paid!'**
+  String get msgAppSubmitted;
+
+  /// No description provided for @msgPinMapOverlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin map overlay opened. Location set.'**
+  String get msgPinMapOverlay;
+
+  /// No description provided for @msgGpsCaptured.
+  ///
+  /// In en, this message translates to:
+  /// **'Current GPS location captured successfully.'**
+  String get msgGpsCaptured;
+
+  /// No description provided for @msgAttachedReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Attached bank_stamped_receipt_MH2026.pdf'**
+  String get msgAttachedReceipt;
+
+  /// No description provided for @msgDownloadedChallan.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded GRAS e-Challan (GRN & CIN) PDF'**
+  String get msgDownloadedChallan;
+
+  /// No description provided for @errStateEngPurpose.
+  ///
+  /// In en, this message translates to:
+  /// **'Please state the engineering purpose for drawdown'**
+  String get errStateEngPurpose;
+
+  /// No description provided for @msgConsumptionLogged.
+  ///
+  /// In en, this message translates to:
+  /// **'Statutory on-site consumption drawdown logged successfully!'**
+  String get msgConsumptionLogged;
+
+  /// No description provided for @msgTransferEtpGenerated.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer e-TP generated successfully! Pass is ready for driver handover.'**
+  String get msgTransferEtpGenerated;
+
+  /// No description provided for @msgTransitPassShared.
+  ///
+  /// In en, this message translates to:
+  /// **'Transit pass link shared on WhatsApp!'**
+  String get msgTransitPassShared;
+
+  /// No description provided for @msgGatePassReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Gate pass ready to print / download.'**
+  String get msgGatePassReady;
+
+  /// No description provided for @errCannotCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot make call to '**
+  String get errCannotCall;
+
+  /// No description provided for @errEnterPackageName.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a package name'**
+  String get errEnterPackageName;
+
+  /// No description provided for @msgPackageCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Package created successfully!'**
+  String get msgPackageCreated;
+
+  /// No description provided for @errEnterProjectName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the project name.'**
+  String get errEnterProjectName;
+
+  /// No description provided for @errSelectGovDept.
+  ///
+  /// In en, this message translates to:
+  /// **'Select or enter the government department.'**
+  String get errSelectGovDept;
+
+  /// No description provided for @errEnterOfficeName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the issuing / division office name.'**
+  String get errEnterOfficeName;
+
+  /// No description provided for @errEnterWorkOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the work order / sanction order number.'**
+  String get errEnterWorkOrder;
+
+  /// No description provided for @errEnterSiteAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the site address.'**
+  String get errEnterSiteAddress;
+
+  /// No description provided for @msgCallingSupervisor.
+  ///
+  /// In en, this message translates to:
+  /// **'Calling supervisor...'**
+  String get msgCallingSupervisor;
+
+  /// No description provided for @msgOpeningWhatsapp.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening WhatsApp...'**
+  String get msgOpeningWhatsapp;
+
+  /// No description provided for @msgActiveScopeSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Active operating scope set to: '**
+  String get msgActiveScopeSet;
+
+  /// No description provided for @errEnterSupervisorName.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter supervisor name'**
+  String get errEnterSupervisorName;
+
+  /// No description provided for @errEnterSupervisorContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter supervisor contact detail'**
+  String get errEnterSupervisorContact;
+
+  /// No description provided for @errEnterValidDigitp.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid numeric DigiTP Number.'**
+  String get errEnterValidDigitp;
+
+  /// No description provided for @inTransitVehiclesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'In-Transit Vehicles'**
+  String get inTransitVehiclesTitle;
+
+  /// No description provided for @activeVehicleTracking.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Vehicle Tracking'**
+  String get activeVehicleTracking;
+
+  /// No description provided for @activeVehicleTrackingDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an in-transit vehicle to monitor real-time GPS location and ETA.'**
+  String get activeVehicleTrackingDesc;
+
+  /// No description provided for @loadingInTransitVehicles.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading In-Transit vehicles...'**
+  String get loadingInTransitVehicles;
+
+  /// No description provided for @failedToLoadInTransitVehicles.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load In-Transit vehicles'**
+  String get failedToLoadInTransitVehicles;
+
+  /// No description provided for @noVehiclesInTransit.
+  ///
+  /// In en, this message translates to:
+  /// **'No Vehicles In-Transit'**
+  String get noVehiclesInTransit;
+
+  /// No description provided for @noVehiclesInTransitDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'There are currently no active mineral vehicles in-transit for your account.'**
+  String get noVehiclesInTransitDesc;
+
+  /// No description provided for @refreshList.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh List'**
+  String get refreshList;
+
+  /// No description provided for @vehicleNA.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle N/A'**
+  String get vehicleNA;
+
+  /// No description provided for @destinationNA.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination N/A'**
+  String get destinationNA;
+
+  /// No description provided for @gpsActive.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS Active'**
+  String get gpsActive;
+
+  /// No description provided for @mineralAndQty.
+  ///
+  /// In en, this message translates to:
+  /// **'Mineral & Qty:'**
+  String get mineralAndQty;
+
+  /// No description provided for @destinationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination:'**
+  String get destinationLabel;
+
+  /// No description provided for @distanceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance :'**
+  String get distanceLabel;
+
+  /// No description provided for @driverLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver:'**
+  String get driverLabel;
+
+  /// No description provided for @selectVehicleAndTrackLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Vehicle & Track Live'**
+  String get selectVehicleAndTrackLive;
+
+  /// No description provided for @digiTpLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'DigiTP:'**
+  String get digiTpLabel;
+
+  /// No description provided for @inTransitStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'In Transit'**
+  String get inTransitStatus;
 }
 
 class _AppLocalizationsDelegate

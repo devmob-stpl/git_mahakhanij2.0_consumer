@@ -6,6 +6,7 @@ import '../../rules/inventory_rules.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../providers/inventory_provider.dart';
+import 'package:mahakhanij_consumer/l10n/app_localizations.dart';
 
 class RecordConsumptionDialog extends ConsumerStatefulWidget {
   final InventoryBalance balance;
@@ -37,7 +38,7 @@ class _RecordConsumptionDialogState extends ConsumerState<RecordConsumptionDialo
 
     if (_purposeController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please state the engineering purpose for drawdown')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errStateEngPurpose)),
       );
       return;
     }
@@ -57,7 +58,7 @@ class _RecordConsumptionDialogState extends ConsumerState<RecordConsumptionDialo
       if (success) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Statutory on-site consumption drawdown logged successfully!')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.msgConsumptionLogged)),
         );
       }
     }

@@ -35,7 +35,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(successMsg),
-            backgroundColor: AppColors.success600,
+            backgroundColor: const Color(0xFF2563EB),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -49,7 +49,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           SnackBar(
             content: Text(response.statusMessage.isNotEmpty
                 ? response.statusMessage
-                : 'Logout failed. Please try again.'),
+                : AppLocalizations.of(context)!.logoutFailedMsg),
             backgroundColor: AppColors.danger600,
             behavior: SnackBarBehavior.floating,
           ),
@@ -62,7 +62,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Network/API error during logout: ${e.toString()}'),
+          content: Text('${AppLocalizations.of(context)!.logoutErrorMsg} ${e.toString()}'),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -83,20 +83,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 16),
-            _buildSectionHeader('PREFERENCES'),
+            _buildSectionHeader(l10n.preferencesHeader),
             Container(
               color: AppColors.surface,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.language, color: AppColors.primary700, size: 24),
-                      SizedBox(width: 14),
+                      const Icon(Icons.language, color: AppColors.primary700, size: 24),
+                      const SizedBox(width: 14),
                       Text(
-                        'Change Language',
-                        style: TextStyle(
+                        l10n.changeLanguageLabel,
+                        style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: AppColors.ink,

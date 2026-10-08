@@ -103,9 +103,16 @@ class VehicleTrackingRepositoryImpl implements VehicleTrackingRepository {
         }
       }
 
+      String errorMsg = e.message ?? 'Server unreachable.';
+      if (errorMsg.contains('Failed host lookup') || errorMsg.contains('SocketException')) {
+        errorMsg = 'Network error: Unable to reach the tracking server. Please check your internet connection.';
+      } else {
+        errorMsg = 'Network error occurred while fetching tracking details: $errorMsg';
+      }
+
       return VehicleTrackingApiResponse(
         statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: 'Network error occurred while fetching tracking details: ${e.message ?? 'Server unreachable.'}',
+        statusMessage: errorMsg,
       );
     } catch (e) {
       return VehicleTrackingApiResponse(

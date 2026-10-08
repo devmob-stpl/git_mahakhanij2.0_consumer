@@ -6,6 +6,7 @@ import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_badge.dart';
 import '../../shared/widgets/app_button.dart';
+import 'package:mahakhanij_consumer/l10n/app_localizations.dart';
 
 class TransfersScreen extends StatefulWidget {
   const TransfersScreen({super.key});
@@ -237,7 +238,7 @@ class _TransfersScreenState extends State<TransfersScreen> {
                     });
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Transfer e-TP generated successfully! Pass is ready for driver handover.')),
+                    SnackBar(content: Text(AppLocalizations.of(context)!.msgTransferEtpGenerated)),
                   );
                 },
               ),
@@ -305,7 +306,7 @@ class _TransfersScreenState extends State<TransfersScreen> {
                       label: const Text('WhatsApp'),
                       onPressed: () {
                         Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transit pass link shared on WhatsApp!')));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.msgTransitPassShared)));
                       },
                     ),
                   ),
@@ -317,7 +318,7 @@ class _TransfersScreenState extends State<TransfersScreen> {
                       label: const Text('Gate Pass'),
                       onPressed: () {
                         Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gate pass ready to print / download.')));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.msgGatePassReady)));
                       },
                     ),
                   ),

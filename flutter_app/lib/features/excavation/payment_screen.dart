@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
+import 'package:mahakhanij_consumer/l10n/app_localizations.dart';
 
 class PaymentScreen extends StatefulWidget {
   final String title;
@@ -444,7 +445,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   _uploadedFileName = 'bank_stamped_receipt_MH2026.pdf';
                                 });
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Attached bank_stamped_receipt_MH2026.pdf')),
+                                  SnackBar(content: Text(AppLocalizations.of(context)!.msgAttachedReceipt)),
                                 );
                               },
                               child: Container(
@@ -761,7 +762,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           InkWell(
                             onTap: () {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Downloaded GRAS e-Challan (GRN & CIN) PDF')),
+                                SnackBar(content: Text(AppLocalizations.of(context)!.msgDownloadedChallan)),
                               );
                             },
                             child: Container(

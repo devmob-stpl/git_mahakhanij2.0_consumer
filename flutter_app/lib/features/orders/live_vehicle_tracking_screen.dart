@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
+import 'dart:math' show sin, cos, atan2, pi, sqrt;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,7 +13,7 @@ import '../../core/utils/date_formatter.dart';
 import '../../domain/vehicle_tracking_models.dart';
 import '../../providers/vehicle_tracking_provider.dart';
 import '../../providers/session_provider.dart';
-
+import 'dart:async';
 
 class LiveVehicleTrackingScreen extends ConsumerStatefulWidget {
   final String deliveryId;
@@ -27,12 +29,35 @@ class LiveVehicleTrackingScreen extends ConsumerStatefulWidget {
   ConsumerState<LiveVehicleTrackingScreen> createState() => _LiveVehicleTrackingScreenState();
 }
 
-class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingScreen> {
+class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _vehicleAnimationController;
+  LatLng? _vehicleStartPosition;
+  LatLng? _vehicleTargetPosition;
+  LatLng? _animatedVehiclePosition;
+  double _vehicleBearing = 0;
+  bool _isFollowingVehicle = true;
+
   late TextEditingController _vehicleSearchController;
   late String _activeVehicleNo;
   final double _sheetSize = 0.50; // Initial sheet size
   GoogleMapController? _mapController;
   BitmapDescriptor? _customMarkerIcon;
+  final List<LatLng> _travelledRoute = [];
+  LatLng? _lastGpsPosition;
+  DateTime? _lastGpsTime;
+
+
+  Timer? _cameraThrottleTimer;
+
+  bool _isProgrammaticCameraMove = false;
+  bool _isUserInteractingWithMap = false;
+  final ValueNotifier<LatLng?> _animatedPositionNotifier =
+  ValueNotifier<LatLng?>(null);
+
+  DateTime? _lastCameraUpdate;
+
+  static const Duration _cameraUpdateInterval =
+  Duration(milliseconds: 150);
 
   @override
   void initState() {
@@ -41,7 +66,40 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
     _activeVehicleNo = _resolveVehicleNo(widget.vehicleNo, widget.deliveryId);
     _vehicleSearchController = TextEditingController(text: _activeVehicleNo);
     _loadCustomMarker();
+
+    _vehicleAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    )..addListener(_onVehicleAnimationTick);
   }
+
+
+  void _onVehicleAnimationTick() {
+    if (_vehicleStartPosition == null ||
+        _vehicleTargetPosition == null) {
+      return;
+    }
+
+    final t = Curves.linear.transform(
+      _vehicleAnimationController.value,
+    );
+
+    final start = _vehicleStartPosition!;
+    final target = _vehicleTargetPosition!;
+
+    final position = LatLng(
+      start.latitude +
+          (target.latitude - start.latitude) * t,
+      start.longitude +
+          (target.longitude - start.longitude) * t,
+    );
+
+    _animatedVehiclePosition = position;
+    _animatedPositionNotifier.value = position;
+
+    _followVehicleCamera(position);
+  }
+
 
   Future<void> _loadCustomMarker() async {
     _customMarkerIcon = await _createVehicleMarkerBitmap();
@@ -60,7 +118,7 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
     // Draw inner blue circle
     final innerPaint = Paint()..color = const Color(0xFF2563EB);
     canvas.drawCircle(const Offset(55, 55), 40, innerPaint);
-    
+
     // Draw white border
     final borderPaint = Paint()
       ..color = Colors.white
@@ -68,14 +126,14 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
       ..strokeWidth = 6;
     canvas.drawCircle(const Offset(55, 55), 40, borderPaint);
 
-    // Draw truck icon
+    // Draw navigation arrow icon
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
     textPainter.text = TextSpan(
-      text: String.fromCharCode(Icons.local_shipping.codePoint),
+      text: String.fromCharCode(Icons.navigation.codePoint),
       style: TextStyle(
         fontSize: 48,
-        fontFamily: Icons.local_shipping.fontFamily,
-        package: Icons.local_shipping.fontPackage,
+        fontFamily: Icons.navigation.fontFamily,
+        package: Icons.navigation.fontPackage,
         color: Colors.white,
       ),
     );
@@ -91,10 +149,119 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
     return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
   }
 
+
+  void _followVehicleCamera(LatLng position) {
+    if (!_isFollowingVehicle ||
+        _isUserInteractingWithMap ||
+        _mapController == null) {
+      return;
+    }
+
+    final now = DateTime.now();
+
+    if (_lastCameraUpdate != null &&
+        now.difference(_lastCameraUpdate!) < _cameraUpdateInterval) {
+      return;
+    }
+
+    _lastCameraUpdate = now;
+
+    _isProgrammaticCameraMove = true;
+
+    _mapController!.moveCamera(
+      CameraUpdate.newLatLng(position),
+    );
+  }
+
   @override
   void dispose() {
+    _animatedPositionNotifier.dispose();
+    _vehicleAnimationController.dispose();
     _vehicleSearchController.dispose();
     super.dispose();
+  }
+
+  double _distanceMeters(LatLng a, LatLng b) {
+    const earthRadiusMeters = 6371000.0;
+    final lat1 = a.latitude * pi / 180;
+    final lat2 = b.latitude * pi / 180;
+    final dLat = (b.latitude - a.latitude) * pi / 180;
+    final dLon = (b.longitude - a.longitude) * pi / 180;
+    final h = sin(dLat / 2) * sin(dLat / 2) +
+        cos(lat1) * cos(lat2) * sin(dLon / 2) * sin(dLon / 2);
+    return earthRadiusMeters * 2 * atan2(sqrt(h), sqrt(1 - h));
+  }
+
+  double _calculateBearing(LatLng start, LatLng end) {
+    final lat1 = start.latitude * pi / 180;
+    final lat2 = end.latitude * pi / 180;
+    final dLon = (end.longitude - start.longitude) * pi / 180;
+    final y = sin(dLon) * cos(lat2);
+    final x = cos(lat1) * sin(lat2) -
+        sin(lat1) * cos(lat2) * cos(dLon);
+    return (atan2(y, x) * 180 / pi + 360) % 360;
+  }
+
+  void _onGpsUpdate(LatLng newPosition) {
+    final now = DateTime.now();
+    final previous = _lastGpsPosition;
+
+    if (previous != null) {
+      final distance = _distanceMeters(previous, newPosition);
+      if (distance < 3) return;
+
+      final elapsedSeconds = now.difference(_lastGpsTime ?? now).inSeconds;
+      if (elapsedSeconds > 0 && distance / elapsedSeconds > 60) return;
+
+      if (distance >= 5) {
+        _vehicleBearing = _calculateBearing(previous, newPosition);
+      }
+    }
+
+    _lastGpsPosition = newPosition;
+    _lastGpsTime = now;
+    _travelledRoute.add(newPosition);
+
+    if (_travelledRoute.length > 3000) {
+      _travelledRoute.removeRange(0, 1000);
+    }
+
+    _animateVehicleTo(newPosition);
+  }
+
+  Future<void> _enableVehicleFollow() async {
+    final position = _animatedVehiclePosition;
+
+    if (position == null || _mapController == null) {
+      return;
+    }
+
+    setState(() {
+      _isFollowingVehicle = true;
+    });
+
+    _isUserInteractingWithMap = false;
+    _isProgrammaticCameraMove = true;
+
+    await _mapController!.animateCamera(
+      CameraUpdate.newLatLng(position),
+    );
+
+    _isProgrammaticCameraMove = false;
+  }
+
+  void _animateVehicleTo(LatLng newPosition) {
+    final previousPosition = _animatedVehiclePosition ?? _vehicleTargetPosition ?? newPosition;
+    _vehicleStartPosition = previousPosition;
+    _vehicleTargetPosition = newPosition;
+
+    if (previousPosition.latitude != newPosition.latitude || previousPosition.longitude != newPosition.longitude) {
+      _vehicleBearing = _calculateBearing(previousPosition, newPosition);
+    }
+
+    _vehicleAnimationController.stop();
+    _vehicleAnimationController.reset();
+    _vehicleAnimationController.forward();
   }
 
   String _resolveVehicleNo(String? passedVehicleNo, String deliveryId) {
@@ -111,15 +278,28 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
     return 'MH40CT2800';
   }
 
+  VehicleTrackingParams _trackingParams() {
+    final user = ref.read(sessionProvider).currentUser;
+    return VehicleTrackingParams(
+      vehicleNo: _activeVehicleNo,
+      deliveryId: widget.deliveryId,
+      consumerId: user?.consumerId ?? 0,
+    );
+  }
+
   void _triggerSearch() {
     final query = _vehicleSearchController.text.trim();
     if (query.isNotEmpty) {
       setState(() {
         _activeVehicleNo = query;
+        _travelledRoute.clear();
+        _lastGpsPosition = null;
+        _lastGpsTime = null;
+        _vehicleBearing = 0;
+        _animatedVehiclePosition = null;
+        _animatedPositionNotifier.value = null;
       });
-      final user = ref.read(sessionProvider).currentUser;
-      final resolvedConsumerId = user?.consumerId ?? 0;
-      ref.invalidate(vehicleTrackingProvider(VehicleTrackingParams(vehicleNo: _activeVehicleNo, deliveryId: widget.deliveryId, consumerId: resolvedConsumerId)));
+      ref.invalidate(vehicleTrackingProvider(_trackingParams()));
     }
   }
 
@@ -131,7 +311,7 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cannot make call to $phoneNumber')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.errCannotCall + '$phoneNumber')),
         );
       }
     }
@@ -139,20 +319,19 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.read(sessionProvider).currentUser;
-    final resolvedConsumerId = user?.consumerId ?? 0;
-    final params = VehicleTrackingParams(vehicleNo: _activeVehicleNo, deliveryId: widget.deliveryId, consumerId: resolvedConsumerId);
-    
+    final params = _trackingParams();
+
     ref.listen<AsyncValue<VehicleTrackingApiResponse>>(
       vehicleTrackingProvider(params),
-      (previous, next) {
+          (previous, next) {
         next.whenData((data) {
           if (data.isSuccess && data.location != null) {
             final loc = data.location!;
             final lat = double.tryParse(loc.latitude?.toString() ?? '') ?? 0.0;
             final lng = double.tryParse(loc.longitude?.toString() ?? '') ?? 0.0;
             if (lat != 0.0 && lng != 0.0) {
-              _mapController?.animateCamera(CameraUpdate.newLatLng(LatLng(lat, lng)));
+              final newPos = LatLng(lat, lng);
+              _onGpsUpdate(newPos);
             }
           }
         });
@@ -318,8 +497,6 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
                           const SizedBox(height: 14),
                         ],
 
-
-
                         // Section 5: Driver Contact & Action Buttons
                         _buildDriverActionCard(location, trip, context),
                       ],
@@ -333,6 +510,8 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
       ),
     );
   }
+
+
 
   // ===========================================================================
   // UI COMPONENTS & MAP CANVAS
@@ -405,7 +584,7 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
               children: [
                 ElevatedButton.icon(
                   onPressed: () {
-                    ref.invalidate(vehicleTrackingProvider(VehicleTrackingParams(vehicleNo: _activeVehicleNo, deliveryId: widget.deliveryId)));
+                    ref.invalidate(vehicleTrackingProvider(_trackingParams()));
                   },
                   icon: const Icon(Icons.refresh, size: 16),
                   label: Text(l10n.retryFetching),
@@ -460,7 +639,7 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: () => ref.invalidate(vehicleTrackingProvider(VehicleTrackingParams(vehicleNo: _activeVehicleNo, deliveryId: widget.deliveryId))),
+              onPressed: () => ref.invalidate(vehicleTrackingProvider(_trackingParams())),
               icon: const Icon(Icons.refresh, size: 16),
               label: Text(l10n.refreshLocation),
               style: ElevatedButton.styleFrom(
@@ -488,8 +667,17 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
 
     Set<Polyline> polylines = {};
 
+    LatLng? currLatLng;
     LatLng? srcLatLng;
     LatLng? destLatLng;
+    if (location.latitude != null && location.longitude != null) {
+      final lat = double.tryParse(location.latitude!.toString());
+      final lng = double.tryParse(location.longitude!.toString());
+      if (lat != null && lng != null) {
+        currLatLng = LatLng(lat, lng);
+      }
+    }
+
     if (trip != null && trip.sourceLatLong != null && trip.destinationLatLong != null) {
       try {
         final srcParts = trip.sourceLatLong!.split(',');
@@ -502,76 +690,111 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
           if (srcLat != null && srcLng != null && destLat != null && destLng != null) {
             srcLatLng = LatLng(srcLat, srcLng);
             destLatLng = LatLng(destLat, destLng);
-            
-            polylines.add(
-              Polyline(
-                polylineId: const PolylineId('travel_route'),
-                points: [srcLatLng, destLatLng],
-                color: Colors.blue,
-                width: 4,
-              ),
-            );
           }
         }
       } catch (_) {}
     }
 
-    return Container(
-      color: const Color(0xFFE2E8F0),
-      child: Stack(
-        children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: LatLng(
-                double.tryParse(location.latitude?.toString() ?? '') ?? 0.0, 
-                double.tryParse(location.longitude?.toString() ?? '') ?? 0.0
-              ),
-              zoom: 16.0,
+    return ValueListenableBuilder<LatLng?>(
+      valueListenable: _animatedPositionNotifier,
+      builder: (context, animatedPos, child) {
+        Set<Polyline> polylines = {};
+
+        // Uses actual GPS fixes received by the app. Sparse fixes still create
+        // straight segments; road snapping requires a routing service.
+        if (_travelledRoute.length >= 2) {
+          polylines.add(
+            Polyline(
+              polylineId: const PolylineId('travelled_route'),
+              points: List<LatLng>.unmodifiable(_travelledRoute),
+              color: Colors.blue,
+              width: 5,
+              geodesic: true,
             ),
-            onMapCreated: (GoogleMapController controller) {
-              _mapController = controller;
-            },
-            myLocationEnabled: true,
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
-            mapType: MapType.normal,
-            polylines: polylines,
-            markers: {
-              if (location.latitude != null && location.longitude != null)
-                Marker(
-                  markerId: const MarkerId('vehicle_marker'),
-                  position: LatLng(
-                    double.tryParse(location.latitude?.toString() ?? '') ?? 0.0, 
-                    double.tryParse(location.longitude?.toString() ?? '') ?? 0.0
+          );
+        }
+
+        return Container(
+          color: const Color(0xFFE2E8F0),
+          child: Stack(
+            children: [
+              GoogleMap(
+                initialCameraPosition: CameraPosition(
+                  target: LatLng(
+                      double.tryParse(location.latitude?.toString() ?? '') ?? 0.0,
+                      double.tryParse(location.longitude?.toString() ?? '') ?? 0.0
                   ),
-                  anchor: const Offset(0.5, 0.5),
-                  icon: _customMarkerIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-                  infoWindow: InfoWindow(
-                    title: '${location.vehicleNo ?? _activeVehicleNo} ($speedText)',
-                    snippet: locationStr,
-                  ),
+                  zoom: 16.0,
                 ),
-              if (srcLatLng != null)
-                Marker(
-                  markerId: const MarkerId('source_marker'),
-                  position: srcLatLng,
-                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-                  infoWindow: InfoWindow(title: 'Source: ${trip?.plotName ?? 'Plot'}'),
-                ),
-              if (destLatLng != null)
-                Marker(
-                  markerId: const MarkerId('destination_marker'),
-                  position: destLatLng,
-                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-                  infoWindow: InfoWindow(title: 'Destination: ${trip?.destination ?? 'Site'}'),
-                ),
-            },
+                onMapCreated: (GoogleMapController controller) {
+                  _mapController = controller;
+                },
+                onCameraMoveStarted: () {
+                  if (_isProgrammaticCameraMove) {
+                    return;
+                  }
+
+                  if (_isFollowingVehicle) {
+                    setState(() {
+                      _isFollowingVehicle = false;
+                    });
+                  }
+
+                  _isUserInteractingWithMap = true;
+                },
+
+                onCameraIdle: () {
+                  if (_isProgrammaticCameraMove) {
+                    _isProgrammaticCameraMove = false;
+                    return;
+                  }
+
+                  _isUserInteractingWithMap = false;
+                },
+
+                myLocationEnabled: false,
+                myLocationButtonEnabled: false,
+                zoomControlsEnabled: false,
+                mapType: MapType.normal,
+                polylines: polylines,
+                markers: {
+                  if (location.latitude != null && location.longitude != null)
+                    Marker(
+                      markerId: const MarkerId('vehicle_marker'),
+                      position: animatedPos ?? LatLng(
+                          double.tryParse(location.latitude?.toString() ?? '') ?? 0.0,
+                          double.tryParse(location.longitude?.toString() ?? '') ?? 0.0
+                      ),
+                      anchor: const Offset(0.5, 0.5),
+                      rotation: _vehicleBearing,
+                      flat: true,
+                      onTap: _enableVehicleFollow,
+                      icon: _customMarkerIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+                      infoWindow: InfoWindow(
+                        title: '${location.vehicleNo ?? _activeVehicleNo} ($speedText)',
+                        snippet: locationStr,
+                      ),
+                    ),
+                  if (srcLatLng != null)
+                    Marker(
+                      markerId: const MarkerId('source_marker'),
+                      position: srcLatLng!,
+                      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+                      infoWindow: InfoWindow(title: 'Source: ${trip?.plotName ?? 'Plot'}'),
+                    ),
+                  if (destLatLng != null)
+                    Marker(
+                      markerId: const MarkerId('destination_marker'),
+                      position: destLatLng!,
+                      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                      infoWindow: InfoWindow(title: 'Destination: ${trip?.destination ?? 'Site'}'),
+                    ),
+                },
+              ),
+            ],
           ),
-
-
-
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -596,8 +819,8 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
               const SizedBox(width: 8),
               Text(
                 '${location.vehTypeName ?? AppLocalizations.of(context)!.vehicle} · '
-                '${trip?.materialType ?? 'Material N/A'} · '
-                '${trip?.quantity ?? location.capacity ?? '0'} ${trip?.mineralUnit ?? 'Units'}',
+                    '${trip?.materialType ?? 'Material N/A'} · '
+                    '${trip?.quantity ?? location.capacity ?? '0'} ${trip?.mineralUnit ?? 'Units'}',
                 style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary),
               ),
             ],
@@ -686,7 +909,7 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  '${AppLocalizations.of(context)!.tripId}: ${trip.tripID ?? 'N/A'}',
+                  '${AppLocalizations.of(context)!.digiTpNo} ${trip.tripID ?? 'N/A'}',
                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, fontFamily: 'monospace', color: AppColors.ink),
                 ),
               ),

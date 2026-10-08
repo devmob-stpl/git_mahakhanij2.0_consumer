@@ -200,17 +200,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       backgroundColor: Colors.white,
       body: SafeArea(
         bottom: false,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
-                child: IntrinsicHeight(
-                  child: Column(
-                    children: [
-                      const Spacer(flex: 2),
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                      const SizedBox(height: 60),
 
                       // App Title: Mahakhanij 2•0
                       RichText(
@@ -275,9 +270,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     ),
                                     GestureDetector(
                                       onTap: _resetOtpState,
-                                      child: const Text(
-                                        'Change',
-                                        style: TextStyle(
+                                      child: Text(
+                                        l10n.changeBtn,
+                                        style: const TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w600,
                                           color: primaryBlue,
@@ -495,7 +490,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                       const SizedBox(height: 20),
 
-                      // Sub-link: New Member? Sign Up
+                      // Sub-link: New Member?Sign Up
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -521,21 +516,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ],
                       ),
 
-                      const Spacer(flex: 3),
-
-                      // Bottom Mining Banner Illustration
-                      Image.asset(
-                        'assets/images/img.png',
-                        width: double.infinity,
-                        fit: BoxFit.fitWidth,
-                        alignment: Alignment.bottomCenter,
-                      ),
+                      const SizedBox(height: 40),
                     ],
                   ),
+            ),
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Image.asset(
+                  'assets/images/img.png',
+                  width: double.infinity,
+                  fit: BoxFit.fitWidth,
+                  alignment: Alignment.bottomCenter,
                 ),
               ),
-            );
-          },
+            ),
+          ],
         ),
       ),
     );

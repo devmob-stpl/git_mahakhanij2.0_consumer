@@ -52,6 +52,7 @@ class ConsumerProfileData {
   });
 
   ConsumerProfileData copyWith({
+    String? name,
     bool? isAadharVerified,
     String? aadharCardNo,
     String? aadharDoc,
@@ -59,7 +60,7 @@ class ConsumerProfileData {
     return ConsumerProfileData(
       id: id,
       consumerType: consumerType,
-      name: name,
+      name: name ?? this.name,
       mobileNo: mobileNo,
       emailId: emailId,
       isTown: isTown,

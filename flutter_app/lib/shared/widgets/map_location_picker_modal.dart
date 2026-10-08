@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 
 class LocationPickerResult {
   final double latitude;
@@ -140,7 +141,7 @@ class _MapLocationPickerModalState extends State<MapLocationPickerModal> {
   void _useCurrentLocation() {
     _updateLocation(18.520430, 73.856740, 'GPS Current Site');
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Current GPS location captured successfully.')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.msgGpsCaptured)),
     );
   }
 

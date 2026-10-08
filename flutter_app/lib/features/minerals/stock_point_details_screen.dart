@@ -91,7 +91,7 @@ class StockPointDetailsScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        '${stockPoint.distanceKm} km away',
+                        '${stockPoint.distanceKm} km',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary700),
                       ),
                     ],

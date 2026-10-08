@@ -9,6 +9,7 @@ import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_badge.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../providers/operating_context_provider.dart';
+import 'package:mahakhanij_consumer/l10n/app_localizations.dart';
 
 class ProjectDetailsScreen extends ConsumerStatefulWidget {
   final Project project;
@@ -134,7 +135,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
                     onTap: () {
                       ref.read(operatingContextProvider.notifier).selectProject(widget.project);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Active operating scope set to: ${widget.project.name}')),
+                        SnackBar(content: Text(AppLocalizations.of(context)!.msgActiveScopeSet + '${widget.project.name}')),
                       );
                     },
                     borderRadius: BorderRadius.circular(8),

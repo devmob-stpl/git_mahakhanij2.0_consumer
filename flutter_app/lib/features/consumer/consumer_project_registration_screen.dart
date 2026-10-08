@@ -13,6 +13,7 @@ import '../../shared/widgets/location_dropdown_section.dart';
 import '../../providers/operating_context_provider.dart';
 import '../../data/repositories/consumer_project_repository.dart';
 import '../../shared/widgets/map_location_picker_modal.dart';
+import 'package:mahakhanij_consumer/l10n/app_localizations.dart';
 
 class ConsumerProjectRegistrationScreen extends ConsumerStatefulWidget {
   final Project? existingProject;
@@ -62,13 +63,13 @@ class _ConsumerProjectRegistrationScreenState extends ConsumerState<ConsumerProj
   void _handleSubmit() async {
     if (_nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter site name (e.g. My Residence Construction)')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errEnterSiteName)),
       );
       return;
     }
     if (_line1Controller.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter delivery address')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errEnterDeliveryAddress)),
       );
       return;
     }
@@ -138,7 +139,7 @@ class _ConsumerProjectRegistrationScreenState extends ConsumerState<ConsumerProj
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(response.statusMessage.isNotEmpty ? response.statusMessage : 'Private delivery site registered!'),
-          backgroundColor: Colors.green,
+          backgroundColor: const Color(0xFF2563EB),
         ),
       );
       context.pop();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../domain/consumer_digitp_models.dart';
 import '../../providers/consumer_digitp_provider.dart';
@@ -12,11 +13,12 @@ class InTransitVehicleListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     // Status 2 = In Transit vehicles/deliveries
     final inTransitAsync = ref.watch(consumerDigiTpListProvider(2));
 
     return AppScaffold(
-      title: 'In-Transit Vehicles',
+      title: l10n.inTransitVehiclesTitle,
       showBackButton: true,
       body: RefreshIndicator(
         onRefresh: () async {
@@ -36,26 +38,26 @@ class InTransitVehicleListScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFEBD9FB)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.near_me_outlined, size: 22, color: Color(0xFF7E22CE)),
+                    const Icon(Icons.near_me_outlined, size: 22, color: Color(0xFF7E22CE)),
                     SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Active Vehicle Tracking',
-                            style: TextStyle(
+                            l10n.activeVehicleTracking,
+                            style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: Color(0xFF581C87),
                             ),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
-                            'Select an in-transit vehicle to monitor real-time GPS location and ETA.',
-                            style: TextStyle(
+                            l10n.activeVehicleTrackingDesc,
+                            style: const TextStyle(
                               fontSize: 11.5,
                               color: Color(0xFF7E22CE),
                             ),
@@ -72,15 +74,15 @@ class InTransitVehicleListScreen extends ConsumerWidget {
               inTransitAsync.when(
                 loading: () => Container(
                   padding: const EdgeInsets.symmetric(vertical: 40),
-                  child: const Center(
+                  child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        CircularProgressIndicator(strokeWidth: 3),
-                        SizedBox(height: 12),
+                        const CircularProgressIndicator(strokeWidth: 3),
+                        const SizedBox(height: 12),
                         Text(
-                          'Loading In-Transit vehicles...',
-                          style: TextStyle(fontSize: 13, color: AppColors.inkSecondary),
+                          l10n.loadingInTransitVehicles,
+                          style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary),
                         ),
                       ],
                     ),
@@ -97,9 +99,9 @@ class InTransitVehicleListScreen extends ConsumerWidget {
                     children: [
                       const Icon(Icons.error_outline, size: 36, color: Color(0xFFDC2626)),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Failed to load In-Transit vehicles',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF991B1B)),
+                      Text(
+                        l10n.failedToLoadInTransitVehicles,
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF991B1B)),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -109,7 +111,7 @@ class InTransitVehicleListScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 12),
                       AppButton(
-                        label: 'Retry Fetching',
+                        label: l10n.retryFetching,
                         size: AppButtonSize.small,
                         variant: AppButtonVariant.primary,
                         onPressed: () => ref.invalidate(consumerDigiTpListProvider(2)),
@@ -145,19 +147,19 @@ class InTransitVehicleListScreen extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(height: 14),
-                          const Text(
-                            'No Vehicles In-Transit',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
+                          Text(
+                            l10n.noVehiclesInTransit,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
                           ),
                           const SizedBox(height: 6),
-                          const Text(
-                            'There are currently no active mineral vehicles in-transit for your account.',
+                          Text(
+                            l10n.noVehiclesInTransitDesc,
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 12.5, color: AppColors.inkSecondary),
+                            style: const TextStyle(fontSize: 12.5, color: AppColors.inkSecondary),
                           ),
                           const SizedBox(height: 16),
                           AppButton(
-                            label: 'Refresh List',
+                            label: l10n.refreshList,
                             size: AppButtonSize.small,
                             variant: AppButtonVariant.secondary,
                             icon: const Icon(Icons.refresh, size: 16),
@@ -175,7 +177,7 @@ class InTransitVehicleListScreen extends ConsumerWidget {
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final item = items[index];
-                      return _buildVehicleCard(context, item);
+                      return _buildVehicleCard(context, l10n, item);
                     },
                   );
                 },
@@ -187,13 +189,13 @@ class InTransitVehicleListScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildVehicleCard(BuildContext context, ConsumerDigiTpItem item) {
-    final vehicleNoStr = item.vehicleNo ?? 'Vehicle N/A';
+  Widget _buildVehicleCard(BuildContext context, AppLocalizations l10n, ConsumerDigiTpItem item) {
+    final vehicleNoStr = item.vehicleNo ?? l10n.vehicleNA;
     final digiTpNoStr = item.invoiceNo;
     final qtyStr = '${item.quantity ?? 0} ${item.mineralUnit ?? 'Brass'}';
-    final mineralStr = item.materialType ?? 'Mineral';
-    final destStr = item.destination ?? 'Destination N/A';
-    final distanceStr = item.distance != null ? '${item.distance} km away' : 'GPS Active';
+    final mineralStr = item.materialType ?? l10n.mineral;
+    final destStr = item.destination ?? l10n.destinationNA;
+    final distanceStr = item.distance != null ? '${item.distance} km' : l10n.gpsActive;
     final driverStr = item.driverName != null && item.driverName!.isNotEmpty
         ? '${item.driverName}${item.driverMobNo != null ? ' (${item.driverMobNo})' : ''}'
         : 'N/A';
@@ -243,7 +245,7 @@ class InTransitVehicleListScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        'DigiTP: $digiTpNoStr',
+                        '${l10n.digiTpLabel} $digiTpNoStr',
                         style: const TextStyle(
                           fontSize: 11.5,
                           color: AppColors.inkSecondary,
@@ -261,14 +263,14 @@ class InTransitVehicleListScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFEBD9FB)),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.circle, size: 6, color: Color(0xFF7E22CE)),
-                    SizedBox(width: 4),
+                    const Icon(Icons.circle, size: 6, color: Color(0xFF7E22CE)),
+                    const SizedBox(width: 4),
                     Text(
-                      'In Transit',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF7E22CE)),
+                      l10n.inTransitStatus,
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF7E22CE)),
                     ),
                   ],
                 ),
@@ -289,7 +291,7 @@ class InTransitVehicleListScreen extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Mineral & Qty:', style: TextStyle(fontSize: 11, color: Color(0xFF737373))),
+                    Text(l10n.mineralAndQty, style: const TextStyle(fontSize: 11, color: Color(0xFF737373))),
                     Text('$mineralStr · $qtyStr', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.ink)),
                   ],
                 ),
@@ -297,7 +299,7 @@ class InTransitVehicleListScreen extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Destination:', style: TextStyle(fontSize: 11, color: Color(0xFF737373))),
+                    Text(l10n.destinationLabel, style: const TextStyle(fontSize: 11, color: Color(0xFF737373))),
                     Expanded(
                       child: Text(
                         destStr,
@@ -312,7 +314,7 @@ class InTransitVehicleListScreen extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Distance :', style: TextStyle(fontSize: 11, color: Color(0xFF737373))),
+                    Text(l10n.distanceLabel, style: const TextStyle(fontSize: 11, color: Color(0xFF737373))),
                     Text(distanceStr, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF2563EB))),
                   ],
                 ),
@@ -320,7 +322,7 @@ class InTransitVehicleListScreen extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Driver:', style: TextStyle(fontSize: 11, color: Color(0xFF737373))),
+                    Text(l10n.driverLabel, style: const TextStyle(fontSize: 11, color: Color(0xFF737373))),
                     Text(driverStr, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.ink)),
                   ],
                 ),
@@ -330,7 +332,7 @@ class InTransitVehicleListScreen extends ConsumerWidget {
           const SizedBox(height: 14),
 
           AppButton(
-            label: 'Select Vehicle & Track Live',
+            label: l10n.selectVehicleAndTrackLive,
             size: AppButtonSize.small,
             icon: const Icon(Icons.navigation_outlined, size: 16),
             onPressed: () => context.push('/deliveries/$digiTpNoStr/live-tracking?vehicleNo=${item.vehicleNo ?? vehicleNoStr}'),

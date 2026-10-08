@@ -13,6 +13,7 @@ import '../../providers/session_provider.dart';
 import '../../data/repositories/consumer_project_repository.dart';
 import '../../providers/consumer_projects_provider.dart';
 import '../../shared/widgets/map_location_picker_modal.dart';
+import 'package:mahakhanij_consumer/l10n/app_localizations.dart';
 
 
 const List<Map<String, String>> kGovtDepartments = [
@@ -127,7 +128,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   void _handleSubmit() async {
     if (_nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter the project name.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errEnterProjectName)),
       );
       return;
     }
@@ -135,26 +136,26 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
       final activeDept = _department == 'OTHER' ? _customDepartmentController.text.trim() : _department;
       if (activeDept.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Select or enter the government department.')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.errSelectGovDept)),
         );
         return;
       }
       if (_officeNameController.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Enter the issuing / division office name.')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.errEnterOfficeName)),
         );
         return;
       }
     }
     if (_workOrderNoController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter the work order / sanction order number.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errEnterWorkOrder)),
       );
       return;
     }
     if (_line1Controller.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter the site address.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errEnterSiteAddress)),
       );
       return;
     }

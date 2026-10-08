@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/app_config.dart';
 import '../config/globals.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Production-ready Dio HTTP Client
 /// Handles JWT Bearer token attachment, request timeouts, and error interceptors.
@@ -36,9 +37,11 @@ class DioClient {
         onError: (DioException error, handler) async {
           if (error.type == DioExceptionType.connectionError ||
               error.type == DioExceptionType.connectionTimeout) {
+            final ctx = scaffoldMessengerKey.currentContext;
+            final msg = ctx != null ? AppLocalizations.of(ctx)?.noInternetConnection ?? 'No Internet Connection' : 'No Internet Connection';
             scaffoldMessengerKey.currentState?.showSnackBar(
-              const SnackBar(
-                content: Text('No Internet Connection'),
+              SnackBar(
+                content: Text(msg),
                 backgroundColor: Colors.red,
                 behavior: SnackBarBehavior.floating,
               ),

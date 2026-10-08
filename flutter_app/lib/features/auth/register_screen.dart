@@ -265,23 +265,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _processPickImage(ImageSource source, {bool isPan = false, bool isSignatoryAadhaar = false}) async {
     try {
-      if (source == ImageSource.gallery) {
-        final storageStatus = await Permission.storage.request();
-        final photosStatus = await Permission.photos.request();
-        if (!storageStatus.isGranted && !photosStatus.isGranted && !storageStatus.isLimited && !photosStatus.isLimited) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Storage/Photos permission is required to select from gallery.')));
-          return;
-        }
-      } else if (source == ImageSource.camera) {
-        final cameraStatus = await Permission.camera.request();
-        if (!cameraStatus.isGranted) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Camera permission is required to take pictures.')));
-          return;
-        }
-      }
-      
+
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(source: source);
       if (pickedFile == null) return;
@@ -298,28 +282,24 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       }
       if (!mounted) return;
       final key = isPan ? 'panFile' : (isSignatoryAadhaar ? 'aadhaarFile' : 'kycFile');
+      String errorMessage = e.toString();
+      if (errorMessage.contains('413')) {
+        errorMessage = 'File size is too large. Please select a smaller file (under 5MB).';
+      } else if (errorMessage.startsWith('Exception: ')) {
+        errorMessage = errorMessage.substring(11);
+      } else if (errorMessage.contains('DioException')) {
+        errorMessage = 'Network error occurred during upload. Please try again.';
+      }
       setState(() {
         _isUploadingAadhaarDoc = false;
         _isUploadingPanDoc = false;
-        _errors[key] = 'Document upload failed: ${e.toString()}';
+        _errors[key] = errorMessage;
       });
     }
   }
 
   Future<void> _processPickFile({bool isPan = false, bool isSignatoryAadhaar = false}) async {
     try {
-      final storageStatus = await Permission.storage.request();
-      if (!storageStatus.isGranted && !storageStatus.isLimited) {
-        // Fallback for Android 13+ where storage might be denied but photos/media is allowed,
-        // although FilePicker usually manages this on its own, we do an explicit check.
-        final photosStatus = await Permission.photos.request();
-        if (!photosStatus.isGranted && !photosStatus.isLimited) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Storage permission is required to pick documents.')));
-          return;
-        }
-      }
-
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
@@ -339,10 +319,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       }
       if (!mounted) return;
       final key = isPan ? 'panFile' : (isSignatoryAadhaar ? 'aadhaarFile' : 'kycFile');
+      String errorMessage = e.toString();
+      if (errorMessage.contains('413')) {
+        errorMessage = 'File size is too large. Please select a smaller file (under 5MB).';
+      } else if (errorMessage.startsWith('Exception: ')) {
+        errorMessage = errorMessage.substring(11);
+      } else if (errorMessage.contains('DioException')) {
+        errorMessage = 'Network error occurred during upload. Please try again.';
+      }
       setState(() {
         _isUploadingAadhaarDoc = false;
         _isUploadingPanDoc = false;
-        _errors[key] = 'Document upload failed: ${e.toString()}';
+        _errors[key] = errorMessage;
       });
     }
   }
@@ -398,12 +386,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   void _verifyGst() {
     final gst = _gstController.text.trim().toUpperCase();
     if (gst.isEmpty) {
-      setState(() => _errors['gstNumber'] = 'Enter your organization GSTIN.');
+      setState(() => _errors['gstNumber'] = AppLocalizations.of(context)!.gstinRequired);
       return;
     }
     if (gst.length != 15 || !RegExp(r'^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}$').hasMatch(gst)) {
       setState(() {
-        _errors['gstNumber'] = 'Enter a valid 15-character GSTIN (e.g. 27AAAAA0000A1Z5).';
+        _errors['gstNumber'] = AppLocalizations.of(context)!.validGstRequired;
         _gstStatus = 'error';
       });
       return;
@@ -493,8 +481,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     if (response.isSuccess) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Registration successful! Please sign in with your mobile number.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.registrationSuccess),
           backgroundColor: Colors.green,
         ),
       );
@@ -504,8 +492,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         SnackBar(
           content: Text(response.statusMessage.isNotEmpty
               ? response.statusMessage
-              : 'Registration failed. Please try again.'),
-          backgroundColor: Colors.red,
+              : AppLocalizations.of(context)!.registrationFailed),
+          backgroundColor: const Color(0xFF2563EB),
         ),
       );
     }
@@ -516,52 +504,56 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Map<String, String> _validateStep() {
     final found = <String, String>{};
 
+    final l10n = AppLocalizations.of(context)!;
     if (_step == 1) {
       if (_fullNameController.text.trim().isEmpty) {
-        found['fullName'] = 'Full Name is required.';
+        found['fullName'] = l10n.fullNameRequired;
       }
       final mobile = _mobileController.text.trim();
       if (mobile.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
-        found['mobile'] = 'Enter a valid 10-digit Indian mobile number.';
+        found['mobile'] = l10n.validMobileRequired;
       }
 
       if (_userType == UserType.organization) {
         if (_orgNameController.text.trim().isEmpty) {
-          found['orgName'] = 'Organization Name is required.';
+          found['orgName'] = l10n.orgNameRequired;
         }
         if (!_noGst) {
           if (_gstController.text.trim().isEmpty) {
-            found['gstNumber'] = 'Enter your organization GSTIN.';
+            found['gstNumber'] = l10n.gstinRequired;
           }
         }
       }
 
       if (_addressController.text.trim().isEmpty) {
-        found['address'] = 'Address is required.';
+        found['address'] = l10n.addressRequired;
       }
 
       if (_emailController.text.trim().isNotEmpty) {
-        final emailValid = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(_emailController.text.trim());
+        final email = _emailController.text.trim();
+        final emailValid = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email) &&
+                           !email.startsWith('.') &&
+                           !email.contains('..');
         if (!emailValid) {
-          found['email'] = 'Enter a valid email address.';
+          found['email'] = l10n.validEmailRequired;
         }
       }
 
       // Location validations
       if (_districtId == null) {
-        found['district'] = 'District is required.';
+        found['district'] = l10n.districtRequired;
       }
       if (_talukaId == null && _areaClassification != 'URBAN') {
-        found['taluka'] = 'Taluka is required.';
+        found['taluka'] = l10n.talukaRequired;
       }
       if (_censusId == null) {
         found['villageCity'] = _areaClassification == 'URBAN'
-            ? 'City/Corporation is required.'
-            : 'Village is required.';
+            ? l10n.cityCorpRequired
+            : l10n.villageRequired;
       }
     } else if (_step == 2) {
       if (_aadhaarController.text.trim().isNotEmpty && !_isAadhaarVerified) {
-        found['aadhaar'] = 'Please verify your Aadhaar number to proceed.';
+        found['aadhaar'] = l10n.aadhaarVerificationRequired;
       }
     }
 
@@ -1244,11 +1236,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           controller: _aadhaarController,
                           keyboardType: TextInputType.number,
                           maxLength: 12,
-                          enabled: !_isAadhaarOtpSent,
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                           onChanged: (val) {
                             if (_aadhaarError != null) {
                               setState(() => _aadhaarError = null);
+                            }
+                            if (_isAadhaarOtpSent) {
+                              setState(() {
+                                _isAadhaarOtpSent = false;
+                                _aadhaarOtpController.clear();
+                              });
                             }
                           },
                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
@@ -1559,17 +1556,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        isLoading
-                            ? l10n.uploadingToMahakhanijServer
-                            : (hasFile ? l10n.aadhaarVerificationCompleted : hint),
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: isLoading ? AppColors.primary700 : AppColors.inkSecondary,
-                          fontWeight: isLoading ? FontWeight.w600 : FontWeight.normal,
+                      if (isLoading || !hasFile) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          isLoading ? l10n.uploadingToMahakhanijServer : hint,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isLoading ? AppColors.primary700 : AppColors.inkSecondary,
+                            fontWeight: isLoading ? FontWeight.w600 : FontWeight.normal,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),

@@ -178,7 +178,7 @@ class _StockPointMapScreenState extends ConsumerState<StockPointMapScreen> {
                                       ),
                                     ),
                                     Text(
-                                      '${sp.distanceKm} km away',
+                                      '${sp.distanceKm} km',
                                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary700),
                                     ),
                                   ],

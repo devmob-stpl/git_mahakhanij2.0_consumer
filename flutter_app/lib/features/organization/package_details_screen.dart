@@ -8,6 +8,7 @@ import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_badge.dart';
 import '../../shared/widgets/app_button.dart';
+import 'package:mahakhanij_consumer/l10n/app_localizations.dart';
 
 class PackageDetailsScreen extends ConsumerStatefulWidget {
   final Package package;
@@ -405,7 +406,7 @@ class _PackageDetailsScreenState extends ConsumerState<PackageDetailsScreen> {
                         icon: const Icon(Icons.phone_outlined, size: 14),
                         label: const Text('Call', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Calling supervisor...')));
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.msgCallingSupervisor)));
                         },
                       ),
                     ),
@@ -421,7 +422,7 @@ class _PackageDetailsScreenState extends ConsumerState<PackageDetailsScreen> {
                         icon: const Icon(Icons.chat_outlined, size: 14),
                         label: const Text('WhatsApp', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening WhatsApp...')));
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.msgOpeningWhatsapp)));
                         },
                       ),
                     ),

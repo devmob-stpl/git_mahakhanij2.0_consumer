@@ -265,6 +265,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profilePincode => 'Pincode';
 
   @override
+  String get saveBtn => 'Save';
+
+  @override
   String get saveChanges => 'Save Changes';
 
   @override
@@ -540,7 +543,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get villageRuralLabel => 'Village / Rural Area';
 
   @override
-  String get cityCorporationHint => 'e.g. Pune City (PMC)';
+  String get cityCorporationHint => 'e.g. Pune City';
 
   @override
   String get villageRuralHint => 'e.g. Narayangaon';
@@ -816,4 +819,297 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logoutBtn => 'Logout';
+
+  @override
+  String get logoutErrorMsg => 'Network/API error during logout:';
+
+  @override
+  String get logoutFailedMsg => 'Logout failed. Please try again.';
+
+  @override
+  String get preferencesHeader => 'PREFERENCES';
+
+  @override
+  String get changeLanguageLabel => 'Change Language';
+
+  @override
+  String get storagePhotosPermissionReq =>
+      'Storage/Photos permission is required to select from gallery.';
+
+  @override
+  String get cameraPermissionReq =>
+      'Camera permission is required to take pictures.';
+
+  @override
+  String get storagePermissionReq =>
+      'Storage permission is required to pick documents.';
+
+  @override
+  String get registrationSuccess =>
+      'Registration successful! Please sign in with your mobile number.';
+
+  @override
+  String get registrationFailed => 'Registration failed. Please try again.';
+
+  @override
+  String get fullNameRequired => 'Full Name is required.';
+
+  @override
+  String get validMobileRequired =>
+      'Enter a valid 10-digit Indian mobile number.';
+
+  @override
+  String get orgNameRequired => 'Organization Name is required.';
+
+  @override
+  String get gstinRequired => 'Enter your organization GSTIN.';
+
+  @override
+  String get addressRequired => 'Address is required.';
+
+  @override
+  String get validEmailRequired =>
+      'Enter a valid email address without consecutive dots or dots at the start.';
+
+  @override
+  String get districtRequired => 'District is required.';
+
+  @override
+  String get talukaRequired => 'Taluka is required.';
+
+  @override
+  String get cityCorpRequired => 'City/Corporation is required.';
+
+  @override
+  String get villageRequired => 'Village is required.';
+
+  @override
+  String get aadhaarVerificationRequired =>
+      'Please verify your Aadhaar number to proceed.';
+
+  @override
+  String get surveyNumberRequired => 'Survey number is required.';
+
+  @override
+  String get validGstRequired => 'Enter a valid 15-character GSTIN.';
+
+  @override
+  String get changeLanguageLaterHint =>
+      'You can always change this later in settings.';
+
+  @override
+  String get changeBtn => 'Change';
+
+  @override
+  String get aadhaarDetailsSavedSuccessfully =>
+      'Aadhaar verification details saved successfully';
+
+  @override
+  String get noInternetConnection => 'No Internet Connection';
+
+  @override
+  String get unableToLogin =>
+      'Unable to login. Please check internet connection.';
+
+  @override
+  String get loginFailedMsg => 'Login failed. Please try again.';
+
+  @override
+  String get pleaseEnterFullName => 'Please enter your full name.';
+
+  @override
+  String get pleaseEnterValidEmail => 'Please enter a valid email address.';
+
+  @override
+  String get profileSaveError => 'Failed to save profile. Please try again.';
+
+  @override
+  String get aadhaarSendOtpError =>
+      'Failed to send Aadhaar OTP. Please try again.';
+
+  @override
+  String get msgRegSuccessSignIn =>
+      'Registration successful! Please sign in with your mobile number.';
+
+  @override
+  String get errEnterMandatoryFields => 'Please enter all mandatory fields.';
+
+  @override
+  String get msgRegSuccessLogin =>
+      'Registration successful! Please login with your mobile number.';
+
+  @override
+  String get errEnterSiteName =>
+      'Please enter site name (e.g. My Residence Construction)';
+
+  @override
+  String get errEnterDeliveryAddress => 'Please enter delivery address';
+
+  @override
+  String get msgEnquirySubmitted => 'Enquiry submitted to quarry operator!';
+
+  @override
+  String get msgDownloadingFile => 'Downloading ';
+
+  @override
+  String get msgDownloadingAppFee =>
+      'Downloading Application Fee Demand Note...';
+
+  @override
+  String get msgDownloadingGrasReceipt => 'Downloading GRAS Fee Receipt...';
+
+  @override
+  String get msgDownloadingRoyaltyNote => 'Downloading Royalty Demand Note...';
+
+  @override
+  String get msgDownloadingPermitOrder =>
+      'Downloading Official Excavation Permit Order...';
+
+  @override
+  String get msgDraftSaved => 'Draft saved successfully.';
+
+  @override
+  String get errUploadMandatoryDocs =>
+      'Please upload all mandatory documents (*) before proceeding.';
+
+  @override
+  String get errAcceptDeclaration =>
+      'Please accept statutory minor minerals declaration.';
+
+  @override
+  String get msgAppSubmitted =>
+      'Application successfully submitted with fee paid!';
+
+  @override
+  String get msgPinMapOverlay => 'Pin map overlay opened. Location set.';
+
+  @override
+  String get msgGpsCaptured => 'Current GPS location captured successfully.';
+
+  @override
+  String get msgAttachedReceipt => 'Attached bank_stamped_receipt_MH2026.pdf';
+
+  @override
+  String get msgDownloadedChallan =>
+      'Downloaded GRAS e-Challan (GRN & CIN) PDF';
+
+  @override
+  String get errStateEngPurpose =>
+      'Please state the engineering purpose for drawdown';
+
+  @override
+  String get msgConsumptionLogged =>
+      'Statutory on-site consumption drawdown logged successfully!';
+
+  @override
+  String get msgTransferEtpGenerated =>
+      'Transfer e-TP generated successfully! Pass is ready for driver handover.';
+
+  @override
+  String get msgTransitPassShared => 'Transit pass link shared on WhatsApp!';
+
+  @override
+  String get msgGatePassReady => 'Gate pass ready to print / download.';
+
+  @override
+  String get errCannotCall => 'Cannot make call to ';
+
+  @override
+  String get errEnterPackageName => 'Please enter a package name';
+
+  @override
+  String get msgPackageCreated => 'Package created successfully!';
+
+  @override
+  String get errEnterProjectName => 'Enter the project name.';
+
+  @override
+  String get errSelectGovDept => 'Select or enter the government department.';
+
+  @override
+  String get errEnterOfficeName => 'Enter the issuing / division office name.';
+
+  @override
+  String get errEnterWorkOrder =>
+      'Enter the work order / sanction order number.';
+
+  @override
+  String get errEnterSiteAddress => 'Enter the site address.';
+
+  @override
+  String get msgCallingSupervisor => 'Calling supervisor...';
+
+  @override
+  String get msgOpeningWhatsapp => 'Opening WhatsApp...';
+
+  @override
+  String get msgActiveScopeSet => 'Active operating scope set to: ';
+
+  @override
+  String get errEnterSupervisorName => 'Please enter supervisor name';
+
+  @override
+  String get errEnterSupervisorContact =>
+      'Please enter supervisor contact detail';
+
+  @override
+  String get errEnterValidDigitp =>
+      'Please enter a valid numeric DigiTP Number.';
+
+  @override
+  String get inTransitVehiclesTitle => 'In-Transit Vehicles';
+
+  @override
+  String get activeVehicleTracking => 'Active Vehicle Tracking';
+
+  @override
+  String get activeVehicleTrackingDesc =>
+      'Select an in-transit vehicle to monitor real-time GPS location and ETA.';
+
+  @override
+  String get loadingInTransitVehicles => 'Loading In-Transit vehicles...';
+
+  @override
+  String get failedToLoadInTransitVehicles =>
+      'Failed to load In-Transit vehicles';
+
+  @override
+  String get noVehiclesInTransit => 'No Vehicles In-Transit';
+
+  @override
+  String get noVehiclesInTransitDesc =>
+      'There are currently no active mineral vehicles in-transit for your account.';
+
+  @override
+  String get refreshList => 'Refresh List';
+
+  @override
+  String get vehicleNA => 'Vehicle N/A';
+
+  @override
+  String get destinationNA => 'Destination N/A';
+
+  @override
+  String get gpsActive => 'GPS Active';
+
+  @override
+  String get mineralAndQty => 'Mineral & Qty:';
+
+  @override
+  String get destinationLabel => 'Destination:';
+
+  @override
+  String get distanceLabel => 'Distance :';
+
+  @override
+  String get driverLabel => 'Driver:';
+
+  @override
+  String get selectVehicleAndTrackLive => 'Select Vehicle & Track Live';
+
+  @override
+  String get digiTpLabel => 'DigiTP:';
+
+  @override
+  String get inTransitStatus => 'In Transit';
 }

@@ -7,6 +7,7 @@ import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
 import 'enquiries_screen.dart';
+import 'package:mahakhanij_consumer/l10n/app_localizations.dart';
 
 class CreateEnquiryScreen extends ConsumerStatefulWidget {
   const CreateEnquiryScreen({super.key});
@@ -56,7 +57,7 @@ class _CreateEnquiryScreenState extends ConsumerState<CreateEnquiryScreen> {
 
     ref.read(enquiriesProvider.notifier).update((state) => [newEnq, ...state]);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Enquiry submitted to quarry operator!')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.msgEnquirySubmitted)),
     );
     context.pop();
   }

@@ -42,7 +42,7 @@ class EnquiryDetailsScreen extends ConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Quotation accepted! Converted to formal statutory order.'),
-              backgroundColor: Color(0xFF16A34A),
+              backgroundColor: Color(0xFF2563EB),
             ),
           );
           context.pop();

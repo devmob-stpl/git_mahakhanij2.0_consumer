@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../domain/package.dart';
+import '../../l10n/app_localizations.dart';
 import '../../providers/operating_context_provider.dart';
 import '../../shared/widgets/app_scaffold.dart';
 
@@ -36,13 +37,13 @@ class _RegisterSupervisorScreenState extends ConsumerState<RegisterSupervisorScr
 
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter supervisor name')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errEnterSupervisorName)),
       );
       return;
     }
     if (contact.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter supervisor contact detail')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errEnterSupervisorContact)),
       );
       return;
     }
@@ -59,8 +60,8 @@ class _RegisterSupervisorScreenState extends ConsumerState<RegisterSupervisorScr
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Supervisor registered successfully!'),
+        SnackBar(
+content: Text('Supervisor registered successfully!'),
           backgroundColor: Color(0xFF16A34A),
         ),
       );

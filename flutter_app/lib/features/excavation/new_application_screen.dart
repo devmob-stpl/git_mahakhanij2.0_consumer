@@ -9,6 +9,7 @@ import '../../shared/widgets/app_scaffold.dart';
 import '../../providers/excavation_provider.dart';
 import '../../providers/session_provider.dart';
 import 'widgets/application_step_widgets.dart';
+import 'package:mahakhanij_consumer/l10n/app_localizations.dart';
 
 class NewApplicationScreen extends ConsumerStatefulWidget {
   final TemporaryExcavationApplication? initialDraft;
@@ -283,7 +284,7 @@ class _NewApplicationScreenState extends ConsumerState<NewApplicationScreen> {
     if (mounted) {
       setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Draft saved successfully.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.msgDraftSaved)),
       );
       context.pop();
     }
@@ -345,14 +346,14 @@ class _NewApplicationScreenState extends ConsumerState<NewApplicationScreen> {
       final missing = ExcavationRules.missingRequiredDocuments(attachedKinds);
       if (missing.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please upload all mandatory documents (*) before proceeding.')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.errUploadMandatoryDocs)),
         );
         return;
       }
     } else if (_currentStep == 4) {
       if (!_declarationAccepted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please accept statutory minor minerals declaration.')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.errAcceptDeclaration)),
         );
         return;
       }
@@ -372,7 +373,7 @@ class _NewApplicationScreenState extends ConsumerState<NewApplicationScreen> {
         if (mounted) {
           setState(() => _isSaving = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Application successfully submitted with fee paid!')),
+            SnackBar(content: Text(AppLocalizations.of(context)!.msgAppSubmitted)),
           );
           context.pop();
         }
@@ -716,7 +717,7 @@ class _NewApplicationScreenState extends ConsumerState<NewApplicationScreen> {
           lngController: _lngController,
           onPinOnMap: () {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Pin map overlay opened. Location set.')),
+              SnackBar(content: Text(AppLocalizations.of(context)!.msgPinMapOverlay)),
             );
           },
           demandNoteOffice: _demandNoteOffice,

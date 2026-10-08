@@ -57,28 +57,47 @@ class AppDateFormatter {
 
   /// Formats date and time into a clean user-friendly format.
   /// Example: "23 Sep 2026, 05:40 PM"
-  static String formatDateTime(dynamic rawInput, {String fallback = 'N/A'}) {
-    if (rawInput == null) return fallback;
-    final String str = rawInput.toString().trim();
-    if (str.isEmpty || str == 'N/A' || str == 'null') return fallback;
+  static String formatDateTime(dynamic rawInput) {
+    if (rawInput == null) return 'N/A';
 
-    final dt = parse(rawInput);
-    if (dt == null) {
-      // If parsing fails but string already looks formatted, return it cleanly
-      return str;
+    final String value = rawInput.toString().trim();
+
+    if (value.isEmpty || value == 'N/A' || value == 'null') {
+      return 'N/A';
     }
 
-    final String day = dt.day.toString().padLeft(2, '0');
-    final String month = _monthNames[dt.month - 1];
-    final String year = dt.year.toString();
-    final int hourInt = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
-    final String hour = hourInt.toString().padLeft(2, '0');
-    final String minute = dt.minute.toString().padLeft(2, '0');
-    final String amPm = dt.hour >= 12 ? 'PM' : 'AM';
+    try {
+      final DateTime dt = DateTime.parse(value).toLocal();
 
-    return '$day $month $year, $hour:$minute $amPm';
+      const months = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ];
+
+      final String day = dt.day.toString().padLeft(2, '0');
+      final String month = months[dt.month - 1];
+      final String year = dt.year.toString();
+
+      final int hour12 = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+      final String hour = hour12.toString().padLeft(2, '0');
+      final String minute = dt.minute.toString().padLeft(2, '0');
+      final String amPm = dt.hour >= 12 ? 'PM' : 'AM';
+
+      return '$day $month $year, $hour:$minute $amPm';
+    } catch (e) {
+      return value;
+    }
   }
-
   /// Formats date only.
   /// Example: "23 Sep 2026"
   static String formatDate(dynamic rawInput, {String fallback = 'N/A'}) {

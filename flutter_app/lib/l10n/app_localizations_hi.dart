@@ -264,6 +264,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get profilePincode => 'पिनकोड';
 
   @override
+  String get saveBtn => 'सहेजें';
+
+  @override
   String get saveChanges => 'परिवर्तन सहेजें';
 
   @override
@@ -367,13 +370,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get materialReceivedSuccess => 'सामग्री सफलतापूर्वक प्राप्त हुई!';
 
   @override
-  String get govtOfMaharashtra => 'Government of Maharashtra';
+  String get govtOfMaharashtra => 'महाराष्ट्र सरकार';
 
   @override
-  String get revenueDepartment => 'Revenue Department';
+  String get revenueDepartment => 'राजस्व विभाग';
 
   @override
-  String get minorMineralTransportSystem => 'Minor Mineral Transport System';
+  String get minorMineralTransportSystem => 'गौण खनिज परिवहन प्रणाली';
 
   @override
   String get revenueDeptMsg => 'राजस्व विभाग, महाराष्ट्र सरकार';
@@ -540,7 +543,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get villageRuralLabel => 'गाँव / ग्रामीण क्षेत्र';
 
   @override
-  String get cityCorporationHint => 'उदा. पुणे शहर (PMC)';
+  String get cityCorporationHint => 'उदा. पुणे शहर';
 
   @override
   String get villageRuralHint => 'उदा. नारायणगांव';
@@ -809,11 +812,308 @@ class AppLocalizationsHi extends AppLocalizations {
       'अवैध OTP दर्ज किया गया। कृपया पुनः प्रयास करें।';
 
   @override
-  String get maharashtraState => 'Maharashtra';
+  String get maharashtraState => 'महाराष्ट्र';
 
   @override
-  String get viewBtn => 'View';
+  String get viewBtn => 'देखें';
 
   @override
-  String get logoutBtn => 'Logout';
+  String get logoutBtn => 'लॉगआउट';
+
+  @override
+  String get logoutErrorMsg => 'लॉगआउट के दौरान नेटवर्क/API त्रुटि:';
+
+  @override
+  String get logoutFailedMsg => 'लॉगआउट विफल रहा। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get preferencesHeader => 'प्राथमिकताएं';
+
+  @override
+  String get changeLanguageLabel => 'भाषा बदलें';
+
+  @override
+  String get storagePhotosPermissionReq =>
+      'गैलरी से चुनने के लिए स्टोरेज/फोटो अनुमति आवश्यक है।';
+
+  @override
+  String get cameraPermissionReq =>
+      'तस्वीरें लेने के लिए कैमरा अनुमति आवश्यक है।';
+
+  @override
+  String get storagePermissionReq =>
+      'दस्तावेज़ चुनने के लिए स्टोरेज अनुमति आवश्यक है।';
+
+  @override
+  String get registrationSuccess =>
+      'पंजीकरण सफल! कृपया अपने मोबाइल नंबर से साइन इन करें।';
+
+  @override
+  String get registrationFailed => 'पंजीकरण विफल। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get fullNameRequired => 'पूरा नाम आवश्यक है।';
+
+  @override
+  String get validMobileRequired =>
+      'एक वैध 10-अंकीय भारतीय मोबाइल नंबर दर्ज करें।';
+
+  @override
+  String get orgNameRequired => 'संगठन का नाम आवश्यक है।';
+
+  @override
+  String get gstinRequired => 'अपना संगठन GSTIN दर्ज करें।';
+
+  @override
+  String get addressRequired => 'पता आवश्यक है।';
+
+  @override
+  String get validEmailRequired =>
+      'बिना लगातार डॉट्स या शुरुआत में डॉट्स के एक वैध ईमेल पता दर्ज करें।';
+
+  @override
+  String get districtRequired => 'ज़िला आवश्यक है।';
+
+  @override
+  String get talukaRequired => 'तालुका आवश्यक है।';
+
+  @override
+  String get cityCorpRequired => 'शहर/निगम आवश्यक है।';
+
+  @override
+  String get villageRequired => 'गाँव आवश्यक है।';
+
+  @override
+  String get aadhaarVerificationRequired =>
+      'कृपया आगे बढ़ने के लिए अपना आधार नंबर सत्यापित करें।';
+
+  @override
+  String get surveyNumberRequired => 'सर्वेक्षण संख्या आवश्यक है।';
+
+  @override
+  String get validGstRequired => 'एक वैध 15-वर्ण का GSTIN दर्ज करें।';
+
+  @override
+  String get changeLanguageLaterHint =>
+      'आप इसे बाद में सेटिंग्स में बदल सकते हैं।';
+
+  @override
+  String get changeBtn => 'बदलें';
+
+  @override
+  String get aadhaarDetailsSavedSuccessfully =>
+      'आधार सत्यापन विवरण सफलतापूर्वक सहेजा गया';
+
+  @override
+  String get noInternetConnection => 'कोई इंटरनेट कनेक्शन नहीं';
+
+  @override
+  String get unableToLogin =>
+      'लॉगिन करने में असमर्थ। कृपया इंटरनेट कनेक्शन जाँचें।';
+
+  @override
+  String get loginFailedMsg => 'लॉगिन विफल। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get pleaseEnterFullName => 'कृपया अपना पूरा नाम दर्ज करें।';
+
+  @override
+  String get pleaseEnterValidEmail => 'कृपया एक वैध ईमेल पता दर्ज करें।';
+
+  @override
+  String get profileSaveError =>
+      'प्रोफाइल सहेजने में विफल। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get aadhaarSendOtpError =>
+      'आधार OTP भेजने में विफल। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get msgRegSuccessSignIn =>
+      'पंजीकरण सफल! कृपया अपने मोबाइल नंबर से साइन इन करें।';
+
+  @override
+  String get errEnterMandatoryFields => 'कृपया सभी अनिवार्य फ़ील्ड दर्ज करें।';
+
+  @override
+  String get msgRegSuccessLogin =>
+      'पंजीकरण सफल! कृपया अपने मोबाइल नंबर से लॉगिन करें।';
+
+  @override
+  String get errEnterSiteName => 'कृपया साइट का नाम दर्ज करें';
+
+  @override
+  String get errEnterDeliveryAddress => 'कृपया वितरण पता दर्ज करें';
+
+  @override
+  String get msgEnquirySubmitted => 'खदान संचालक को पूछताछ प्रस्तुत की गई!';
+
+  @override
+  String get msgDownloadingFile => 'फ़ाइल डाउनलोड हो रही है... ';
+
+  @override
+  String get msgDownloadingAppFee =>
+      'आवेदन शुल्क मांग पत्र डाउनलोड हो रहा है...';
+
+  @override
+  String get msgDownloadingGrasReceipt =>
+      'GRAS शुल्क रसीद डाउनलोड हो रही है...';
+
+  @override
+  String get msgDownloadingRoyaltyNote =>
+      'रॉयल्टी मांग पत्र डाउनलोड हो रहा है...';
+
+  @override
+  String get msgDownloadingPermitOrder =>
+      'आधिकारिक उत्खनन परमिट आदेश डाउनलोड हो रहा है...';
+
+  @override
+  String get msgDraftSaved => 'ड्राफ्ट सफलतापूर्वक सहेजा गया।';
+
+  @override
+  String get errUploadMandatoryDocs =>
+      'कृपया आगे बढ़ने से पहले सभी अनिवार्य दस्तावेज़ (*) अपलोड करें।';
+
+  @override
+  String get errAcceptDeclaration =>
+      'कृपया वैधानिक लघु खनिज घोषणा स्वीकार करें।';
+
+  @override
+  String get msgAppSubmitted =>
+      'शुल्क भुगतान के साथ आवेदन सफलतापूर्वक जमा किया गया!';
+
+  @override
+  String get msgPinMapOverlay => 'पिन मैप ओवरले खोला गया। स्थान सेट किया गया।';
+
+  @override
+  String get msgGpsCaptured =>
+      'वर्तमान जीपीएस स्थान सफलतापूर्वक कैप्चर किया गया।';
+
+  @override
+  String get msgAttachedReceipt => 'संलग्न बैंक रसीद';
+
+  @override
+  String get msgDownloadedChallan => 'GRAS ई-चालान डाउनलोड किया गया';
+
+  @override
+  String get errStateEngPurpose =>
+      'कृपया ड्रॉडाउन के लिए इंजीनियरिंग उद्देश्य बताएं';
+
+  @override
+  String get msgConsumptionLogged =>
+      'वैधानिक ऑन-साइट खपत ड्रॉडाउन सफलतापूर्वक लॉग किया गया!';
+
+  @override
+  String get msgTransferEtpGenerated =>
+      'ई-टीपी सफलतापूर्वक उत्पन्न! पास ड्राइवर के लिए तैयार है।';
+
+  @override
+  String get msgTransitPassShared =>
+      'व्हाट्सएप पर ट्रांजिट पास लिंक साझा किया गया!';
+
+  @override
+  String get msgGatePassReady => 'गेट पास प्रिंट / डाउनलोड के लिए तैयार है।';
+
+  @override
+  String get errCannotCall => 'कॉल नहीं कर सकते ';
+
+  @override
+  String get errEnterPackageName => 'कृपया पैकेज का नाम दर्ज करें';
+
+  @override
+  String get msgPackageCreated => 'पैकेज सफलतापूर्वक बनाया गया!';
+
+  @override
+  String get errEnterProjectName => 'प्रोजेक्ट का नाम दर्ज करें।';
+
+  @override
+  String get errSelectGovDept => 'सरकारी विभाग का चयन करें या दर्ज करें।';
+
+  @override
+  String get errEnterOfficeName =>
+      'जारी करने वाले/प्रभाग कार्यालय का नाम दर्ज करें।';
+
+  @override
+  String get errEnterWorkOrder =>
+      'कार्य आदेश / स्वीकृति आदेश संख्या दर्ज करें।';
+
+  @override
+  String get errEnterSiteAddress => 'साइट का पता दर्ज करें।';
+
+  @override
+  String get msgCallingSupervisor => 'सुपरवाइज़र को कॉल कर रहे हैं...';
+
+  @override
+  String get msgOpeningWhatsapp => 'व्हाट्सएप खुल रहा है...';
+
+  @override
+  String get msgActiveScopeSet => 'सक्रिय कार्यक्षेत्र सेट किया गया: ';
+
+  @override
+  String get errEnterSupervisorName => 'कृपया सुपरवाइज़र का नाम दर्ज करें';
+
+  @override
+  String get errEnterSupervisorContact =>
+      'कृपया सुपरवाइज़र का संपर्क विवरण दर्ज करें';
+
+  @override
+  String get errEnterValidDigitp =>
+      'कृपया एक वैध संख्यात्मक DigiTP नंबर दर्ज करें।';
+
+  @override
+  String get inTransitVehiclesTitle => 'मार्ग में वाहन';
+
+  @override
+  String get activeVehicleTracking => 'सक्रिय वाहन ट्रैकिंग';
+
+  @override
+  String get activeVehicleTrackingDesc =>
+      'रियल-टाइम जीपीएस स्थान और ईटीए की निगरानी के लिए मार्ग में वाहन चुनें।';
+
+  @override
+  String get loadingInTransitVehicles => 'मार्ग में वाहन लोड हो रहे हैं...';
+
+  @override
+  String get failedToLoadInTransitVehicles =>
+      'मार्ग में वाहन लोड करने में विफल';
+
+  @override
+  String get noVehiclesInTransit => 'कोई वाहन मार्ग में नहीं है';
+
+  @override
+  String get noVehiclesInTransitDesc =>
+      'वर्तमान में आपके खाते के लिए कोई सक्रिय खनिज वाहन मार्ग में नहीं है।';
+
+  @override
+  String get refreshList => 'सूची रीफ्रेश करें';
+
+  @override
+  String get vehicleNA => 'वाहन उपलब्ध नहीं';
+
+  @override
+  String get destinationNA => 'गंतव्य उपलब्ध नहीं';
+
+  @override
+  String get gpsActive => 'जीपीएस सक्रिय';
+
+  @override
+  String get mineralAndQty => 'खनिज और मात्रा:';
+
+  @override
+  String get destinationLabel => 'गंतव्य:';
+
+  @override
+  String get distanceLabel => 'दूरी:';
+
+  @override
+  String get driverLabel => 'चालक:';
+
+  @override
+  String get selectVehicleAndTrackLive => 'वाहन चुनें और लाइव ट्रैक करें';
+
+  @override
+  String get digiTpLabel => 'DigiTP:';
+
+  @override
+  String get inTransitStatus => 'मार्ग में';
 }

@@ -88,9 +88,8 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         setState(() => _isLoading = false);
         if (signUpResponse.isSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Registration successful! Please sign in with your mobile number.'),
-              backgroundColor: Colors.green,
+            SnackBar(content: Text(AppLocalizations.of(context)!.msgRegSuccessSignIn),
+              backgroundColor: Color(0xFF2563EB),
             ),
           );
           context.go('/login', extra: widget.mobileNumber);
@@ -170,6 +169,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   Widget build(BuildContext context) {
     final enteredCode = _getEnteredCode();
     final isComplete = enteredCode.length == 5;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -221,9 +221,9 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                       const SizedBox(width: 12),
                       GestureDetector(
                         onTap: () => context.pop(),
-                        child: const Text(
-                          'Change',
-                          style: TextStyle(
+                        child: Text(
+                          l10n.changeBtn,
+                          style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: AppColors.primary700,

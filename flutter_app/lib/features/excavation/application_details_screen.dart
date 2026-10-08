@@ -112,7 +112,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
                       onPressed: () {
                         Navigator.pop(ctx);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Downloading $filename...')),
+                          SnackBar(content: Text(AppLocalizations.of(context)!.msgDownloadingFile + '$filename')),
                         );
                       },
                       icon: const Icon(Icons.download, size: 18, color: Color(0xFF2563EB)),
@@ -229,7 +229,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Document uploaded successfully!'),
-                            backgroundColor: Color(0xFF16A34A),
+                            backgroundColor: Color(0xFF2563EB),
                           ),
                         );
                       },
@@ -376,7 +376,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Query response submitted successfully! Status updated to Under Review.'),
-                            backgroundColor: Color(0xFF15803D),
+                            backgroundColor: Color(0xFF2563EB),
                           ),
                         );
                       },
@@ -1163,7 +1163,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
           downloadColor: const Color(0xFF475569),
           onDownload: () {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Downloading Application Fee Demand Note...')),
+              SnackBar(content: Text(AppLocalizations.of(context)!.msgDownloadingAppFee)),
             );
           },
         ),
@@ -1180,7 +1180,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
           downloadColor: const Color(0xFF16A34A),
           onDownload: () {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Downloading GRAS Fee Receipt...')),
+              SnackBar(content: Text(AppLocalizations.of(context)!.msgDownloadingGrasReceipt)),
             );
           },
         ),
@@ -1198,7 +1198,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
             downloadColor: const Color(0xFFD97706),
             onDownload: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Downloading Royalty Demand Note...')),
+                SnackBar(content: Text(AppLocalizations.of(context)!.msgDownloadingRoyaltyNote)),
               );
             },
           ),
@@ -1217,7 +1217,7 @@ class _ApplicationDetailsScreenState extends ConsumerState<ApplicationDetailsScr
             downloadColor: const Color(0xFF16A34A),
             onDownload: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Downloading Official Excavation Permit Order...')),
+                SnackBar(content: Text(AppLocalizations.of(context)!.msgDownloadingPermitOrder)),
               );
             },
           ),

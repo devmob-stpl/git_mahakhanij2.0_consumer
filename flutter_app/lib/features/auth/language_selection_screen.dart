@@ -74,10 +74,10 @@ class _LanguageSelectionScreenState extends ConsumerState<LanguageSelectionScree
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
-                'You can always change this later in settings.',
+              Text(
+                lookupAppLocalizations(Locale(_selectedLocale)).changeLanguageLaterHint,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
                   color: AppColors.inkSecondary,
                 ),

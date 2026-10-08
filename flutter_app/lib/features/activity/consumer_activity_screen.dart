@@ -415,11 +415,18 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                   const SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${loc.validity}:', style: const TextStyle(fontSize: 11, color: Color(0xFF737373))),
-                      Text(
-                        '${AppDateFormatter.formatDateTime(item.validityFrom)} - ${AppDateFormatter.formatDateTime(item.validityUpto)}',
-                        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: AppColors.inkSecondary),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: Text('${loc.validity}:', style: const TextStyle(fontSize: 11, color: Color(0xFF737373))),
+                      ),
+                      Expanded(
+                        child: Text(
+                          '${AppDateFormatter.formatDateTime(item.validityFrom)} - ${AppDateFormatter.formatDateTime(item.validityUpto)}',
+                          textAlign: TextAlign.end,
+                          style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: AppColors.inkSecondary),
+                        ),
                       ),
                     ],
                   ),
