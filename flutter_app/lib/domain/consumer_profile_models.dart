@@ -148,6 +148,19 @@ class ConsumerProfileData {
   };
 }
 
+/// Release isolate JSON uses `Map<dynamic, dynamic>`. A strict
+/// `is Map<String, dynamic>` check drops `responseData` and the profile
+/// screen never receives the API payload.
+Map<String, dynamic>? _asStringKeyMap(dynamic value) {
+  if (value is Map<String, dynamic>) return value;
+  if (value is Map) {
+    return Map<String, dynamic>.from(
+      value.map((key, item) => MapEntry(key.toString(), item)),
+    );
+  }
+  return null;
+}
+
 class ConsumerProfileApiResponse {
   final String statusCode;
   final String statusMessage;
@@ -166,13 +179,15 @@ class ConsumerProfileApiResponse {
 
   factory ConsumerProfileApiResponse.fromJson(Map<String, dynamic> json) {
     ConsumerProfileData? dataObj;
-    if (json['responseData'] != null) {
-      if (json['responseData'] is Map<String, dynamic>) {
-        dataObj = ConsumerProfileData.fromJson(json['responseData'] as Map<String, dynamic>);
-      } else if (json['responseData'] is List && (json['responseData'] as List).isNotEmpty) {
-        final firstItem = (json['responseData'] as List).first;
-        if (firstItem is Map<String, dynamic>) {
-          dataObj = ConsumerProfileData.fromJson(firstItem);
+    final raw = json['responseData'];
+    if (raw != null) {
+      final objectMap = _asStringKeyMap(raw);
+      if (objectMap != null) {
+        dataObj = ConsumerProfileData.fromJson(objectMap);
+      } else if (raw is List && raw.isNotEmpty) {
+        final firstMap = _asStringKeyMap(raw.first);
+        if (firstMap != null) {
+          dataObj = ConsumerProfileData.fromJson(firstMap);
         }
       }
     }

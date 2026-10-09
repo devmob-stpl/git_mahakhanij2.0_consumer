@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../core/network/release_json.dart';
 import '../../domain/vehicle_tracking_models.dart';
 
 abstract class VehicleTrackingRepository {
@@ -41,10 +41,7 @@ class VehicleTrackingRepositoryImpl implements VehicleTrackingRepository {
       final locUrl = ApiEndpoints.getVehicleTrackingLocationUrl(cleanedVehicleNo);
       final locResponse = await _dio.get(locUrl);
 
-      dynamic locData = locResponse.data;
-      if (locData is String) {
-        locData = jsonDecode(locData);
-      }
+      final locData = asResponseMap(locResponse.data);
 
       List<VehicleLocationData>? locationList;
       if (locData != null && locData['responseData'] != null) {
@@ -60,10 +57,7 @@ class VehicleTrackingRepositoryImpl implements VehicleTrackingRepository {
           final tripUrl = ApiEndpoints.getConsumerInvoiceDetailsUrl(invoiceNo: deliveryId, consumerId: consumerId);
           final tripResponse = await _dio.get(tripUrl);
           
-          dynamic tripData = tripResponse.data;
-          if (tripData is String) {
-            tripData = jsonDecode(tripData);
-          }
+          final tripData = asResponseMap(tripResponse.data);
           
           if (tripData != null && tripData['responseData'] != null) {
             if (tripData['responseData'] is Map<String, dynamic>) {
@@ -92,13 +86,8 @@ class VehicleTrackingRepositoryImpl implements VehicleTrackingRepository {
       }
 
       if (e.response?.data != null) {
-        dynamic errData = e.response!.data;
-        if (errData is String) {
-          try {
-            errData = jsonDecode(errData);
-          } catch (_) {}
-        }
-        if (errData is Map<String, dynamic>) {
+        final errData = asResponseMap(e.response!.data);
+        if (errData != null) {
           return VehicleTrackingApiResponse.fromJson(errData);
         }
       }

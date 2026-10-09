@@ -1,5 +1,5 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
+import '../../core/network/release_json.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../domain/aadhaar_kyc_models.dart';
@@ -34,12 +34,9 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
       final url = ApiEndpoints.getCheckAadhaarExistsUrl(aadhaarNo);
       final response = await _dio.get(url);
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
+      final data = asResponseMap(response.data);
 
-      if (data is Map<String, dynamic>) {
+      if (data != null) {
         return AadhaarExistResponse.fromJson(data);
       }
 
@@ -51,13 +48,8 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
-        dynamic errData = e.response!.data;
-        if (errData is String) {
-          try {
-            errData = jsonDecode(errData);
-          } catch (_) {}
-        }
-        if (errData is Map<String, dynamic>) {
+        final errData = asResponseMap(e.response!.data);
+        if (errData != null) {
           return AadhaarExistResponse.fromJson(errData);
         }
       }
@@ -89,12 +81,9 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
         },
       );
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
+      final data = asResponseMap(response.data);
 
-      if (data is Map<String, dynamic>) {
+      if (data != null) {
         return GenerateAadhaarOtpResponse.fromJson(data);
       }
 
@@ -105,13 +94,8 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
-        dynamic errData = e.response!.data;
-        if (errData is String) {
-          try {
-            errData = jsonDecode(errData);
-          } catch (_) {}
-        }
-        if (errData is Map<String, dynamic>) {
+        final errData = asResponseMap(e.response!.data);
+        if (errData != null) {
           return GenerateAadhaarOtpResponse.fromJson(errData);
         }
       }
@@ -148,12 +132,9 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
         },
       );
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
+      final data = asResponseMap(response.data);
 
-      if (data is Map<String, dynamic>) {
+      if (data != null) {
         return VerifyAadhaarOtpResponse.fromJson(data);
       }
 
@@ -164,13 +145,8 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
-        dynamic errData = e.response!.data;
-        if (errData is String) {
-          try {
-            errData = jsonDecode(errData);
-          } catch (_) {}
-        }
-        if (errData is Map<String, dynamic>) {
+        final errData = asResponseMap(e.response!.data);
+        if (errData != null) {
           return VerifyAadhaarOtpResponse.fromJson(errData);
         }
       }
@@ -217,12 +193,9 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
         ),
       );
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
+      final data = asResponseMap(response.data);
 
-      if (data is Map<String, dynamic>) {
+      if (data != null) {
         return AadhaarDocumentUploadResponse.fromJson(data);
       }
 
@@ -233,13 +206,8 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
-        dynamic errData = e.response!.data;
-        if (errData is String) {
-          try {
-            errData = jsonDecode(errData);
-          } catch (_) {}
-        }
-        if (errData is Map<String, dynamic>) {
+        final errData = asResponseMap(e.response!.data);
+        if (errData != null) {
           return AadhaarDocumentUploadResponse.fromJson(errData);
         }
       }

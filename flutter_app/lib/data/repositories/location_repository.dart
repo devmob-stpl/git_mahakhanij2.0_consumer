@@ -1,5 +1,5 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
+import '../../core/network/release_json.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../domain/location_models.dart';
@@ -48,13 +48,9 @@ class LocationRepositoryImpl implements LocationRepository {
     try {
       final url = ApiEndpoints.getStatesUrl;
       final response = await _dio.get(url);
+      final data = asResponseMap(response.data);
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
-
-      if (data is Map<String, dynamic> && data['responseData'] is List) {
+      if (data != null && data['responseData'] is List) {
         final list = (data['responseData'] as List)
             .map((item) => StateModel.fromJson(item as Map<String, dynamic>))
             .where((s) => s.state.trim().isNotEmpty)
@@ -79,13 +75,9 @@ class LocationRepositoryImpl implements LocationRepository {
     try {
       final url = ApiEndpoints.getDistrictsUrl(stateId);
       final response = await _dio.get(url);
+      final data = asResponseMap(response.data);
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
-
-      if (data is Map && data['responseData'] is List) {
+      if (data != null && data['responseData'] is List) {
         final list = (data['responseData'] as List)
             .map((item) => DistrictModel.fromJson(Map<String, dynamic>.from(item as Map)))
             .where((d) => d.district.trim().isNotEmpty)
@@ -110,13 +102,9 @@ class LocationRepositoryImpl implements LocationRepository {
     try {
       final url = ApiEndpoints.getTalukasUrl(districtId);
       final response = await _dio.get(url);
+      final data = asResponseMap(response.data);
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
-
-      if (data is Map && data['responseData'] is List) {
+      if (data != null && data['responseData'] is List) {
         final list = (data['responseData'] as List)
             .map((item) => TalukaModel.fromJson(Map<String, dynamic>.from(item as Map)))
             .where((t) => t.taluka.trim().isNotEmpty)
@@ -155,22 +143,23 @@ class LocationRepositoryImpl implements LocationRepository {
 
       dynamic data = response.data;
       if (data is String) {
-        if (data.trim().startsWith('<?xml') || data.trim().startsWith('<string')) {
+        final trimmed = data.trim();
+        if (trimmed.startsWith('<?xml') || trimmed.startsWith('<string')) {
           final start = data.indexOf('{');
           final end = data.lastIndexOf('}');
           if (start != -1 && end != -1) {
             data = data.substring(start, end + 1);
           }
         }
-        data = jsonDecode(data);
       }
 
-      if (data is Map) {
+      final map = asResponseMap(data);
+      if (map != null) {
         List<dynamic>? listData;
-        if (data.containsKey('data1')) {
-          listData = data['data1'] as List?;
-        } else if (data['responseData'] != null && data['responseData'] is Map && (data['responseData'] as Map)['data'] is List) {
-          listData = (data['responseData'] as Map)['data'] as List;
+        if (map.containsKey('data1')) {
+          listData = map['data1'] as List?;
+        } else if (map['responseData'] is Map && (map['responseData'] as Map)['data'] is List) {
+          listData = (map['responseData'] as Map)['data'] as List;
         }
         
         if (listData != null) {

@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../../domain/consumer_profile_models.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../core/network/release_json.dart';
 
 abstract class ConsumerProfileRepository {
   Future<ConsumerProfileApiResponse> getConsumerProfile(String mobileNo);
@@ -21,12 +21,8 @@ class ConsumerProfileRepositoryImpl implements ConsumerProfileRepository {
       final url = ApiEndpoints.getConsumerProfileUrl(mobileNo);
       final response = await _dio.get(url);
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
-
-      if (data is Map<String, dynamic>) {
+      final data = asResponseMap(response.data);
+      if (data != null) {
         return ConsumerProfileApiResponse.fromJson(data);
       }
 
@@ -36,13 +32,8 @@ class ConsumerProfileRepositoryImpl implements ConsumerProfileRepository {
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
-        dynamic errData = e.response!.data;
-        if (errData is String) {
-          try {
-            errData = jsonDecode(errData);
-          } catch (_) {}
-        }
-        if (errData is Map<String, dynamic>) {
+        final errData = asResponseMap(e.response!.data);
+        if (errData != null) {
           return ConsumerProfileApiResponse.fromJson(errData);
         }
       }

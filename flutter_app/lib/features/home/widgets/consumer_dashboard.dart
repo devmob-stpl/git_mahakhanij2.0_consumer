@@ -361,7 +361,7 @@ class _ConsumerDashboardState extends ConsumerState<ConsumerDashboard> with Widg
                       padding: EdgeInsets.zero,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: recentDeliveries.length > 3 ? 3 : recentDeliveries.length,
+                      itemCount: recentDeliveries.length > 50 ? 50 : recentDeliveries.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         return DeliverySummaryCardWidget(item: recentDeliveries[index]);

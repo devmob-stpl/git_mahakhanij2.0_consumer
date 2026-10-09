@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../core/network/release_json.dart';
 import '../../domain/consumer_project_models.dart';
 
 class SaveUpdateProjectResponse {
@@ -59,12 +59,9 @@ class ConsumerProjectRepositoryImpl implements ConsumerProjectRepository {
         data: projectData,
       );
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
+      final data = asResponseMap(response.data);
 
-      if (data is Map<String, dynamic>) {
+      if (data != null) {
         return SaveUpdateProjectResponse.fromJson(data);
       }
       return const SaveUpdateProjectResponse(
@@ -74,9 +71,8 @@ class ConsumerProjectRepositoryImpl implements ConsumerProjectRepository {
     } catch (e) {
       if (e is DioException && e.response?.data != null) {
         try {
-          dynamic errData = e.response!.data;
-          if (errData is String) errData = jsonDecode(errData);
-          if (errData is Map<String, dynamic>) {
+          final errData = asResponseMap(e.response!.data);
+          if (errData != null) {
             return SaveUpdateProjectResponse.fromJson(errData);
           }
         } catch (_) {}
@@ -109,12 +105,9 @@ class ConsumerProjectRepositoryImpl implements ConsumerProjectRepository {
 
       final response = await _dio.get(url);
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
+      final data = asResponseMap(response.data);
 
-      if (data is Map<String, dynamic>) {
+      if (data != null) {
         final apiResp = ConsumerProjectApiResponse.fromJson(data);
         if (apiResp.isSuccess && apiResp.projects.isNotEmpty) {
           return apiResp;

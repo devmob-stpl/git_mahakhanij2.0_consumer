@@ -10,6 +10,7 @@ import '../../domain/auth_api_models.dart';
 import '../../core/config/app_config.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../core/network/release_json.dart';
 import '../mock_db.dart';
 
 abstract class AuthRepository {
@@ -69,12 +70,9 @@ class AuthRepositoryImpl implements AuthRepository {
       final url = ApiEndpoints.getLogoutUserUrl(userId: userId, appId: appId);
       final response = await _dio.get(url);
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
+      final data = asResponseMap(response.data);
 
-      if (data is Map<String, dynamic>) {
+      if (data != null) {
         final parsed = LogoutApiResponse.fromJson(data);
         if (parsed.isSuccess) {
           await clearSession();
@@ -88,13 +86,8 @@ class AuthRepositoryImpl implements AuthRepository {
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
-        dynamic errData = e.response!.data;
-        if (errData is String) {
-          try {
-            errData = jsonDecode(errData);
-          } catch (_) {}
-        }
-        if (errData is Map<String, dynamic>) {
+        final errData = asResponseMap(e.response!.data);
+        if (errData != null) {
           final parsed = LogoutApiResponse.fromJson(errData);
           if (parsed.isSuccess) {
             await clearSession();
@@ -159,12 +152,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
       final response = await _dio.get(url);
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
+      final data = asResponseMap(response.data);
 
-      if (data is Map<String, dynamic>) {
+      if (data != null) {
         return UserKeyApiResponse.fromJson(data);
       }
 
@@ -174,13 +164,8 @@ class AuthRepositoryImpl implements AuthRepository {
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
-        dynamic errData = e.response!.data;
-        if (errData is String) {
-          try {
-            errData = jsonDecode(errData);
-          } catch (_) {}
-        }
-        if (errData is Map<String, dynamic>) {
+        final errData = asResponseMap(e.response!.data);
+        if (errData != null) {
           return UserKeyApiResponse.fromJson(errData);
         }
       }
@@ -229,12 +214,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
       final response = await _dio.get(url);
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
+      final data = asResponseMap(response.data);
 
-      if (data is Map<String, dynamic>) {
+      if (data != null) {
         final parsed = VerifyCodeApiResponse.fromJson(data);
         if (parsed.isSuccess && parsed.responseData != null &&
             parsed.responseData!.isNotEmpty) {
@@ -272,13 +254,8 @@ class AuthRepositoryImpl implements AuthRepository {
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
-        dynamic errData = e.response!.data;
-        if (errData is String) {
-          try {
-            errData = jsonDecode(errData);
-          } catch (_) {}
-        }
-        if (errData is Map<String, dynamic>) {
+        final errData = asResponseMap(e.response!.data);
+        if (errData != null) {
           return VerifyCodeApiResponse.fromJson(errData);
         }
       }
@@ -325,12 +302,9 @@ class AuthRepositoryImpl implements AuthRepository {
         data: signUpData,
       );
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
+      final data = asResponseMap(response.data);
 
-      if (data is Map<String, dynamic>) {
+      if (data != null) {
         final parsed = ConsumerSignUpResponse.fromJson(data);
         if (parsed.isSuccess) {
           // Do not save session or auto-login on signup. 
@@ -345,13 +319,8 @@ class AuthRepositoryImpl implements AuthRepository {
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
-        dynamic errData = e.response!.data;
-        if (errData is String) {
-          try {
-            errData = jsonDecode(errData);
-          } catch (_) {}
-        }
-        if (errData is Map<String, dynamic>) {
+        final errData = asResponseMap(e.response!.data);
+        if (errData != null) {
           return ConsumerSignUpResponse.fromJson(errData);
         }
       }

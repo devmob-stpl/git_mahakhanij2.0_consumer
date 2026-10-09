@@ -4,7 +4,7 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   /// Environment selection switch (Default: Demo)
-  static ApiEnvironment activeEnvironment = ApiEnvironment.demo;
+  static ApiEnvironment activeEnvironment = ApiEnvironment.live;
 
   // ===========================================================================
   // BASE URL CONFIGURATION
@@ -48,7 +48,7 @@ class ApiEndpoints {
 
   static String get loginMobile => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/login-mobile';
   static String getLoginMobileUrl({required String mobileNo, required String key}) =>
-      '$loginMobile?MobileNo=$mobileNo&key=$key&version=1&RegistraionId=1&LoginDeviceTypeId=1';
+      '$loginMobile?MobileNo=$mobileNo&key=$key&version=1.0.0&RegistraionId=1&LoginDeviceTypeId=1';
 
   static String get checkAadhaarExists => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/is-exists-consumer-aadharcard-no';
   static String getCheckAadhaarExistsUrl(String aadharNo) => '$checkAadhaarExists?AadharCardNo=$aadharNo';

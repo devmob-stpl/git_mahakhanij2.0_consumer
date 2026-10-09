@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../core/network/api_endpoints.dart';
+import '../../core/network/release_json.dart';
 import '../../domain/consumer_dashboard_count_models.dart';
 
 abstract class ConsumerDashboardCountRepository {
@@ -19,7 +19,10 @@ class ConsumerDashboardCountRepositoryImpl implements ConsumerDashboardCountRepo
     try {
       final response = await _client.get(Uri.parse(url));
       if (response.statusCode == 200) {
-        final Map<String, dynamic> json = jsonDecode(response.body);
+        final json = asResponseMap(response.body);
+        if (json == null) {
+          throw const FormatException('Invalid dashboard count response');
+        }
         return ConsumerDashboardCountApiResponse.fromJson(json);
       } else {
         return ConsumerDashboardCountApiResponse(

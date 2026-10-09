@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../core/network/release_json.dart';
 import '../../domain/report_models.dart';
 
 abstract class ConsumerReportRepository {
@@ -27,7 +28,11 @@ class ConsumerReportRepositoryImpl implements ConsumerReportRepository {
   Future<ConsumerPlotResponse> getConsumerPlots(int consumerId) async {
     final url = ApiEndpoints.getConsumerPlotsUrl(consumerId);
     final response = await _dio.get(url);
-    return ConsumerPlotResponse.fromJson(response.data);
+    final map = asResponseMap(response.data);
+    if (map == null) {
+      throw const FormatException('Invalid consumer plots response');
+    }
+    return ConsumerPlotResponse.fromJson(map);
   }
 
   @override
@@ -50,6 +55,10 @@ class ConsumerReportRepositoryImpl implements ConsumerReportRepository {
       ApiEndpoints.consumerInvoiceReport,
       data: data,
     );
-    return ConsumerReportResponse.fromJson(response.data);
+    final map = asResponseMap(response.data);
+    if (map == null) {
+      throw const FormatException('Invalid consumer invoice report response');
+    }
+    return ConsumerReportResponse.fromJson(map);
   }
 }

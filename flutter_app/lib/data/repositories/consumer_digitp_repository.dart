@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../../domain/consumer_digitp_models.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../core/network/release_json.dart';
 
 abstract class ConsumerDigiTpRepository {
   Future<ConsumerDigiTpApiResponse> getConsumerDigiTpList({
@@ -36,12 +36,9 @@ class ConsumerDigiTpRepositoryImpl implements ConsumerDigiTpRepository {
       final url = ApiEndpoints.getConsumerDigiTpListUrl(consumerId: consumerId, status: status);
       final response = await _dio.get(url);
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
+      final data = asResponseMap(response.data);
 
-      if (data is Map<String, dynamic>) {
+      if (data != null) {
         return ConsumerDigiTpApiResponse.fromJson(data);
       }
 
@@ -51,13 +48,8 @@ class ConsumerDigiTpRepositoryImpl implements ConsumerDigiTpRepository {
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
-        dynamic errData = e.response!.data;
-        if (errData is String) {
-          try {
-            errData = jsonDecode(errData);
-          } catch (_) {}
-        }
-        if (errData is Map<String, dynamic>) {
+        final errData = asResponseMap(e.response!.data);
+        if (errData != null) {
           return ConsumerDigiTpApiResponse.fromJson(errData);
         }
       }
@@ -82,12 +74,9 @@ class ConsumerDigiTpRepositoryImpl implements ConsumerDigiTpRepository {
       final url = ApiEndpoints.getConsumerInvoiceDetailsUrl(invoiceNo: invoiceNo, consumerId: consumerId);
       final response = await _dio.get(url);
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
+      final data = asResponseMap(response.data);
 
-      if (data is Map<String, dynamic>) {
+      if (data != null) {
         final parsedRes = GetConsumerInvoiceDetailsResponse.fromJson(data);
         if (parsedRes.isSuccess || parsedRes.isAlreadyReceived || parsedRes.statusCode == '404') {
           return parsedRes;
@@ -131,12 +120,9 @@ class ConsumerDigiTpRepositoryImpl implements ConsumerDigiTpRepository {
         data: request.toJson(),
       );
 
-      dynamic data = response.data;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
+      final data = asResponseMap(response.data);
 
-      if (data is Map<String, dynamic>) {
+      if (data != null) {
         final parsedRes = ReceiveInvoiceResponse.fromJson(data);
         if (parsedRes.isSuccess || parsedRes.isAlreadyReceived) {
           return parsedRes;
