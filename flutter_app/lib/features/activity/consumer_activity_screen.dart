@@ -20,7 +20,7 @@ class ConsumerActivityScreen extends ConsumerStatefulWidget {
 
   const ConsumerActivityScreen({
     super.key,
-    this.initialChip = ActivityChip.live,
+    this.initialChip = ActivityChip.all,
   });
 
   @override
@@ -276,8 +276,17 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
   Widget _buildDigiTpCard(BuildContext context, ConsumerDigiTpItem item, int activeStatus) {
     final loc = AppLocalizations.of(context)!;
     String statusLabel = item.invoiceStatus ?? (activeStatus == 1 ? loc.notReceived : (activeStatus == 2 ? loc.inTransit : loc.delivered));
-    if (statusLabel.toUpperCase() == 'NOT RECEIVED') {
-      statusLabel = 'Not Received';
+    final normalizedStatus = statusLabel.toUpperCase();
+    if (normalizedStatus.contains('NOT RECEIVED') || normalizedStatus == '1') {
+      statusLabel = loc.statusNotReceived;
+    } else if (normalizedStatus.contains('TRANSIT') || normalizedStatus == 'DISPATCHED' || normalizedStatus == '2') {
+      statusLabel = loc.inTransit;
+    } else if (normalizedStatus.contains('ARRIV')) {
+      statusLabel = loc.statusArrivedAtSite;
+    } else if (normalizedStatus.contains('PASS') || normalizedStatus.contains('APPROV')) {
+      statusLabel = loc.statusPassIssued;
+    } else if ((normalizedStatus.contains('RECEIV') && !normalizedStatus.contains('NOT')) || normalizedStatus.contains('DELIVER') || normalizedStatus == '3') {
+      statusLabel = loc.delivered;
     }
     final isDelivered = activeStatus == 3 || statusLabel.toLowerCase() == 'delivered' || statusLabel == loc.delivered;
 
@@ -287,12 +296,12 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
 
     final qtyStr = '${item.quantity ?? 0} ${item.mineralUnit ?? 'Brass'}';
     final mineralStr = item.materialType ?? 'Mineral';
-    final vehicleNoStr = item.vehicleNo ?? 'Vehicle N/A';
-    final destStr = item.destination ?? 'Destination N/A';
+    final vehicleNoStr = item.vehicleNo ?? loc.vehicleNA;
+    final destStr = item.destination ?? loc.destinationNA;
     final driverStr = item.driverName != null && item.driverName!.isNotEmpty
         ? '${item.driverName}${item.driverMobNo != null ? ' (${item.driverMobNo})' : ''}'
-        : 'N/A';
-    final ownerStr = item.ownerName ?? 'Quarry / Stockyard';
+        : '-';
+    final ownerStr = item.ownerName ?? loc.authorizedQuarry;
 
     return Container(
       decoration: BoxDecoration(
@@ -327,8 +336,8 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'DigiTP: ${item.invoiceNo}',
-                    style: const TextStyle(
+                    '${loc.digiTpLabel} ${item.invoiceNo}',
+                     style: const TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF2563EB),
@@ -570,7 +579,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
               ),
               const SizedBox(height: 6),
               Text(enq.mineralName, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink)),
-              Text('Qty: ${enq.requiredQuantity.formatted} · ${AppLocalizations.of(context)!.source}: ${enq.stockPointName}', style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary)),
+              Text('${AppLocalizations.of(context)!.qty}: ${enq.requiredQuantity.formatted} · ${AppLocalizations.of(context)!.source}: ${enq.stockPointName}', style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary)),
             ],
           ),
         ),

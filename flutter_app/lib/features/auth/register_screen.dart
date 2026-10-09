@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_file/open_file.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
@@ -66,6 +67,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   String? _aadhaarSignatoryDocUrl;
   bool _isUploadingAadhaarDoc = false;
   bool _isUploadingPanDoc = false;
+
+  String? _localAadhaarPath;
+  String? _localAadhaarName;
+  Uint8List? _localAadhaarBytes;
+
+  String? _localPanPath;
+  String? _localPanName;
+  Uint8List? _localPanBytes;
+
+  String? _localSignatoryAadhaarPath;
+  String? _localSignatoryAadhaarName;
+  Uint8List? _localSignatoryAadhaarBytes;
 
   // Aadhaar API State
   String? _aadhaarClientId;
@@ -270,7 +283,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       final pickedFile = await picker.pickImage(source: source);
       if (pickedFile == null) return;
       final bytes = await pickedFile.readAsBytes();
-      await _uploadDocumentFile(pickedFile.path, pickedFile.name, bytes, isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
+      await _setLocalDocumentFile(pickedFile.path, pickedFile.name, bytes, isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
     } catch (e) {
       if (e.toString().contains('access_denied')) {
         if (!mounted) return;
@@ -307,7 +320,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
       if (result == null || result.files.isEmpty) return;
       final file = result.files.first;
-      await _uploadDocumentFile(file.path ?? '', file.name, file.bytes, isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
+      await _setLocalDocumentFile(file.path ?? '', file.name, file.bytes, isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
     } catch (e) {
       if (e.toString().contains('access_denied')) {
         if (!mounted) return;
@@ -335,51 +348,30 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
   }
 
-  Future<void> _uploadDocumentFile(String path, String name, Uint8List? bytes, {bool isPan = false, bool isSignatoryAadhaar = false}) async {
+  Future<void> _setLocalDocumentFile(String path, String name, Uint8List? bytes, {bool isPan = false, bool isSignatoryAadhaar = false}) async {
     final key = isPan ? 'panFile' : (isSignatoryAadhaar ? 'aadhaarFile' : 'kycFile');
 
     setState(() {
       if (isPan) {
-        _isUploadingPanDoc = true;
+        _localPanPath = path;
+        _localPanName = name;
+        _localPanBytes = bytes;
+        _panFileName = name;
+        _panDocUrl = null;
+      } else if (isSignatoryAadhaar) {
+        _localSignatoryAadhaarPath = path;
+        _localSignatoryAadhaarName = name;
+        _localSignatoryAadhaarBytes = bytes;
+        _aadhaarFileName = name;
+        _aadhaarSignatoryDocUrl = null;
       } else {
-        _isUploadingAadhaarDoc = true;
+        _localAadhaarPath = path;
+        _localAadhaarName = name;
+        _localAadhaarBytes = bytes;
+        _kycFileName = name;
+        _aadhaarDocUrl = null;
       }
       _errors.remove(key);
-    });
-
-    final repo = ref.read(aadhaarKycRepositoryProvider);
-    final response = await repo.uploadAadhaarDocument(
-      filePath: path,
-      fileName: name,
-      bytes: bytes,
-    );
-
-    if (!mounted) return;
-
-    setState(() {
-      if (isPan) {
-        _isUploadingPanDoc = false;
-      } else {
-        _isUploadingAadhaarDoc = false;
-      }
-
-      if (response.isSuccess && response.responseData != null && response.responseData!.isNotEmpty) {
-        if (isPan) {
-          _panFileName = name;
-          _panDocUrl = response.responseData;
-        } else if (isSignatoryAadhaar) {
-          _aadhaarFileName = name;
-          _aadhaarSignatoryDocUrl = response.responseData;
-        } else {
-          _kycFileName = name;
-          _aadhaarDocUrl = response.responseData;
-        }
-        _errors.remove(key);
-      } else {
-        _errors[key] = response.statusMessage.isNotEmpty
-            ? response.statusMessage
-            : 'Failed to upload document. Please try again.';
-      }
     });
   }
 
@@ -448,6 +440,40 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     // Step 2 complete -> Directly submit Sign Up API without OTP verification
     setState(() => _isSubmitting = true);
     final mobile = _mobileController.text.trim();
+
+    final repo = ref.read(aadhaarKycRepositoryProvider);
+    Future<String?> uploadLocal(String? path, String? name, Uint8List? bytes) async {
+      if (path == null) return null;
+      final res = await repo.uploadAadhaarDocument(filePath: path, fileName: name ?? 'doc', bytes: bytes);
+      if (res.isSuccess && res.responseData != null) return res.responseData;
+      throw Exception(res.statusMessage ?? 'Document upload failed.');
+    }
+
+    try {
+      if (_localAadhaarPath != null) {
+        final resUrl = await uploadLocal(_localAadhaarPath, _localAadhaarName, _localAadhaarBytes);
+        if (resUrl != null) _aadhaarDocUrl = resUrl;
+      }
+      if (_localPanPath != null) {
+        final resUrl = await uploadLocal(_localPanPath, _localPanName, _localPanBytes);
+        if (resUrl != null) _panDocUrl = resUrl;
+      }
+      if (_localSignatoryAadhaarPath != null) {
+        final resUrl = await uploadLocal(_localSignatoryAadhaarPath, _localSignatoryAadhaarName, _localSignatoryAadhaarBytes);
+        if (resUrl != null) _aadhaarSignatoryDocUrl = resUrl;
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      String errorMsg = e.toString();
+      if (errorMsg.startsWith('Exception: ')) {
+        errorMsg = errorMsg.substring(11);
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
+      );
+      return;
+    }
 
     final Map<String, dynamic> signUpPayload = {
       'id': 0,
@@ -552,7 +578,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             : l10n.villageRequired;
       }
     } else if (_step == 2) {
-      if (_aadhaarController.text.trim().isNotEmpty && !_isAadhaarVerified) {
+      final hasAadhaarDoc = _localAadhaarPath != null || _aadhaarDocUrl != null || _localSignatoryAadhaarPath != null || _aadhaarSignatoryDocUrl != null;
+      if (hasAadhaarDoc && !_isAadhaarVerified) {
         found['aadhaar'] = l10n.aadhaarVerificationRequired;
       }
     }
@@ -1356,9 +1383,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             hint: l10n.frontOrCombinedAadhaar,
             fileName: _kycFileName,
             docUrl: _aadhaarDocUrl,
+            localPath: _localAadhaarPath,
             isLoading: _isUploadingAadhaarDoc,
             error: _errors['kycFile'],
             onPick: () => _pickAndUploadDocument(isPan: false),
+            onRemove: () {
+              setState(() {
+                _localAadhaarPath = null;
+                _localAadhaarBytes = null;
+                _kycFileName = null;
+                _aadhaarDocUrl = null;
+              });
+            },
           ),
           const SizedBox(height: 20),
 
@@ -1396,9 +1432,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             hint: 'Clear copy of entity PAN card (PDF / Image)',
             fileName: _panFileName,
             docUrl: _panDocUrl,
+            localPath: _localPanPath,
             isLoading: _isUploadingPanDoc,
             error: _errors['panFile'],
             onPick: () => _pickAndUploadDocument(isPan: true),
+            onRemove: () {
+              setState(() {
+                _localPanPath = null;
+                _localPanBytes = null;
+                _panFileName = null;
+                _panDocUrl = null;
+              });
+            },
           ),
           const SizedBox(height: 20),
 
@@ -1412,9 +1457,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             hint: 'Clear copy of authorized signatory Aadhaar (PDF / Image)',
             fileName: _aadhaarFileName,
             docUrl: _aadhaarSignatoryDocUrl ?? _aadhaarDocUrl,
+            localPath: _localSignatoryAadhaarPath,
             isLoading: _isUploadingAadhaarDoc,
             error: _errors['aadhaarFile'],
             onPick: () => _pickAndUploadDocument(isPan: false, isSignatoryAadhaar: true),
+            onRemove: () {
+              setState(() {
+                _localSignatoryAadhaarPath = null;
+                _localSignatoryAadhaarBytes = null;
+                _aadhaarFileName = null;
+                _aadhaarSignatoryDocUrl = null;
+              });
+            },
           ),
         ],
 
@@ -1487,11 +1541,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     required String hint,
     required String? fileName,
     required String? docUrl,
+    String? localPath,
     required bool isLoading,
     String? error,
     required VoidCallback onPick,
+    VoidCallback? onRemove,
   }) {
-    final hasFile = docUrl != null && docUrl.isNotEmpty;
+    final hasFile = fileName != null && fileName.isNotEmpty;
     final l10n = AppLocalizations.of(context)!;
 
     return Column(
@@ -1502,11 +1558,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ? null
               : (hasFile
                   ? () async {
-                      final url = Uri.tryParse(docUrl);
-                      if (url != null) {
-                        try {
-                          await launchUrl(url, mode: LaunchMode.externalApplication);
-                        } catch (_) {}
+                      if (docUrl != null) {
+                        final url = Uri.tryParse(docUrl);
+                        if (url != null) {
+                          try {
+                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                          } catch (_) {}
+                        }
                       }
                     }
                   : onPick),
@@ -1570,36 +1628,54 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ],
                   ),
                 ),
-                if (hasFile)
+                if (hasFile) ...[
+                  GestureDetector(
+                    onTap: !isLoading ? onPick : null,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                      child: Icon(Icons.edit, color: AppColors.primary700, size: 20),
+                    ),
+                  ),
                   GestureDetector(
                     onTap: () async {
-                      final url = Uri.tryParse(docUrl);
-                      if (url != null) {
+                      if (docUrl != null) {
+                        final url = Uri.tryParse(docUrl);
+                        if (url != null) {
+                          try {
+                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                          } catch (_) {}
+                        }
+                      } else if (localPath != null) {
                         try {
-                          await launchUrl(url, mode: LaunchMode.externalApplication);
+                          await OpenFile.open(localPath);
                         } catch (_) {}
                       }
                     },
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                      child: Icon(Icons.visibility, color: AppColors.primary700, size: 20),
+                    ),
+                  ),
+                  if (onRemove != null)
+                    GestureDetector(
+                      onTap: !isLoading ? onRemove : null,
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                        child: Icon(Icons.delete_outline, color: AppColors.danger700, size: 20),
+                      ),
+                    ),
+                ] else ...[
+                  GestureDetector(
+                    onTap: !isLoading ? onPick : null,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                      padding: const EdgeInsets.only(left: 8.0, top: 8.0, bottom: 8.0),
                       child: Text(
-                        l10n.viewBtn,
+                        isLoading ? '${l10n.uploadBtn}...' : l10n.uploadBtn,
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary700),
                       ),
                     ),
                   ),
-                if (hasFile)
-                  const Text('|', style: TextStyle(color: AppColors.line, fontSize: 12)),
-                GestureDetector(
-                  onTap: hasFile && !isLoading ? onPick : null,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 8.0, top: 8.0, bottom: 8.0),
-                    child: Text(
-                      isLoading ? '${l10n.uploadBtn}...' : (hasFile ? l10n.replaceBtn : l10n.uploadBtn),
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary700),
-                    ),
-                  ),
-                ),
+                ],
               ],
             ),
           ),

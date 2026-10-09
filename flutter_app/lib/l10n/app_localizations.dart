@@ -253,7 +253,7 @@ abstract class AppLocalizations {
   /// No description provided for @eTransitPassDetails.
   ///
   /// In en, this message translates to:
-  /// **'E-TRANSIT PASS DETAILS'**
+  /// **'DIGITP PASS DETAILS'**
   String get eTransitPassDetails;
 
   /// No description provided for @invoiceHash.
@@ -2187,6 +2187,270 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'In Transit'**
   String get inTransitStatus;
+
+  /// No description provided for @roleBuilder.
+  ///
+  /// In en, this message translates to:
+  /// **'Builder'**
+  String get roleBuilder;
+
+  /// No description provided for @roleContractor.
+  ///
+  /// In en, this message translates to:
+  /// **'Contractor'**
+  String get roleContractor;
+
+  /// No description provided for @roleGovernment.
+  ///
+  /// In en, this message translates to:
+  /// **'Government'**
+  String get roleGovernment;
+
+  /// No description provided for @roleOrganization.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization'**
+  String get roleOrganization;
+
+  /// No description provided for @mineralStoneAgg20.
+  ///
+  /// In en, this message translates to:
+  /// **'Stone Aggregate 20mm'**
+  String get mineralStoneAgg20;
+
+  /// No description provided for @mineralRiverSand.
+  ///
+  /// In en, this message translates to:
+  /// **'Natural River Sand'**
+  String get mineralRiverSand;
+
+  /// No description provided for @mineralMSand.
+  ///
+  /// In en, this message translates to:
+  /// **'Manufactured Sand (M-Sand)'**
+  String get mineralMSand;
+
+  /// No description provided for @mineralMurrum.
+  ///
+  /// In en, this message translates to:
+  /// **'Murrum / Soil Filling'**
+  String get mineralMurrum;
+
+  /// No description provided for @noEnquiriesRaised.
+  ///
+  /// In en, this message translates to:
+  /// **'No enquiries raised.'**
+  String get noEnquiriesRaised;
+
+  /// No description provided for @quotationAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Quotation accepted! Converted to formal statutory order.'**
+  String get quotationAccepted;
+
+  /// No description provided for @docOtherSupporting.
+  ///
+  /// In en, this message translates to:
+  /// **'Other Supporting Document'**
+  String get docOtherSupporting;
+
+  /// No description provided for @docSiteBoundary.
+  ///
+  /// In en, this message translates to:
+  /// **'Site Boundary Photo'**
+  String get docSiteBoundary;
+
+  /// No description provided for @docNoc.
+  ///
+  /// In en, this message translates to:
+  /// **'Environmental / Gram Panchayat NOC'**
+  String get docNoc;
+
+  /// No description provided for @docUploadedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Document uploaded successfully!'**
+  String get docUploadedSuccess;
+
+  /// No description provided for @queryResponseSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Query response submitted successfully! Status updated to Under Review.'**
+  String get queryResponseSubmitted;
+
+  /// No description provided for @mineralStoneAgg20Basalt.
+  ///
+  /// In en, this message translates to:
+  /// **'Stone Aggregate 20mm (Basalt)'**
+  String get mineralStoneAgg20Basalt;
+
+  /// No description provided for @appBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'App Blocked'**
+  String get appBlocked;
+
+  /// No description provided for @accountBlockedLogout.
+  ///
+  /// In en, this message translates to:
+  /// **'Your app has been blocked. You will be logged out.'**
+  String get accountBlockedLogout;
+
+  /// No description provided for @whatsapp.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp'**
+  String get whatsapp;
+
+  /// No description provided for @gatePass.
+  ///
+  /// In en, this message translates to:
+  /// **'Gate Pass'**
+  String get gatePass;
+
+  /// No description provided for @noMineralsStockPoint.
+  ///
+  /// In en, this message translates to:
+  /// **'No minerals listed for this stock point.'**
+  String get noMineralsStockPoint;
+
+  /// No description provided for @noOrdersPlaced.
+  ///
+  /// In en, this message translates to:
+  /// **'No orders placed yet.'**
+  String get noOrdersPlaced;
+
+  /// No description provided for @noDeliveriesRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'No deliveries recorded.'**
+  String get noDeliveriesRecorded;
+
+  /// No description provided for @discoverQuarries.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover nearby quarries for this package'**
+  String get discoverQuarries;
+
+  /// No description provided for @scanQrCodeTruck.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR code of truck at site gate'**
+  String get scanQrCodeTruck;
+
+  /// No description provided for @issueTransferEtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue Transfer e-TP to move mineral surplus'**
+  String get issueTransferEtp;
+
+  /// No description provided for @noProjectsRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'No projects registered.'**
+  String get noProjectsRegistered;
+
+  /// No description provided for @noPackagesAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'No packages added to this project yet.'**
+  String get noPackagesAdded;
+
+  /// No description provided for @supervisorRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'Supervisor registered successfully!'**
+  String get supervisorRegistered;
+
+  /// No description provided for @invalidDigiTpNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid numeric DigiTP number'**
+  String get invalidDigiTpNumber;
+
+  /// No description provided for @deliveryNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery not found'**
+  String get deliveryNotFound;
+
+  /// No description provided for @langEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English (EN)'**
+  String get langEnglish;
+
+  /// No description provided for @langHindi.
+  ///
+  /// In en, this message translates to:
+  /// **'हिंदी (HI)'**
+  String get langHindi;
+
+  /// No description provided for @langMarathi.
+  ///
+  /// In en, this message translates to:
+  /// **'मराठी (MR)'**
+  String get langMarathi;
+
+  /// No description provided for @errorUpdatingProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred while updating profile: '**
+  String get errorUpdatingProfile;
+
+  /// No description provided for @errorPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: '**
+  String get errorPrefix;
+
+  /// No description provided for @downloadedReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded DigiTP_Receipt_'**
+  String get downloadedReceipt;
+
+  /// No description provided for @statusNotReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Received'**
+  String get statusNotReceived;
+
+  /// No description provided for @statusArrivedAtSite.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrived at Site'**
+  String get statusArrivedAtSite;
+
+  /// No description provided for @statusPassIssued.
+  ///
+  /// In en, this message translates to:
+  /// **'Pass Issued'**
+  String get statusPassIssued;
+
+  /// No description provided for @authorizedQuarry.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorized Quarry'**
+  String get authorizedQuarry;
+
+  /// No description provided for @financialYear.
+  ///
+  /// In en, this message translates to:
+  /// **'FY {yearRange}'**
+  String financialYear(String yearRange);
+
+  /// No description provided for @verifyDigiTp.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify DigiTP'**
+  String get verifyDigiTp;
+
+  /// No description provided for @removeBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get removeBtn;
 }
 
 class _AppLocalizationsDelegate
