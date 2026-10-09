@@ -188,7 +188,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     });
 
     final repo = ref.read(aadhaarKycRepositoryProvider);
-    final existRes = await repo.checkAadhaarExists(aadh);
+    final mobileNo = _mobileController.text.trim();
+    final existRes = await repo.checkAadhaarExists(aadh, mobileNo: mobileNo);
     if (!mounted) return;
 
     if (existRes.exists) {

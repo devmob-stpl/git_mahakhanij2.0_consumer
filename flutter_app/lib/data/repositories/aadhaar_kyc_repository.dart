@@ -5,7 +5,7 @@ import '../../core/network/api_endpoints.dart';
 import '../../domain/aadhaar_kyc_models.dart';
 
 abstract class AadhaarKycRepository {
-  Future<AadhaarExistResponse> checkAadhaarExists(String aadhaarNo);
+  Future<AadhaarExistResponse> checkAadhaarExists(String aadhaarNo, {String? mobileNo});
   Future<GenerateAadhaarOtpResponse> generateAadhaarOtp(String aadhaarNo, {int createdBy = 0});
   Future<VerifyAadhaarOtpResponse> submitAadhaarOtp({
     required String clientId,
@@ -29,9 +29,9 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
   );
 
   @override
-  Future<AadhaarExistResponse> checkAadhaarExists(String aadhaarNo) async {
+  Future<AadhaarExistResponse> checkAadhaarExists(String aadhaarNo, {String? mobileNo}) async {
     try {
-      final url = ApiEndpoints.getCheckAadhaarExistsUrl(aadhaarNo);
+      final url = ApiEndpoints.getCheckAadhaarExistsUrl(aadhaarNo, mobileNo: mobileNo);
       final response = await _dio.get(url);
 
       final data = asResponseMap(response.data);

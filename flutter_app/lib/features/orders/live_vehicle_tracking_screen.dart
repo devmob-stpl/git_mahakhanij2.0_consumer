@@ -69,7 +69,7 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
 
     _vehicleAnimationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 8),
+      duration: const Duration(milliseconds: 2500),
     )..addListener(_onVehicleAnimationTick);
   }
 
@@ -96,8 +96,6 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
 
     _animatedVehiclePosition = position;
     _animatedPositionNotifier.value = position;
-
-    _followVehicleCamera(position);
   }
 
 
@@ -151,26 +149,10 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
 
 
   void _followVehicleCamera(LatLng position) {
-    if (!_isFollowingVehicle ||
-        _isUserInteractingWithMap ||
-        _mapController == null) {
-      return;
-    }
-
-    final now = DateTime.now();
-
-    if (_lastCameraUpdate != null &&
-        now.difference(_lastCameraUpdate!) < _cameraUpdateInterval) {
-      return;
-    }
-
-    _lastCameraUpdate = now;
-
+    if (!_isFollowingVehicle || _isUserInteractingWithMap || _mapController == null) return;
+    
     _isProgrammaticCameraMove = true;
-
-    _mapController!.moveCamera(
-      CameraUpdate.newLatLng(position),
-    );
+    _mapController!.animateCamera(CameraUpdate.newLatLng(position));
   }
 
   @override
@@ -227,6 +209,7 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
     }
 
     _animateVehicleTo(newPosition);
+    _followVehicleCamera(newPosition);
   }
 
   Future<void> _enableVehicleFollow() async {
@@ -246,8 +229,6 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
     await _mapController!.animateCamera(
       CameraUpdate.newLatLng(position),
     );
-
-    _isProgrammaticCameraMove = false;
   }
 
   void _animateVehicleTo(LatLng newPosition) {
@@ -663,7 +644,7 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
     }
 
     final speedText = location.speed != null ? '${location.speed} km/h' : '0 km/h';
-    final locationStr = location.locationName ?? 'Tracking Live GPS';
+    final locationStr = location.locationName ?? '';
 
     Set<Polyline> polylines = {};
 
@@ -1020,37 +1001,53 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.line),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const CircleAvatar(
-                radius: 20,
-                backgroundColor: Color(0xFFEEF4FE),
-                child: Icon(Icons.person, color: Color(0xFF2563EB), size: 22),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    driverName,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink),
-                  ),
-                  Text(
-                    driverMobile.isNotEmpty ? driverMobile : AppLocalizations.of(context)!.mobileNumberUnavailable,
-                    style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary),
-                  ),
-                ],
+              const Icon(Icons.person_pin, size: 18, color: AppColors.inkSecondary),
+              const SizedBox(width: 6),
+              Text(
+                AppLocalizations.of(context)!.driverDetails,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink),
               ),
             ],
           ),
-          if (driverMobile.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.phone_in_talk, color: Color(0xFF2563EB), size: 24),
-              onPressed: () => _makePhoneCall(driverMobile),
-            ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Color(0xFFEEF4FE),
+                    child: Icon(Icons.person, color: Color(0xFF2563EB), size: 22),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        driverName,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink),
+                      ),
+                      Text(
+                        driverMobile.isNotEmpty ? driverMobile : AppLocalizations.of(context)!.mobileNumberUnavailable,
+                        style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              if (driverMobile.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.phone_in_talk, color: Color(0xFF2563EB), size: 24),
+                  onPressed: () => _makePhoneCall(driverMobile),
+                ),
+            ],
+          ),
         ],
       ),
     );

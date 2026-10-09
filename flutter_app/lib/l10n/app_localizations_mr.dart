@@ -27,10 +27,10 @@ class AppLocalizationsMr extends AppLocalizations {
   String get welcome => 'सुस्वागतम';
 
   @override
-  String get digitpDeliveries => 'डिजी-टीपी\nजारी केले';
+  String get digitpDeliveries => 'डिजीटीपी\nजारी केले';
 
   @override
-  String get receivedMaterial => 'डिजी-टीपी\nप्राप्त झाले';
+  String get receivedMaterial => 'डिजीटीपी\nप्राप्त झाले';
 
   @override
   String get inTransitVehicles => 'मार्गातील\nवाहने';
@@ -39,7 +39,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get coreServices => 'मुख्य सेवा';
 
   @override
-  String get digitpPasses => 'डिजी-टीपी\nपास';
+  String get digitpPasses => 'डिजीटीपी\nपास';
 
   @override
   String get receiveMaterialAction => 'सामग्री\nप्राप्त करा';
@@ -48,14 +48,13 @@ class AppLocalizationsMr extends AppLocalizations {
   String get trackVehicle => 'वाहन\nट्रॅक करा';
 
   @override
-  String get recentDeliveriesHeader => 'डिजी-टीपी आणि खनिज वितरण';
+  String get recentDeliveriesHeader => 'डिजीटीपी आणि खनिज वितरण';
 
   @override
   String get viewAll => 'सर्व पहा';
 
   @override
-  String get noRecentDeliveries =>
-      'कोणतेही अलीकडील डिजी-टीपी वितरण आढळले नाही.';
+  String get noRecentDeliveries => 'कोणतेही अलीकडील डिजीटीपी वितरण आढळले नाही.';
 
   @override
   String get receiveMaterial => 'सामग्री प्राप्त करा';
@@ -64,7 +63,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get receiveMaterialError => 'सामग्री प्राप्त करताना त्रुटी';
 
   @override
-  String get scanDigiTp => 'डिजी-टीपी क्यूआर / बारकोड स्कॅन करा';
+  String get scanDigiTp => 'डिजीटीपी क्यूआर / बारकोड स्कॅन करा';
 
   @override
   String get pointCameraDescription =>
@@ -129,12 +128,12 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String fetchingLiveGpsLocation(String vehicleNo) {
-    return '$vehicleNo साठी लाईव्ह जीपीएस स्थान प्राप्त करत आहे...';
+    return '$vehicleNo साठी लाईव्ह वाहन स्थान प्राप्त करत आहे...';
   }
 
   @override
   String get connectingToMahakhanij =>
-      'महाखनिज जीपीएस ट्रॅकिंग सेवेशी कनेक्ट होत आहे';
+      'महाखनिज वाहन ट्रॅकिंग सेवेशी कनेक्ट होत आहे';
 
   @override
   String get trackingDataUnavailable => 'ट्रॅकिंग डेटा अनुपलब्ध';
@@ -188,7 +187,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get validity => 'वैधता';
 
   @override
-  String get viewDigiTp => 'डिजी-टीपी पहा';
+  String get viewDigiTp => 'डिजीटीपी पहा';
 
   @override
   String get cancelEnquiry => 'चौकशी रद्द करा';
@@ -215,7 +214,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get quarrySeller => 'खाण / विक्रेता';
 
   @override
-  String get digiTpNo => 'डिजी-टीपी क्र.';
+  String get digiTpNo => 'डिजीटीपी क्र.';
 
   @override
   String get vehicleDriverName => 'वाहन चालकाचे नाव';
@@ -233,10 +232,10 @@ class AppLocalizationsMr extends AppLocalizations {
   String get invoiceStatus => 'चलनाची स्थिती';
 
   @override
-  String get createdDateAndTimeOfDigiTp => 'डिजी-टीपीची निर्मिती तारीख आणि वेळ';
+  String get createdDateAndTimeOfDigiTp => 'डिजीटीपीची निर्मिती तारीख आणि वेळ';
 
   @override
-  String get digiTpValidityDateAndTime => 'डिजी-टीपी वैधता तारीख आणि वेळ';
+  String get digiTpValidityDateAndTime => 'डिजीटीपी वैधता तारीख आणि वेळ';
 
   @override
   String get profileName => 'नाव';
@@ -299,16 +298,16 @@ class AppLocalizationsMr extends AppLocalizations {
   String get personalDetails => 'वैयक्तिक तपशील';
 
   @override
-  String get liveVehicleTracking => 'थेट वाहन ट्रॅकिंग';
+  String get liveVehicleTracking => 'वाहन ट्रॅक करा';
 
   @override
-  String get liveGps => 'थेट जीपीएस';
+  String get liveGps => 'थेट वाहन';
 
   @override
-  String get currentGpsLocation => 'सध्याचे जीपीएस स्थान';
+  String get currentGpsLocation => 'सध्याचे वाहन स्थान';
 
   @override
-  String get trackingLiveGps => 'थेट जीपीएस ट्रॅक करत आहे';
+  String get trackingLiveGps => 'थेट वाहन ट्रॅक करत आहे';
 
   @override
   String get speed => 'वेग';
@@ -339,7 +338,7 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get noActiveDigiTpTripDetails =>
-      'सध्या या वाहनाशी संबंधित कोणतेही सक्रिय डिजी-टीपी प्रवास तपशील नाहीत.';
+      'सध्या या वाहनाशी संबंधित कोणतेही सक्रिय डिजीटीपी प्रवास तपशील नाहीत.';
 
   @override
   String get mobileNumberUnavailable => 'मोबाईल नंबर उपलब्ध नाही';
@@ -348,7 +347,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get enterVehicleNo => 'वाहन क्रमांक प्रविष्ट करा';
 
   @override
-  String get enterDigiTpNumber => 'डिजी-टीपी नंबर प्रविष्ट करा';
+  String get enterDigiTpNumber => 'डिजीटीपी नंबर प्रविष्ट करा';
 
   @override
   String get enterDigiTpNumberHint => 'उदा. 491 किंवा 0436610';
@@ -682,7 +681,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get totalReceived => 'एकूण प्राप्त';
 
   @override
-  String get digitpsReceived => 'प्राप्त झालेले डिजी-टीपी';
+  String get digitpsReceived => 'प्राप्त झालेले डिजीटीपी';
 
   @override
   String get passes => 'पास';
@@ -771,7 +770,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get resendBtn => 'पुन्हा पाठवा';
 
   @override
-  String get digitpsNotReceived => 'डिजी-टीपी\nप्राप्त नाही';
+  String get digitpsNotReceived => 'डिजीटीपी\nप्राप्त नाही';
 
   @override
   String get enterFullName => 'पूर्ण नाव प्रविष्ट करा';
@@ -982,7 +981,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get msgPinMapOverlay => 'पिन मॅप आच्छादन उघडले. स्थान सेट केले.';
 
   @override
-  String get msgGpsCaptured => 'सध्याचे जीपीएस स्थान यशस्वीरित्या कॅप्चर केले.';
+  String get msgGpsCaptured => 'सध्याचे वाहन स्थान यशस्वीरित्या कॅप्चर केले.';
 
   @override
   String get msgAttachedReceipt => 'जोडलेली बँक पावती';
@@ -1063,7 +1062,7 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get activeVehicleTrackingDesc =>
-      'रिअल-टाइम GPS स्थान आणि ETA चे निरीक्षण करण्यासाठी मार्गावरील वाहन निवडा.';
+      'रिअल-टाइम वाहन स्थान आणि ETA चे निरीक्षण करण्यासाठी मार्गावरील वाहन निवडा.';
 
   @override
   String get loadingInTransitVehicles => 'मार्गावरील वाहने लोड होत आहेत...';
@@ -1089,7 +1088,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get destinationNA => 'गंतव्य उपलब्ध नाही';
 
   @override
-  String get gpsActive => 'GPS सक्रिय';
+  String get gpsActive => 'वाहन सक्रिय';
 
   @override
   String get mineralAndQty => 'खनिज आणि प्रमाण:';
@@ -1229,7 +1228,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get downloadedReceipt => 'Downloaded DigiTP_Receipt_';
 
   @override
-  String get statusNotReceived => 'Not Received';
+  String get statusNotReceived => 'प्राप्त झाले नाही';
 
   @override
   String get statusArrivedAtSite => 'Arrived at Site';

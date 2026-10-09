@@ -337,13 +337,13 @@ abstract class AppLocalizations {
   /// No description provided for @fetchingLiveGpsLocation.
   ///
   /// In en, this message translates to:
-  /// **'Fetching live GPS location for {vehicleNo}...'**
+  /// **'Fetching live Vehicle location for {vehicleNo}...'**
   String fetchingLiveGpsLocation(String vehicleNo);
 
   /// No description provided for @connectingToMahakhanij.
   ///
   /// In en, this message translates to:
-  /// **'Connecting to Mahakhanij GPS Tracking Service'**
+  /// **'Connecting to Mahakhanij Vehicle Tracking Service'**
   String get connectingToMahakhanij;
 
   /// No description provided for @trackingDataUnavailable.
@@ -667,25 +667,25 @@ abstract class AppLocalizations {
   /// No description provided for @liveVehicleTracking.
   ///
   /// In en, this message translates to:
-  /// **'Live Vehicle Tracking'**
+  /// **'Track Vehicle'**
   String get liveVehicleTracking;
 
   /// No description provided for @liveGps.
   ///
   /// In en, this message translates to:
-  /// **'Live GPS'**
+  /// **'Live Vehicle'**
   String get liveGps;
 
   /// No description provided for @currentGpsLocation.
   ///
   /// In en, this message translates to:
-  /// **'CURRENT GPS LOCATION'**
+  /// **'CURRENT VEHICLE LOCATION'**
   String get currentGpsLocation;
 
   /// No description provided for @trackingLiveGps.
   ///
   /// In en, this message translates to:
-  /// **'Tracking Live GPS'**
+  /// **'Tracking Live Vehicle'**
   String get trackingLiveGps;
 
   /// No description provided for @speed.
@@ -1951,7 +1951,7 @@ abstract class AppLocalizations {
   /// No description provided for @msgGpsCaptured.
   ///
   /// In en, this message translates to:
-  /// **'Current GPS location captured successfully.'**
+  /// **'Current Vehicle location captured successfully.'**
   String get msgGpsCaptured;
 
   /// No description provided for @msgAttachedReceipt.
@@ -2095,7 +2095,7 @@ abstract class AppLocalizations {
   /// No description provided for @activeVehicleTrackingDesc.
   ///
   /// In en, this message translates to:
-  /// **'Select an in-transit vehicle to monitor real-time GPS location and ETA.'**
+  /// **'Select an in-transit vehicle to monitor real-time Vehicle location and ETA.'**
   String get activeVehicleTrackingDesc;
 
   /// No description provided for @loadingInTransitVehicles.
@@ -2143,7 +2143,7 @@ abstract class AppLocalizations {
   /// No description provided for @gpsActive.
   ///
   /// In en, this message translates to:
-  /// **'GPS Active'**
+  /// **'Vehicle Active'**
   String get gpsActive;
 
   /// No description provided for @mineralAndQty.
