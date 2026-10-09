@@ -11,6 +11,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../../../core/network/api_endpoints.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../core/services/in_app_update_service.dart';
 import 'home_header.dart';
 import 'delivery_summary_card.dart';
 
@@ -28,6 +29,7 @@ class _ConsumerDashboardState extends ConsumerState<ConsumerDashboard> with Widg
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAppBlockStatus();
+      InAppUpdateService.checkForPlayUpdate();
     });
   }
 
@@ -41,6 +43,7 @@ class _ConsumerDashboardState extends ConsumerState<ConsumerDashboard> with Widg
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _checkAppBlockStatus();
+      InAppUpdateService.checkForPlayUpdate();
     }
   }
 
