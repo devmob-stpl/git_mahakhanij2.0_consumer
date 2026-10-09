@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_file/open_file.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
@@ -71,6 +72,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   // KYC Modal State
   KycStep _kycStep = KycStep.view;
   String _uploadedDocName = '';
+  
+  String? _localProfileAadhaarPath;
+  String? _localProfileAadhaarName;
+  Uint8List? _localProfileAadhaarBytes;
+  
+  bool? _tempIsAadharVerified;
+  String? _tempAadharCardNo;
+  String? _tempAadharName;
 
   @override
   void initState() {
@@ -261,12 +270,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (res.isSuccess) {
         if (_activeProfileData != null) {
           final newName = (res.fullName != null && res.fullName!.trim().isNotEmpty) ? res.fullName! : _activeProfileData!.name;
-          _activeProfileData = _activeProfileData!.copyWith(
-            name: newName,
-            isAadharVerified: true, 
-            aadharCardNo: _profileAadhaarController.text.replaceAll(' ', '').trim(),
-          );
-          _nameController.text = newName;
+          _tempIsAadharVerified = true;
+          _tempAadharCardNo = _profileAadhaarController.text.replaceAll(' ', '').trim();
+          _tempAadharName = newName;
         }
         setState(() {});
       } else {
@@ -372,37 +378,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _uploadProfileDocument(String path, String name, Uint8List? bytes, StateSetter setModalState) async {
     setModalState(() {
-      _isProfileUploadingDoc = true;
+      _localProfileAadhaarPath = path;
+      _localProfileAadhaarName = name;
+      _localProfileAadhaarBytes = bytes;
+      _profileAadhaarDocUrl = null;
       _profileAadhaarDocError = null;
       _uploadedDocName = name;
-    });
-
-    final repo = ref.read(aadhaarKycRepositoryProvider);
-    final uploadRes = await repo.uploadAadhaarDocument(
-      filePath: path,
-      fileName: name,
-      bytes: bytes,
-    );
-    if (!mounted) return;
-
-    setModalState(() {
-      _isProfileUploadingDoc = false;
-      if (uploadRes.isSuccess && uploadRes.responseData != null && uploadRes.responseData!.isNotEmpty) {
-        _profileAadhaarDocUrl = uploadRes.responseData;
-        _profileAadhaarDocError = null;
-        if (_activeProfileData != null) {
-          _activeProfileData = _activeProfileData!.copyWith(
-            aadharDoc: _profileAadhaarDocUrl,
-          );
-        }
-        setState(() {});
-      } else {
-        _profileAadhaarDocError = uploadRes.statusMessage;
-      }
+      setState(() {});
     });
   }
 
-  Future<void> _handleSaveProfile() async {
+  Future<bool> _handleSaveProfile() async {
     final user = ref.read(sessionProvider).currentUser;
     final mobile = _mobileController.text.trim();
     final l10n = AppLocalizations.of(context)!;
@@ -411,7 +397,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.pleaseEnterFullName)),
       );
-      return;
+      return false;
     }
 
     if (_emailController.text.trim().isNotEmpty) {
@@ -420,11 +406,50 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.pleaseEnterValidEmail)),
         );
-        return;
+        return false;
       }
     }
 
     setState(() => _isSaving = true);
+
+    if (_tempIsAadharVerified != null && _activeProfileData != null) {
+      _activeProfileData = _activeProfileData!.copyWith(
+        name: _tempAadharName ?? _activeProfileData!.name,
+        isAadharVerified: _tempIsAadharVerified,
+        aadharCardNo: _tempAadharCardNo ?? _activeProfileData!.aadharCardNo,
+      );
+      if (_tempAadharName != null) {
+        _nameController.text = _tempAadharName!;
+      }
+      _tempIsAadharVerified = null;
+      _tempAadharCardNo = null;
+      _tempAadharName = null;
+    }
+
+    if (_localProfileAadhaarPath != null) {
+      final repo = ref.read(aadhaarKycRepositoryProvider);
+      final uploadRes = await repo.uploadAadhaarDocument(
+        filePath: _localProfileAadhaarPath!,
+        fileName: _localProfileAadhaarName ?? 'doc',
+        bytes: _localProfileAadhaarBytes,
+      );
+      if (uploadRes.isSuccess && uploadRes.responseData != null) {
+        _profileAadhaarDocUrl = uploadRes.responseData;
+        if (_activeProfileData != null) {
+          _activeProfileData = _activeProfileData!.copyWith(aadharDoc: _profileAadhaarDocUrl);
+        }
+      } else {
+        if (!mounted) return false;
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(uploadRes.statusMessage ?? 'Document upload failed. Please try again.'),
+            backgroundColor: AppColors.danger700,
+          ),
+        );
+        return false;
+      }
+    }
 
     final isAadhaarVerified = _activeProfileData?.isAadharVerified ?? false;
 
@@ -447,9 +472,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     };
 
     try {
-      final response = await ref.read(authRepositoryProvider).consumerSignUp(updatePayload);
+      final response = await ref.read(authRepositoryProvider).consumerProfileUpdate(updatePayload);
 
-      if (!mounted) return;
+      if (!mounted) return false;
 
       setState(() => _isSaving = false);
 
@@ -460,6 +485,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         Timer(const Duration(seconds: 3), () {
           if (mounted) setState(() => _showSaveToast = false);
         });
+        return true;
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -469,9 +495,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             backgroundColor: Colors.red,
           ),
         );
+        return false;
       }
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) return false;
       setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -479,6 +506,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           backgroundColor: Colors.red,
         ),
       );
+      return false;
     }
   }
 
@@ -522,14 +550,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                       _buildKycDetailRow(
                         loc.aadhaarNumberLabel,
-                        _activeProfileData?.aadharCardNo != null && _activeProfileData!.aadharCardNo!.isNotEmpty
-                            ? _activeProfileData!.aadharCardNo!
-                            : 'N/A',
+                        (_tempAadharCardNo != null && _tempAadharCardNo!.isNotEmpty)
+                            ? _tempAadharCardNo!
+                            : (_activeProfileData?.aadharCardNo != null && _activeProfileData!.aadharCardNo!.isNotEmpty)
+                                ? _activeProfileData!.aadharCardNo!
+                                : 'N/A',
                       ),
                       const SizedBox(height: 10),
                       _buildKycDetailRow(
                         loc.aadhaarVerificationLabel,
-                        _activeProfileData?.isAadharVerified == true ? 'VERIFIED' : 'PENDING',
+                        (_tempIsAadharVerified ?? _activeProfileData?.isAadharVerified == true) ? 'VERIFIED' : 'PENDING',
                       ),
                       const SizedBox(height: 10),
 
@@ -543,7 +573,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               child: Text(loc.closeBtn),
                             ),
                           ),
-                          if (_activeProfileData?.isAadharVerified != true) ...[
+                          if (!(_tempIsAadharVerified ?? _activeProfileData?.isAadharVerified == true)) ...[
                             const SizedBox(width: 10),
                             Expanded(
                               child: ElevatedButton(
@@ -568,7 +598,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       const SizedBox(height: 16),
 
                       // Option 1: Live Aadhaar OTP
-                      if (_activeProfileData?.isAadharVerified == true) ...[
+                      if (_tempIsAadharVerified ?? _activeProfileData?.isAadharVerified == true) ...[
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -589,10 +619,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(_profileAadhaarController.text.isNotEmpty ? _profileAadhaarController.text : (_activeProfileData?.aadharCardNo ?? 'Aadhaar OTP Verified'), style: const TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w600)),
-                                        if (_activeProfileData?.name.isNotEmpty == true) ...[
+                                        Text(_profileAadhaarController.text.isNotEmpty ? _profileAadhaarController.text : (_tempAadharCardNo ?? _activeProfileData?.aadharCardNo ?? 'Aadhaar OTP Verified'), style: const TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w600)),
+                                        if ((_tempAadharName ?? _activeProfileData?.name)?.isNotEmpty == true) ...[
                                           const SizedBox(height: 2),
-                                          Text(_activeProfileData!.name, style: const TextStyle(color: Color(0xFF15803D), fontSize: 12, fontWeight: FontWeight.w500)),
+                                          Text((_tempAadharName ?? _activeProfileData!.name), style: const TextStyle(color: Color(0xFF15803D), fontSize: 12, fontWeight: FontWeight.w500)),
                                         ],
                                       ],
                                     ),
@@ -604,6 +634,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                           if (_activeProfileData != null) {
                                             _activeProfileData = _activeProfileData!.copyWith(isAadharVerified: false, aadharCardNo: '');
                                           }
+                                          _tempIsAadharVerified = null;
+                                          _tempAadharCardNo = null;
+                                          _tempAadharName = null;
                                           _profileAadhaarController.clear();
                                           _profileAadhaarOtpController.clear();
                                           _isProfileAadhaarOtpSent = false;
@@ -611,12 +644,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                           _profileAadhaarDocUrl = null;
                                         });
                                       },
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-                                        child: Text(
-                                          loc.replaceBtn,
-                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary700),
-                                        ),
+                                      child: const Padding(
+                                        padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                                        child: Icon(Icons.edit, color: AppColors.primary700, size: 20),
                                       ),
                                     ),
                                 ],
@@ -738,11 +768,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               loc.method2UploadAadhaar,
                               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              loc.uploadAadhaarDesc,
-                              style: TextStyle(fontSize: 11, color: AppColors.inkSecondary),
-                            ),
+
                             const SizedBox(height: 10),
 
                             InkWell(
@@ -760,8 +786,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     _isProfileUploadingDoc
                                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary700))
                                         : Icon(
-                                            _profileAadhaarDocUrl != null ? Icons.check_circle : Icons.upload_file,
-                                            color: _profileAadhaarDocUrl != null ? const Color(0xFF15803D) : AppColors.inkSecondary,
+                                            (_profileAadhaarDocUrl != null || _localProfileAadhaarPath != null) ? Icons.check_circle : Icons.upload_file,
+                                            color: (_profileAadhaarDocUrl != null || _localProfileAadhaarPath != null) ? const Color(0xFF15803D) : AppColors.inkSecondary,
                                             size: 20,
                                           ),
                                     const SizedBox(width: 10),
@@ -774,7 +800,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                             style: TextStyle(
                                               fontSize: 12.5,
                                               fontWeight: FontWeight.w700,
-                                              color: _profileAadhaarDocUrl != null ? const Color(0xFF15803D) : AppColors.ink,
+                                              color: (_profileAadhaarDocUrl != null || _localProfileAadhaarPath != null) ? const Color(0xFF15803D) : AppColors.ink,
                                             ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -786,20 +812,68 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         ],
                                       ),
                                     ),
-                                    ElevatedButton(
-                                      onPressed: _isProfileUploadingDoc ? null : () => _handleProfileUploadAadhaarDoc(setModalState),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.primary700,
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                        minimumSize: Size.zero,
-                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    if ((_profileAadhaarDocUrl != null || _localProfileAadhaarPath != null) && !_isProfileUploadingDoc) ...[
+                                      GestureDetector(
+                                        onTap: () => _handleProfileUploadAadhaarDoc(setModalState),
+                                        child: const Padding(
+                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                          child: Icon(Icons.edit, color: AppColors.primary700, size: 20),
+                                        ),
                                       ),
-                                      child: Text(
-                                        _isProfileUploadingDoc ? 'Uploading...' : (_profileAadhaarDocUrl != null ? loc.replaceBtn : loc.uploadBtn),
-                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                                      if (_profileAadhaarDocUrl != null || _localProfileAadhaarPath != null) ...[
+                                        GestureDetector(
+                                          onTap: () async {
+                                            if (_profileAadhaarDocUrl != null) {
+                                              final url = Uri.tryParse(_profileAadhaarDocUrl!);
+                                              if (url != null) {
+                                                try {
+                                                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                                                } catch (_) {}
+                                              }
+                                            } else if (_localProfileAadhaarPath != null) {
+                                              try {
+                                                await OpenFile.open(_localProfileAadhaarPath!);
+                                              } catch (_) {}
+                                            }
+                                          },
+                                          child: const Padding(
+                                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                            child: Icon(Icons.visibility, color: AppColors.primary700, size: 20),
+                                          ),
+                                        ),
+                                      ],
+                                      GestureDetector(
+                                        onTap: () {
+                                          setModalState(() {
+                                            _localProfileAadhaarPath = null;
+                                            _localProfileAadhaarBytes = null;
+                                            _localProfileAadhaarName = null;
+                                            _profileAadhaarDocUrl = null;
+                                            _uploadedDocName = '';
+                                            setState(() {});
+                                          });
+                                        },
+                                        child: const Padding(
+                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                          child: Icon(Icons.delete_outline, color: AppColors.danger700, size: 20),
+                                        ),
                                       ),
-                                    ),
+                                    ] else ...[
+                                      ElevatedButton(
+                                        onPressed: _isProfileUploadingDoc ? null : () => _handleProfileUploadAadhaarDoc(setModalState),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.primary700,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                          minimumSize: Size.zero,
+                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                        child: Text(
+                                          _isProfileUploadingDoc ? 'Uploading...' : loc.uploadBtn,
+                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -852,9 +926,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
-                              onPressed: _isSaving ? null : () {
-                                _handleSaveProfile();
-                                Navigator.pop(modalContext);
+                              onPressed: _isSaving ? null : () async {
+                                final isVerified = _tempIsAadharVerified == true || _activeProfileData?.isAadharVerified == true;
+                                if (!isVerified) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(loc.aadhaarVerificationRequired),
+                                      backgroundColor: AppColors.danger700,
+                                    ),
+                                  );
+                                  return;
+                                }
+                                setModalState(() => _isSaving = true);
+                                final success = await _handleSaveProfile();
+                                if (mounted) {
+                                  setModalState(() => _isSaving = false);
+                                  if (success) {
+                                    Navigator.pop(modalContext);
+                                  }
+                                }
                               },
                               child: _isSaving 
                                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
@@ -964,6 +1054,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
           final profile = response.responseData;
           final isAadhaarVerified = _activeProfileData?.isAadharVerified ?? profile?.isAadharVerified ?? false;
+          final displayAadhaarNo = _tempAadharCardNo ?? _activeProfileData?.aadharCardNo ?? profile?.aadharCardNo ?? '';
+          final displayAadhaarName = _tempAadharName ?? _activeProfileData?.name ?? profile?.name ?? '';
 
           return Stack(
             children: [
@@ -1063,7 +1155,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       _buildChecklistRow(
                                         icon: Icons.person_outline,
                                         label: loc.aadhaarAuthenticationLabel,
-                                        subtitle: isAadhaarVerified ? '${profile?.aadharCardNo ?? ''}\n${profile?.name ?? ''}' : null,
+                                        subtitle: isAadhaarVerified ? '${displayAadhaarNo.isNotEmpty ? displayAadhaarNo : 'N/A'}\n${displayAadhaarName.isNotEmpty ? displayAadhaarName : 'N/A'}' : null,
                                         isVerified: isAadhaarVerified,
                                       ),
                                     ],

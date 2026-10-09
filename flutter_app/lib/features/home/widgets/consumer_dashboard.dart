@@ -87,12 +87,13 @@ class _ConsumerDashboardState extends ConsumerState<ConsumerDashboard> with Widg
   }
 
   void _showBlockDialogAndLogout() {
+    final loc = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('App Blocked'),
-        content: const Text('Your account has been blocked. You will be logged out.'),
+        title: Text(loc.appBlocked),
+        content: Text(loc.accountBlockedLogout),
         actions: [
           TextButton(
             onPressed: () {
@@ -100,7 +101,7 @@ class _ConsumerDashboardState extends ConsumerState<ConsumerDashboard> with Widg
               ref.read(sessionProvider.notifier).logout();
               context.go('/login');
             },
-            child: const Text('OK'),
+            child: Text(loc.ok),
           ),
         ],
       ),
@@ -124,6 +125,7 @@ class _ConsumerDashboardState extends ConsumerState<ConsumerDashboard> with Widg
 
     final dashboardCountAsync = ref.watch(consumerDashboardCountProvider);
     final allAsync = ref.watch(consumerDigiTpListProvider(0));
+    final appVersionAsync = ref.watch(appVersionProvider);
 
     final allItems = allAsync.valueOrNull?.items ?? [];
 
@@ -370,6 +372,20 @@ class _ConsumerDashboardState extends ConsumerState<ConsumerDashboard> with Widg
                         return DeliverySummaryCardWidget(item: recentDeliveries[index]);
                       },
                     ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        'V${appVersionAsync.valueOrNull ?? '...'}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.neutral500,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 24),
                 ],
               ),

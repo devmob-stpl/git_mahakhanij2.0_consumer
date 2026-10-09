@@ -11,12 +11,14 @@ import '../../core/config/app_config.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../core/network/release_json.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../mock_db.dart';
 
 abstract class AuthRepository {
   Future<UserKeyApiResponse> sendVerificationCode(String mobileNumber);
   Future<VerifyCodeApiResponse> verifyMobileCode({required String mobileNumber, required String key});
   Future<ConsumerSignUpResponse> consumerSignUp(Map<String, dynamic> signUpData);
+  Future<ConsumerSignUpResponse> consumerProfileUpdate(Map<String, dynamic> signUpData);
   Future<bool> sendOtp(String mobileNumber);
   Future<User?> verifyOtp(String mobileNumber, String otp);
   Future<User?> getCurrentUser();
@@ -187,8 +189,9 @@ class AuthRepositoryImpl implements AuthRepository {
     required String key,
   }) async {
     try {
+      final packageInfo = await PackageInfo.fromPlatform();
       final url = ApiEndpoints.getLoginMobileUrl(
-          mobileNo: mobileNumber, key: key);
+          mobileNo: mobileNumber, key: key, version: packageInfo.version);
           
       // Pre-flight internet check
       try {
@@ -308,6 +311,71 @@ class AuthRepositoryImpl implements AuthRepository {
         final parsed = ConsumerSignUpResponse.fromJson(data);
         if (parsed.isSuccess) {
           // Do not save session or auto-login on signup. 
+          // The user must explicitly login afterwards.
+        }
+        return parsed;
+      }
+
+      return const ConsumerSignUpResponse(
+        statusCode: '500',
+        statusMessage: 'Unexpected response from registration server.',
+      );
+    } on DioException catch (e) {
+      if (e.response?.data != null) {
+        final errData = asResponseMap(e.response!.data);
+        if (errData != null) {
+          return ConsumerSignUpResponse.fromJson(errData);
+        }
+      }
+      return ConsumerSignUpResponse(
+        statusCode: e.response?.statusCode?.toString() ?? '500',
+        statusMessage: 'Registration failed: ${e.message}',
+      );
+    } catch (e) {
+      return ConsumerSignUpResponse(
+        statusCode: '500',
+        statusMessage: 'An error occurred during registration: ${e.toString()}',
+      );
+    }
+  }
+  @override
+  Future<ConsumerSignUpResponse> consumerProfileUpdate(Map<String, dynamic> signUpData) async {
+    try {
+      final url = ApiEndpoints.consumerProfileUpdate;
+
+      // Pre-flight internet check
+      try {
+        final result = await InternetAddress.lookup(Uri.parse(url).host);
+        if (result.isEmpty || result[0].rawAddress.isEmpty) {
+          throw const SocketException('No Internet');
+        }
+      } on SocketException catch (_) {
+        final ctx = scaffoldMessengerKey.currentContext;
+        final msg = ctx != null ? AppLocalizations.of(ctx)?.noInternetConnection ?? 'No Internet Connection' : 'No Internet Connection';
+        scaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return ConsumerSignUpResponse(
+          statusCode: 'NoInternet',
+          statusMessage: msg,
+        );
+      }
+
+      final response = await _dio.post(
+        url,
+        data: signUpData,
+      );
+
+      final data = asResponseMap(response.data);
+
+      if (data != null) {
+        final parsed = ConsumerSignUpResponse.fromJson(data);
+        if (parsed.isSuccess) {
+          // Do not save session or auto-login on signup.
           // The user must explicitly login afterwards.
         }
         return parsed;

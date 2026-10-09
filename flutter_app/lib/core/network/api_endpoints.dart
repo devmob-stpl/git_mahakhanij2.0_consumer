@@ -4,7 +4,7 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   /// Environment selection switch (Default: Demo)
-  static ApiEnvironment activeEnvironment = ApiEnvironment.live;
+  static ApiEnvironment activeEnvironment = ApiEnvironment.demo;
 
   // ===========================================================================
   // BASE URL CONFIGURATION
@@ -47,8 +47,8 @@ class ApiEndpoints {
       '$getUserKey?MobileNo=$mobileNo&Key=&LoginDeviceTypeId=1';
 
   static String get loginMobile => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/login-mobile';
-  static String getLoginMobileUrl({required String mobileNo, required String key}) =>
-      '$loginMobile?MobileNo=$mobileNo&key=$key&version=1.0.0&RegistraionId=1&LoginDeviceTypeId=1';
+  static String getLoginMobileUrl({required String mobileNo, required String key, required String version}) =>
+      '$loginMobile?MobileNo=$mobileNo&key=$key&version=$version&RegistraionId=1&LoginDeviceTypeId=1';
 
   static String get checkAadhaarExists => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/is-exists-consumer-aadharcard-no';
   static String getCheckAadhaarExistsUrl(String aadharNo) => '$checkAadhaarExists?AadharCardNo=$aadharNo';
@@ -58,6 +58,7 @@ class ApiEndpoints {
   static String get uploadPhoto => '$mineralMappingBaseUrl/mineral-mapping/uploads/upload-photo';
 
   static String get consumerSignUp => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/consumer-signup-v1';
+  static String get consumerProfileUpdate => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/update-consumer-profile';
   static String get consumerProfile => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/get-Consumer-Profile';
   static String getConsumerProfileUrl(String mobileNo) => '$consumerProfile?mobileNo=$mobileNo';
 

@@ -213,7 +213,7 @@ class DeliverySummaryCardWidget extends StatelessWidget {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  '${loc.source}: ${item.purchasedFrom ?? 'Authorized Quarry'}',
+                  '${loc.source}: ${item.purchasedFrom ?? loc.authorizedQuarry}',
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 11.5, color: Color(0xFF525252), fontWeight: FontWeight.w500),
                 ),
@@ -333,16 +333,16 @@ class DeliverySummaryCardWidget extends StatelessWidget {
   _StatusConfig _getStatusBadge(String status, AppLocalizations loc) {
     final normalized = status.toUpperCase();
     if (normalized.contains('NOT RECEIVED') || normalized == '1') {
-      return _StatusConfig('Not Received', const Color(0xFFFEF2F2), const Color(0xFFFCA5A5), const Color(0xFFDC2626));
+      return _StatusConfig(loc.statusNotReceived, const Color(0xFFFEF2F2), const Color(0xFFFCA5A5), const Color(0xFFDC2626));
     }
     if (normalized.contains('TRANSIT') || normalized == 'DISPATCHED' || normalized == '2') {
       return _StatusConfig(loc.inTransit, const Color(0xFFF7F0FD), const Color(0xFFEBD9FB), const Color(0xFF7E22CE));
     }
     if (normalized.contains('ARRIV')) {
-      return _StatusConfig('Arrived at Site', const Color(0xFFFEF3C7), const Color(0xFFFDE68A), const Color(0xFF92400E));
+      return _StatusConfig(loc.statusArrivedAtSite, const Color(0xFFFEF3C7), const Color(0xFFFDE68A), const Color(0xFF92400E));
     }
     if (normalized.contains('PASS') || normalized.contains('APPROV')) {
-      return _StatusConfig('Pass Issued', const Color(0xFFE0F2FE), const Color(0xFFBAE6FD), const Color(0xFF0369A1));
+      return _StatusConfig(loc.statusPassIssued, const Color(0xFFE0F2FE), const Color(0xFFBAE6FD), const Color(0xFF0369A1));
     }
     if ((normalized.contains('RECEIV') && !normalized.contains('NOT')) || normalized.contains('DELIVER') || normalized == '3') {
       return _StatusConfig(loc.delivered, const Color(0xFFDCFCE7), const Color(0xFFBBF7D0), const Color(0xFF15803D));

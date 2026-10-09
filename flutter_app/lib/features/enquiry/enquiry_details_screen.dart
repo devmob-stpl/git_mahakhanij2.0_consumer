@@ -50,7 +50,7 @@ class EnquiryDetailsScreen extends ConsumerWidget {
       );
     } else if (enq.status == EnquiryStatus.digitpGenerated) {
       bottomAction = AppButton(
-        label: 'View DigiTP Transit Pass',
+        label: 'View DigiTP Pass',
         icon: const Icon(Icons.qr_code, size: 18),
         variant: AppButtonVariant.primary,
         onPressed: () {

@@ -86,7 +86,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ok => 'OK';
 
   @override
-  String get eTransitPassDetails => 'E-TRANSIT PASS DETAILS';
+  String get eTransitPassDetails => 'DIGITP PASS DETAILS';
 
   @override
   String get invoiceHash => 'Invoice #';
@@ -1112,4 +1112,143 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inTransitStatus => 'In Transit';
+
+  @override
+  String get roleBuilder => 'Builder';
+
+  @override
+  String get roleContractor => 'Contractor';
+
+  @override
+  String get roleGovernment => 'Government';
+
+  @override
+  String get roleOrganization => 'Organization';
+
+  @override
+  String get mineralStoneAgg20 => 'Stone Aggregate 20mm';
+
+  @override
+  String get mineralRiverSand => 'Natural River Sand';
+
+  @override
+  String get mineralMSand => 'Manufactured Sand (M-Sand)';
+
+  @override
+  String get mineralMurrum => 'Murrum / Soil Filling';
+
+  @override
+  String get noEnquiriesRaised => 'No enquiries raised.';
+
+  @override
+  String get quotationAccepted =>
+      'Quotation accepted! Converted to formal statutory order.';
+
+  @override
+  String get docOtherSupporting => 'Other Supporting Document';
+
+  @override
+  String get docSiteBoundary => 'Site Boundary Photo';
+
+  @override
+  String get docNoc => 'Environmental / Gram Panchayat NOC';
+
+  @override
+  String get docUploadedSuccess => 'Document uploaded successfully!';
+
+  @override
+  String get queryResponseSubmitted =>
+      'Query response submitted successfully! Status updated to Under Review.';
+
+  @override
+  String get mineralStoneAgg20Basalt => 'Stone Aggregate 20mm (Basalt)';
+
+  @override
+  String get appBlocked => 'App Blocked';
+
+  @override
+  String get accountBlockedLogout =>
+      'Your app has been blocked. You will be logged out.';
+
+  @override
+  String get whatsapp => 'WhatsApp';
+
+  @override
+  String get gatePass => 'Gate Pass';
+
+  @override
+  String get noMineralsStockPoint => 'No minerals listed for this stock point.';
+
+  @override
+  String get noOrdersPlaced => 'No orders placed yet.';
+
+  @override
+  String get noDeliveriesRecorded => 'No deliveries recorded.';
+
+  @override
+  String get discoverQuarries => 'Discover nearby quarries for this package';
+
+  @override
+  String get scanQrCodeTruck => 'Scan QR code of truck at site gate';
+
+  @override
+  String get issueTransferEtp => 'Issue Transfer e-TP to move mineral surplus';
+
+  @override
+  String get noProjectsRegistered => 'No projects registered.';
+
+  @override
+  String get noPackagesAdded => 'No packages added to this project yet.';
+
+  @override
+  String get supervisorRegistered => 'Supervisor registered successfully!';
+
+  @override
+  String get invalidDigiTpNumber =>
+      'Please enter a valid numeric DigiTP number';
+
+  @override
+  String get deliveryNotFound => 'Delivery not found';
+
+  @override
+  String get langEnglish => 'English (EN)';
+
+  @override
+  String get langHindi => 'हिंदी (HI)';
+
+  @override
+  String get langMarathi => 'मराठी (MR)';
+
+  @override
+  String get errorUpdatingProfile =>
+      'An error occurred while updating profile: ';
+
+  @override
+  String get errorPrefix => 'Error: ';
+
+  @override
+  String get downloadedReceipt => 'Downloaded DigiTP_Receipt_';
+
+  @override
+  String get statusNotReceived => 'Not Received';
+
+  @override
+  String get statusArrivedAtSite => 'Arrived at Site';
+
+  @override
+  String get statusPassIssued => 'Pass Issued';
+
+  @override
+  String get authorizedQuarry => 'Authorized Quarry';
+
+  @override
+  String financialYear(String yearRange) {
+    return 'FY $yearRange';
+  }
+
+  @override
+  String get verifyDigiTp => 'Verify DigiTP';
+
+  @override
+  String get removeBtn => 'Remove';
 }

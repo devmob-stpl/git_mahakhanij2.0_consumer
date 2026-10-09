@@ -531,7 +531,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            '${l10n.invoiceHash}: ${_scannedItem!.invoiceNo}',
+                            '${l10n.digiTpLabel} ${_scannedItem!.invoiceNo}',
                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, fontFamily: 'monospace'),
                           ),
                         ),
@@ -548,6 +548,11 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                     _buildDetailRow(
                       label: l10n.ownerName,
                       value: _scannedItem!.ownerName ?? 'N/A',
+                    ),
+                    const SizedBox(height: 10),
+                    _buildDetailRow(
+                      label: l10n.plotProjectName,
+                      value: _scannedItem!.plotName ?? 'N/A',
                     ),
                     const SizedBox(height: 10),
                     _buildDetailRow(

@@ -357,5 +357,6 @@
   "driverLabel": "चालक:",
   "selectVehicleAndTrackLive": "वाहन निवडा आणि थेट ट्रॅक करा",
   "digiTpLabel": "DigiTP:",
-  "inTransitStatus": "मार्गावर"
+  "inTransitStatus": "मार्गावर",
+  "removeBtn": "काढून टाका"
 }

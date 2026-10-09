@@ -205,11 +205,27 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
         isSuccess: false,
       );
     } on DioException catch (e) {
+      if (e.response?.statusCode == 413) {
+        return const AadhaarDocumentUploadResponse(
+          statusCode: '413',
+          statusMessage: 'Unsupported file format. Please upload a valid PDF or Image file.',
+          isSuccess: false,
+        );
+      } else if (e.response?.statusCode == 415) {
+        return const AadhaarDocumentUploadResponse(
+          statusCode: '415',
+          statusMessage: '',
+          isSuccess: false,
+        );
+      }
+      
       if (e.response?.data != null) {
-        final errData = asResponseMap(e.response!.data);
-        if (errData != null) {
-          return AadhaarDocumentUploadResponse.fromJson(errData);
-        }
+        try {
+          final errData = asResponseMap(e.response!.data);
+          if (errData != null) {
+            return AadhaarDocumentUploadResponse.fromJson(errData);
+          }
+        } catch (_) {}
       }
       return AadhaarDocumentUploadResponse(
         statusCode: e.response?.statusCode?.toString() ?? '500',

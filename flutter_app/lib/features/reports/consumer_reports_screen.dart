@@ -41,7 +41,8 @@ class _ConsumerReportsScreenState extends ConsumerState<ConsumerReportsScreen> {
     // Add only current financial year dynamically
     int currentFyStartYear = now.month >= 4 ? now.year : now.year - 1;
     final yearRangeString = '${currentFyStartYear.toString().substring(2)}-${(currentFyStartYear + 1).toString().substring(2)}';
-    final label = loc.fy2425.replaceAll('24-25', yearRangeString);
+    final localizedRange = _localizeDigits(yearRangeString, loc.localeName);
+    final label = loc.financialYear(localizedRange);
     timeTabs.add(TimeTab(
       label,
       DateTime(currentFyStartYear, 4, 1),
@@ -152,7 +153,23 @@ class _ConsumerReportsScreenState extends ConsumerState<ConsumerReportsScreen> {
                         items: dropdownItems,
                       );
                     },
-                    loading: () => const Center(child: CircularProgressIndicator()),
+                    loading: () => DropdownButton<int>(
+                      value: 0,
+                      isExpanded: true,
+                      icon: const Icon(Icons.arrow_drop_down, color: AppColors.primary300),
+                      style: const TextStyle(color: AppColors.neutral500, fontSize: 14),
+                      underline: Container(height: 2, color: AppColors.primary50),
+                      onChanged: null,
+                      items: [
+                        DropdownMenuItem(
+                          value: 0,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12.0),
+                            child: Text(loc.loading),
+                          ),
+                        )
+                      ],
+                    ),
                     error: (_, __) => Text(loc.errorLoadingPlots),
                   ),
                 ),
@@ -261,6 +278,17 @@ class _ConsumerReportsScreenState extends ConsumerState<ConsumerReportsScreen> {
       Color(0xFFEF4444), // Red
     ];
     return colors[index % colors.length];
+  }
+
+  String _localizeDigits(String input, String localeName) {
+    if (localeName == 'en') return input;
+    const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    const devanagari = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
+    String result = input;
+    for (int i = 0; i < english.length; i++) {
+      result = result.replaceAll(english[i], devanagari[i]);
+    }
+    return result;
   }
 
   Widget _buildDynamicTimeTab(TimeTab tab) {

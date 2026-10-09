@@ -203,6 +203,7 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
                     TextField(
                       controller: _manualController,
                       keyboardType: TextInputType.number,
+                      maxLength: 10,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: InputDecoration(
                         labelText: loc.enterInvoiceManually,
@@ -212,7 +213,7 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
                     ),
                     const SizedBox(height: 10),
                     AppButton(
-                      label: 'Verify DigiTP',
+                      label: loc.verifyDigiTp,
                       fullWidth: true,
                       size: AppButtonSize.medium,
                       variant: AppButtonVariant.secondary,

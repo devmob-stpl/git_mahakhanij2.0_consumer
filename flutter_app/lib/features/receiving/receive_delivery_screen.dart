@@ -157,7 +157,7 @@ class _ReceiveDeliveryScreenState extends ConsumerState<ReceiveDeliveryScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Transit Pass Valid & Verified',
+                                'DigiTP Pass Valid & Verified',
                                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF166534)),
                               ),
                               SizedBox(height: 2),
@@ -273,7 +273,7 @@ class _ReceiveDeliveryScreenState extends ConsumerState<ReceiveDeliveryScreen> {
 
                   // Confirm Receipt Button
                   AppButton(
-                    label: _isSubmitting ? 'Closing Transit Pass...' : 'Confirm Receipt & Close DigiTP',
+                    label: _isSubmitting ? 'Closing DigiTP Pass...' : 'Confirm Receipt & Close DigiTP',
                     fullWidth: true,
                     size: AppButtonSize.large,
                     variant: AppButtonVariant.primary,
@@ -380,7 +380,7 @@ class _ReceiveDeliveryScreenState extends ConsumerState<ReceiveDeliveryScreen> {
               ),
               const SizedBox(height: 14),
               const Text(
-                'Transit Pass Closed Successfully',
+                'DigiTP Pass Closed Successfully',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink),
               ),
               const SizedBox(height: 4),
