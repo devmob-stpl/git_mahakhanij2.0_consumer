@@ -129,12 +129,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String fetchingLiveGpsLocation(String vehicleNo) {
-    return 'Fetching live GPS location for $vehicleNo...';
+    return 'Fetching live Vehicle location for $vehicleNo...';
   }
 
   @override
   String get connectingToMahakhanij =>
-      'Connecting to Mahakhanij GPS Tracking Service';
+      'Connecting to Mahakhanij Vehicle Tracking Service';
 
   @override
   String get trackingDataUnavailable => 'Tracking Data Unavailable';
@@ -301,16 +301,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get personalDetails => 'Personal Details';
 
   @override
-  String get liveVehicleTracking => 'Live Vehicle Tracking';
+  String get liveVehicleTracking => 'Track Vehicle';
 
   @override
-  String get liveGps => 'Live GPS';
+  String get liveGps => 'Live Vehicle';
 
   @override
-  String get currentGpsLocation => 'CURRENT GPS LOCATION';
+  String get currentGpsLocation => 'CURRENT VEHICLE LOCATION';
 
   @override
-  String get trackingLiveGps => 'Tracking Live GPS';
+  String get trackingLiveGps => 'Tracking Live Vehicle';
 
   @override
   String get speed => 'Speed';
@@ -984,7 +984,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get msgPinMapOverlay => 'Pin map overlay opened. Location set.';
 
   @override
-  String get msgGpsCaptured => 'Current GPS location captured successfully.';
+  String get msgGpsCaptured =>
+      'Current Vehicle location captured successfully.';
 
   @override
   String get msgAttachedReceipt => 'Attached bank_stamped_receipt_MH2026.pdf';
@@ -1064,7 +1065,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activeVehicleTrackingDesc =>
-      'Select an in-transit vehicle to monitor real-time GPS location and ETA.';
+      'Select an in-transit vehicle to monitor real-time Vehicle location and ETA.';
 
   @override
   String get loadingInTransitVehicles => 'Loading In-Transit vehicles...';
@@ -1090,7 +1091,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get destinationNA => 'Destination N/A';
 
   @override
-  String get gpsActive => 'GPS Active';
+  String get gpsActive => 'Vehicle Active';
 
   @override
   String get mineralAndQty => 'Mineral & Qty:';

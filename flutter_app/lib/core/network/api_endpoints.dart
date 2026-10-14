@@ -51,7 +51,13 @@ class ApiEndpoints {
       '$loginMobile?MobileNo=$mobileNo&key=$key&version=$version&RegistraionId=1&LoginDeviceTypeId=1';
 
   static String get checkAadhaarExists => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/is-exists-consumer-aadharcard-no';
-  static String getCheckAadhaarExistsUrl(String aadharNo) => '$checkAadhaarExists?AadharCardNo=$aadharNo';
+  static String getCheckAadhaarExistsUrl(String aadharNo, {String? mobileNo}) {
+    String url = '$checkAadhaarExists?AadharCardNo=$aadharNo';
+    if (mobileNo != null && mobileNo.isNotEmpty) {
+      url += '&mobileNo=$mobileNo';
+    }
+    return url;
+  }
 
   static String get generateAadhaarOtp => '$mineralMappingBaseUrl/mineral-mapping/aadhar-verification/generate-otp';
   static String get verifyAadhaarOtp => '$mineralMappingBaseUrl/mineral-mapping/aadhar-verification/submit-otp';

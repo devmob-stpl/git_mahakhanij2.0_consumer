@@ -155,7 +155,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final repo = ref.read(aadhaarKycRepositoryProvider);
 
     // 1. Check if Aadhaar already exists
-    final existRes = await repo.checkAadhaarExists(aadh);
+    final mobileNo = _mobileController.text.trim();
+    final existRes = await repo.checkAadhaarExists(aadh, mobileNo: mobileNo);
     if (!mounted) return;
 
     if (existRes.exists) {
