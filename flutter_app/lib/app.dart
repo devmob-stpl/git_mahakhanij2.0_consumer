@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/config/app_config.dart';
 import 'core/config/globals.dart';
+import 'core/keyboard/ios_keyboard_done_wrapper.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 
@@ -22,6 +23,14 @@ class MahakhanijApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       routerConfig: appRouter,
       locale: locale,
+
+      // Add the Done toolbar globally
+      builder: (context, child) {
+        return IosKeyboardDoneWrapper(
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
