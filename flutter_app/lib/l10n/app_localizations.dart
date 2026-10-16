@@ -271,13 +271,13 @@ abstract class AppLocalizations {
   /// No description provided for @ownerName.
   ///
   /// In en, this message translates to:
-  /// **'Owner Name'**
+  /// **'Plot Owner Name'**
   String get ownerName;
 
   /// No description provided for @ownerMobile.
   ///
   /// In en, this message translates to:
-  /// **'Owner Mobile'**
+  /// **'Plot Owner Mobile'**
   String get ownerMobile;
 
   /// No description provided for @driverDetails.
@@ -373,8 +373,14 @@ abstract class AppLocalizations {
   /// No description provided for @refreshLocation.
   ///
   /// In en, this message translates to:
-  /// **'Refresh Location'**
+  /// **'Refresh'**
   String get refreshLocation;
+
+  /// No description provided for @refresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get refresh;
 
   /// No description provided for @inTransit.
   ///
@@ -385,7 +391,7 @@ abstract class AppLocalizations {
   /// No description provided for @delivered.
   ///
   /// In en, this message translates to:
-  /// **'Delivered'**
+  /// **'Received'**
   String get delivered;
 
   /// No description provided for @enquiries.
@@ -397,26 +403,38 @@ abstract class AppLocalizations {
   /// No description provided for @noActiveDeliveries.
   ///
   /// In en, this message translates to:
-  /// **'No Active Deliveries'**
+  /// **'No Active Passes In Transit'**
   String get noActiveDeliveries;
 
   /// No description provided for @noDeliveriesInTransitDesc.
   ///
   /// In en, this message translates to:
-  /// **'There are currently no deliveries in transit.'**
+  /// **'There are currently no passes in transit.'**
   String get noDeliveriesInTransitDesc;
 
   /// No description provided for @noDeliveredItems.
   ///
   /// In en, this message translates to:
-  /// **'No Delivered Items'**
+  /// **'No Received Passes'**
   String get noDeliveredItems;
 
   /// No description provided for @noDeliveriesReceivedDesc.
   ///
   /// In en, this message translates to:
-  /// **'You have not received any deliveries yet.'**
+  /// **'You have not received any passes yet.'**
   String get noDeliveriesReceivedDesc;
+
+  /// No description provided for @noNotReceivedPasses.
+  ///
+  /// In en, this message translates to:
+  /// **'No Not Received Passes'**
+  String get noNotReceivedPasses;
+
+  /// No description provided for @noNotReceivedPassesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'There are currently no not received passes.'**
+  String get noNotReceivedPassesDesc;
 
   /// No description provided for @noActiveEnquiries.
   ///
@@ -493,7 +511,7 @@ abstract class AppLocalizations {
   /// No description provided for @quarrySeller.
   ///
   /// In en, this message translates to:
-  /// **'Quarry / Seller'**
+  /// **'Quarry'**
   String get quarrySeller;
 
   /// No description provided for @digiTpNo.
@@ -517,13 +535,13 @@ abstract class AppLocalizations {
   /// No description provided for @ownerMobileNumber.
   ///
   /// In en, this message translates to:
-  /// **'Owner Mobile Number'**
+  /// **'Plot Owner Mobile Number'**
   String get ownerMobileNumber;
 
   /// No description provided for @plotProjectName.
   ///
   /// In en, this message translates to:
-  /// **'Plot / Project Name'**
+  /// **'Plot Name'**
   String get plotProjectName;
 
   /// No description provided for @invoiceStatus.
@@ -543,6 +561,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'DigiTP validity date and time'**
   String get digiTpValidityDateAndTime;
+
+  /// No description provided for @receivedDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Received Date'**
+  String get receivedDate;
+
+  /// No description provided for @receiveDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive Date'**
+  String get receiveDate;
 
   /// No description provided for @profileName.
   ///
@@ -603,6 +633,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save Changes'**
   String get saveChanges;
+
+  /// No description provided for @kycVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'KYC Verification'**
+  String get kycVerification;
 
   /// No description provided for @aadhaarKyc.
   ///
@@ -1453,7 +1489,7 @@ abstract class AppLocalizations {
   /// No description provided for @noDeliveriesFound.
   ///
   /// In en, this message translates to:
-  /// **'No Deliveries Found'**
+  /// **'No DigiTP Passes Found'**
   String get noDeliveriesFound;
 
   /// No description provided for @noDeliveriesFoundDesc.
@@ -1561,7 +1597,7 @@ abstract class AppLocalizations {
   /// No description provided for @resendBtn.
   ///
   /// In en, this message translates to:
-  /// **'Resend'**
+  /// **'Resend OTP'**
   String get resendBtn;
 
   /// No description provided for @digitpsNotReceived.
@@ -2451,6 +2487,522 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove'**
   String get removeBtn;
+
+  /// No description provided for @contactPersonNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Person Name'**
+  String get contactPersonNameLabel;
+
+  /// No description provided for @contactPersonNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Contact Person Name'**
+  String get contactPersonNameHint;
+
+  /// No description provided for @contactPersonNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact person name is required.'**
+  String get contactPersonNameRequired;
+
+  /// No description provided for @orgPanRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization PAN number is required.'**
+  String get orgPanRequired;
+
+  /// No description provided for @validPanRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid 10-character PAN (e.g. ABCDE1234F).'**
+  String get validPanRequired;
+
+  /// No description provided for @organisationDetailsHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'ORGANISATION DETAILS'**
+  String get organisationDetailsHeader;
+
+  /// No description provided for @contactPersonDetailsHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'CONTACT PERSON DETAILS'**
+  String get contactPersonDetailsHeader;
+
+  /// No description provided for @locationDetailsHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'LOCATION DETAILS'**
+  String get locationDetailsHeader;
+
+  /// No description provided for @orgNameRequiredLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Organisation Name *'**
+  String get orgNameRequiredLabel;
+
+  /// No description provided for @emailIdRequiredLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email ID *'**
+  String get emailIdRequiredLabel;
+
+  /// No description provided for @addressRequiredLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Address *'**
+  String get addressRequiredLabel;
+
+  /// No description provided for @contactPersonNameRequiredLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Person Name *'**
+  String get contactPersonNameRequiredLabel;
+
+  /// No description provided for @mobileNumberRequiredLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile No. *'**
+  String get mobileNumberRequiredLabel;
+
+  /// No description provided for @contactPersonAadhaarOptionalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Person Aadhaar No. (optional)'**
+  String get contactPersonAadhaarOptionalLabel;
+
+  /// No description provided for @enterOrgNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter organisation / company / firm name'**
+  String get enterOrgNameHint;
+
+  /// No description provided for @enterEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter email address'**
+  String get enterEmailHint;
+
+  /// No description provided for @registeredOfficeAddressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Registered office address'**
+  String get registeredOfficeAddressHint;
+
+  /// No description provided for @enterContactPersonNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter contact person name'**
+  String get enterContactPersonNameHint;
+
+  /// No description provided for @enterTenDigitMobileHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 10-digit mobile number'**
+  String get enterTenDigitMobileHint;
+
+  /// No description provided for @enterTwelveDigitAadhaarHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 12-digit Aadhaar number'**
+  String get enterTwelveDigitAadhaarHint;
+
+  /// No description provided for @emailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Email ID is required.'**
+  String get emailRequired;
+
+  /// No description provided for @enterValidAadhaarNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid 12-digit Aadhaar number.'**
+  String get enterValidAadhaarNumber;
+
+  /// No description provided for @aadhaarCannotStartWithZeroOrOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar number cannot start with 0 or 1.'**
+  String get aadhaarCannotStartWithZeroOrOne;
+
+  /// No description provided for @aadhaarAlreadyRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'This Aadhaar card number is already registered in Mahakhanij system.'**
+  String get aadhaarAlreadyRegistered;
+
+  /// No description provided for @invalidAadhaarNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid Aadhaar number entered. Please verify and try again.'**
+  String get invalidAadhaarNumber;
+
+  /// No description provided for @aadhaarSendOtpFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send OTP to Aadhaar-registered mobile number.'**
+  String get aadhaarSendOtpFailed;
+
+  /// No description provided for @contactPersonAadhaarVerificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Person Aadhaar\\nVerification'**
+  String get contactPersonAadhaarVerificationTitle;
+
+  /// No description provided for @orgPanVerificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Organisation PAN Verification'**
+  String get orgPanVerificationTitle;
+
+  /// No description provided for @verifiedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get verifiedStatus;
+
+  /// No description provided for @notVerifiedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Verified'**
+  String get notVerifiedStatus;
+
+  /// No description provided for @uploadAadhaarDocOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Aadhaar Document (Optional)'**
+  String get uploadAadhaarDocOptional;
+
+  /// No description provided for @chooseAadhaarCardPhotoPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Aadhaar Card photo / PDF'**
+  String get chooseAadhaarCardPhotoPdf;
+
+  /// No description provided for @otpSentToAadhaarMobileNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP will be sent to your Aadhaar registered mobile number'**
+  String get otpSentToAadhaarMobileNotice;
+
+  /// No description provided for @resendOtpBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend OTP'**
+  String get resendOtpBtn;
+
+  /// No description provided for @enterSixDigitOtpHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 6-digit OTP'**
+  String get enterSixDigitOtpHint;
+
+  /// No description provided for @enterValidAadhaarOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid 6-digit Aadhaar OTP.'**
+  String get enterValidAadhaarOtp;
+
+  /// No description provided for @panNoOptionalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN No. (optional)'**
+  String get panNoOptionalLabel;
+
+  /// No description provided for @enterTenDigitPan.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 10 digit PAN'**
+  String get enterTenDigitPan;
+
+  /// No description provided for @uploadPanDocOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload PAN Document (Optional)'**
+  String get uploadPanDocOptional;
+
+  /// No description provided for @choosePanCardPhotoPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose PAN Card photo / PDF'**
+  String get choosePanCardPhotoPdf;
+
+  /// No description provided for @verifyPanBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify PAN'**
+  String get verifyPanBtn;
+
+  /// No description provided for @panStatusPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Status: '**
+  String get panStatusPrefix;
+
+  /// No description provided for @panAlreadyRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'This PAN number is already registered in Mahakhanij system.'**
+  String get panAlreadyRegistered;
+
+  /// No description provided for @invalidPanNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid PAN number entered. Please verify and try again.'**
+  String get invalidPanNumber;
+
+  /// No description provided for @panVerificationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN verification failed. Please try again.'**
+  String get panVerificationFailed;
+
+  /// No description provided for @orgDeclarationText.
+  ///
+  /// In en, this message translates to:
+  /// **'I confirm that the information provided above is correct. If the information is found to be incorrect, I understand that I may be subject to applicable legal action.'**
+  String get orgDeclarationText;
+
+  /// No description provided for @confirmDeclarationRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please confirm the declaration to complete registration.'**
+  String get confirmDeclarationRequired;
+
+  /// No description provided for @organisationConsumer.
+  ///
+  /// In en, this message translates to:
+  /// **'Organisation Consumer'**
+  String get organisationConsumer;
+
+  /// No description provided for @individualConsumer.
+  ///
+  /// In en, this message translates to:
+  /// **'Individual Consumer'**
+  String get individualConsumer;
+
+  /// No description provided for @requiresOrgKycSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Requires Contact Person Aadhaar & Organisation PAN'**
+  String get requiresOrgKycSubtitle;
+
+  /// No description provided for @requiresIndividualKycSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Requires Individual Aadhaar Verification'**
+  String get requiresIndividualKycSubtitle;
+
+  /// No description provided for @pendingBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pendingBadge;
+
+  /// No description provided for @contactPersonAadhaarVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Person Aadhaar Verified'**
+  String get contactPersonAadhaarVerified;
+
+  /// No description provided for @contactPersonAadhaarPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Person Aadhaar Pending'**
+  String get contactPersonAadhaarPending;
+
+  /// No description provided for @authContactPersonIdentity.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorized Contact Person Identity'**
+  String get authContactPersonIdentity;
+
+  /// No description provided for @nationalIdentityUidai.
+  ///
+  /// In en, this message translates to:
+  /// **'National Identity (UIDAI)'**
+  String get nationalIdentityUidai;
+
+  /// No description provided for @contactPersonAadhaar.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Person Aadhaar'**
+  String get contactPersonAadhaar;
+
+  /// No description provided for @orgPanVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Organisation PAN Verified'**
+  String get orgPanVerified;
+
+  /// No description provided for @orgPanPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Organisation PAN Pending'**
+  String get orgPanPending;
+
+  /// No description provided for @incomeTaxDeptEntityPan.
+  ///
+  /// In en, this message translates to:
+  /// **'Income Tax Department (Entity PAN)'**
+  String get incomeTaxDeptEntityPan;
+
+  /// No description provided for @orgPan.
+  ///
+  /// In en, this message translates to:
+  /// **'Organisation PAN'**
+  String get orgPan;
+
+  /// No description provided for @verifyPanArrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify PAN →'**
+  String get verifyPanArrow;
+
+  /// No description provided for @kycDetailsSavedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'KYC verification details saved successfully'**
+  String get kycDetailsSavedSuccessfully;
+
+  /// No description provided for @orgPanInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Organisation PAN Information'**
+  String get orgPanInfoTitle;
+
+  /// No description provided for @verifyOrgPanDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify organisation PAN number and upload PAN document copy'**
+  String get verifyOrgPanDesc;
+
+  /// No description provided for @panNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN Number'**
+  String get panNumberLabel;
+
+  /// No description provided for @panVerificationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN Verification'**
+  String get panVerificationLabel;
+
+  /// No description provided for @verifiedUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'VERIFIED'**
+  String get verifiedUpper;
+
+  /// No description provided for @pendingUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'PENDING'**
+  String get pendingUpper;
+
+  /// No description provided for @method1LivePanVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Method 1: Live PAN Verification'**
+  String get method1LivePanVerification;
+
+  /// No description provided for @orgPanNumberRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Organisation PAN Number *'**
+  String get orgPanNumberRequired;
+
+  /// No description provided for @method2UploadPanCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Method 2: Upload PAN Card Document (PDF / Image)'**
+  String get method2UploadPanCard;
+
+  /// No description provided for @choosePanPdfOrImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose PAN PDF or image'**
+  String get choosePanPdfOrImage;
+
+  /// No description provided for @uploadingDots.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading...'**
+  String get uploadingDots;
+
+  /// No description provided for @verifyOrgPanBeforeSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Please verify your Organisation PAN before saving.'**
+  String get verifyOrgPanBeforeSaving;
+
+  /// No description provided for @loadingConsumerProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading Consumer Profile...'**
+  String get loadingConsumerProfile;
+
+  /// No description provided for @failedToFetchConsumerProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to fetch Consumer Profile'**
+  String get failedToFetchConsumerProfile;
+
+  /// No description provided for @retryLoadingProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry Loading Profile'**
+  String get retryLoadingProfile;
+
+  /// No description provided for @resendInSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in 00:{seconds}'**
+  String resendInSeconds(String seconds);
+
+  /// No description provided for @verifiedCountSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{verifiedCount} of {totalDocs} Verified'**
+  String verifiedCountSummary(String verifiedCount, String totalDocs);
+
+  /// No description provided for @clientSessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Client session expired. Please resend OTP.'**
+  String get clientSessionExpired;
+
+  /// No description provided for @invalidAadhaarOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid Aadhaar OTP. Please check and try again.'**
+  String get invalidAadhaarOtp;
+
+  /// No description provided for @uploadFailedWithReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed: '**
+  String get uploadFailedWithReason;
+
+  /// No description provided for @docUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Document upload failed. Please try again.'**
+  String get docUploadFailed;
+
+  /// No description provided for @panDocUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN document upload failed. Please try again.'**
+  String get panDocUploadFailed;
+
+  /// No description provided for @failedToUpdateProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update consumer profile.'**
+  String get failedToUpdateProfile;
 }
 
 class _AppLocalizationsDelegate

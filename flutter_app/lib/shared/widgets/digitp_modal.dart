@@ -38,10 +38,13 @@ void showDigiTpPassModal(
   
   String? localizedStatus;
   if (statusStr != null) {
-    if (statusStr.toLowerCase() == 'delivered') {
+    final statusLower = statusStr.toLowerCase();
+    if (statusLower == 'delivered' || statusLower == 'received') {
       localizedStatus = loc.delivered;
-    } else if (statusStr.toLowerCase() == 'in transit') {
+    } else if (statusLower == 'in transit' || statusLower == 'intransit') {
       localizedStatus = loc.inTransit;
+    } else if (statusLower == 'not received' || statusLower == 'notreceived') {
+      localizedStatus = loc.notReceived;
     } else {
       localizedStatus = statusStr;
     }
@@ -148,7 +151,7 @@ void showDigiTpPassModal(
                       _buildTableRow(loc.digiTpValidityDateAndTime, validityStr, isLast: receiveDateStr == null),
                       if (receiveDateStr != null && receiveDateStr.isNotEmpty) ...[
                         const Divider(height: 16, color: Color(0xFFF1F5F9)),
-                        _buildTableRow('Receive Approved Date', receiveDateStr, isLast: true),
+                        _buildTableRow(loc.receivedDate, receiveDateStr, isLast: true),
                       ],
                     ],
                   ),
