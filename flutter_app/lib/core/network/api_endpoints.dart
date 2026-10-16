@@ -4,7 +4,7 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   /// Environment selection switch (Default: Demo)
-  static ApiEnvironment activeEnvironment = ApiEnvironment.demo;
+  static ApiEnvironment activeEnvironment = ApiEnvironment.live;
 
   // ===========================================================================
   // BASE URL CONFIGURATION
@@ -16,12 +16,14 @@ class ApiEndpoints {
   static String demoMineralMappingBaseUrl = 'https://mineral-mapping.mahakhanij.in';
   static String demoMasterBaseUrl = 'https://master.mahakhanij.in';
   static String demoBaseUrl = 'https://mineral-mapping.mahakhanij.in';
+  static String demoMahaServiceBaseUrl = 'https://mahaservice.mahakhanij.in';
 
   // Live / Production Environment Base URLs
   static String liveMineralProjectBaseUrl = 'https://mahakhanij.maharashtra.gov.in';
   static String liveMineralMappingBaseUrl = 'https://mahakhanij.maharashtra.gov.in';
   static String liveMasterBaseUrl = 'https://mahakhanij.maharashtra.gov.in';
   static String liveBaseUrl = 'https://mahakhanij.maharashtra.gov.in';
+  static String liveMahaServiceBaseUrl = 'https://mahakhanij.maharashtra.gov.in/mahaservice';
 
   // Dynamic Base URL getters evaluated at runtime based on active environment
   static String get mineralProjectBaseUrl =>
@@ -33,8 +35,8 @@ class ApiEndpoints {
   static String get masterBaseUrl =>
       activeEnvironment == ApiEnvironment.demo ? demoMasterBaseUrl : liveMasterBaseUrl;
 
-  static String get baseUrl =>
-      activeEnvironment == ApiEnvironment.demo ? demoBaseUrl : liveBaseUrl;
+  static String get baseUrl =>      activeEnvironment == ApiEnvironment.demo ? demoBaseUrl : liveBaseUrl;
+  static String get mahaServiceBaseUrl =>      activeEnvironment == ApiEnvironment.demo ? demoMahaServiceBaseUrl : liveMahaServiceBaseUrl;
 
   // ===========================================================================
   // DYNAMIC ENDPOINT PATHS & URL BUILDERS
@@ -126,7 +128,7 @@ class ApiEndpoints {
     required bool isTown,
     int userId = 0,
   }) =>
-      'https://mahaservice.mahakhanij.in/service.asmx/GetCensusVillageTownDetails_1_7?DistrictId=$districtId&TalukaId=$talukaId&IsTown=${isTown ? 1 : 0}&UserId=$userId&VillageUpdatedDate=&TownUpdatedDate=&PlotId=0&ReceiverPlotUpdatedDate=';
+      '$mahaServiceBaseUrl/service.asmx/GetCensusVillageTownDetails_1_7?DistrictId=$districtId&TalukaId=$talukaId&IsTown=${isTown ? 1 : 0}&UserId=$userId&VillageUpdatedDate=&TownUpdatedDate=&PlotId=0&ReceiverPlotUpdatedDate=';
 
   // Minerals & Stock Points
   static String get minerals => '$baseUrl/minerals';
