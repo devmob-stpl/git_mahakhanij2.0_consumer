@@ -7,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/config/globals.dart';
 import '../../domain/user.dart';
 import '../../domain/auth_api_models.dart';
+import '../../core/config/app_config.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../core/network/release_json.dart';
@@ -25,20 +26,6 @@ abstract class AuthRepository {
   Future<void> saveSession(User user, [String? token]);
   Future<void> clearSession();
   Future<LogoutApiResponse> logoutUser(String userId);
-  Future<ExistenceCheckResult> checkGstExists({
-    required String gstNo,
-    required String mobileNo,
-    int id = 0,
-    int userCategory = 2,
-  });
-  Future<GstVerificationResponse> verifyGstin({required String gstNo});
-  Future<ExistenceCheckResult> checkPanExists({
-    required String panNo,
-    required String mobileNo,
-    int id = 0,
-    int userCategory = 2,
-  });
-  Future<PanVerificationResponse> verifyPan({required String panNo, int userId = 0});
 }
 
 
@@ -253,7 +240,9 @@ class AuthRepositoryImpl implements AuthRepository {
             consumerId: resolvedConsumerId > 0 ? resolvedConsumerId : null,
             fullName: userData.name,
             mobileNumber: userData.mobileNo,
-            userType: loginData.isConsumer ? UserType.normalConsumer : UserType.organization,
+            userType: (!AppConfig.enableOrganizationFlow ||
+                loginData.isConsumer) ? UserType.normalConsumer : UserType
+                .organization,
             createdAt: DateTime.now().toIso8601String(),
             appId: extractedAppId,
           );
@@ -473,176 +462,5 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<List<User>> getAllUsersForPersonaSwitch() async {
     return _db.users;
-  }
-
-  @override
-  Future<ExistenceCheckResult> checkGstExists({
-    required String gstNo,
-    required String mobileNo,
-    int id = 0,
-    int userCategory = 2,
-  }) async {
-    try {
-      final url = ApiEndpoints.getCheckGstExistsUrl(
-        gstNo: gstNo,
-        mobileNo: mobileNo,
-        id: id,
-        userCategory: userCategory,
-      );
-      final response = await _dio.get(url);
-      final data = asResponseMap(response.data);
-      if (data != null) {
-        return ExistenceCheckResult.fromJson(data);
-      }
-      return const ExistenceCheckResult(
-        statusCode: '500',
-        statusMessage: 'Invalid response from GST verification service.',
-        exists: false,
-      );
-    } on DioException catch (e) {
-      if (e.response?.data != null) {
-        final errData = asResponseMap(e.response!.data);
-        if (errData != null) {
-          return ExistenceCheckResult.fromJson(errData);
-        }
-      }
-      return ExistenceCheckResult(
-        statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: 'Network error checking GST existence.',
-        exists: false,
-      );
-    } catch (e) {
-      return ExistenceCheckResult(
-        statusCode: '500',
-        statusMessage: 'Failed to check GST existence: ${e.toString()}',
-        exists: false,
-      );
-    }
-  }
-
-  @override
-  Future<GstVerificationResponse> verifyGstin({required String gstNo}) async {
-    try {
-      final url = ApiEndpoints.verifyGstin;
-      final response = await _dio.post(
-        url,
-        data: {
-          'id_number': gstNo,
-        },
-      );
-      final data = asResponseMap(response.data);
-      if (data != null) {
-        return GstVerificationResponse.fromJson(data, expectedGstin: gstNo);
-      }
-      return const GstVerificationResponse(
-        statusCode: '500',
-        statusMessage: 'Invalid response from GST verification service.',
-        isSuccess: false,
-      );
-    } on DioException catch (e) {
-      if (e.response?.data != null) {
-        final errData = asResponseMap(e.response!.data);
-        if (errData != null) {
-          return GstVerificationResponse.fromJson(errData, expectedGstin: gstNo);
-        }
-      }
-      return GstVerificationResponse(
-        statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: 'Network error verifying GSTIN.',
-        isSuccess: false,
-      );
-    } catch (e) {
-      return GstVerificationResponse(
-        statusCode: '500',
-        statusMessage: 'GST verification failed: ${e.toString()}',
-        isSuccess: false,
-      );
-    }
-  }
-
-  @override
-  Future<ExistenceCheckResult> checkPanExists({
-    required String panNo,
-    required String mobileNo,
-    int id = 0,
-    int userCategory = 2,
-  }) async {
-    try {
-      final url = ApiEndpoints.getCheckPanExistsUrl(
-        panNo: panNo,
-        mobileNo: mobileNo,
-        id: id,
-        userCategory: userCategory,
-      );
-      final response = await _dio.get(url);
-      final data = asResponseMap(response.data);
-      if (data != null) {
-        return ExistenceCheckResult.fromJson(data);
-      }
-      return const ExistenceCheckResult(
-        statusCode: '500',
-        statusMessage: 'Invalid response from PAN verification service.',
-        exists: false,
-      );
-    } on DioException catch (e) {
-      if (e.response?.data != null) {
-        final errData = asResponseMap(e.response!.data);
-        if (errData != null) {
-          return ExistenceCheckResult.fromJson(errData);
-        }
-      }
-      return ExistenceCheckResult(
-        statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: 'Network error checking PAN existence.',
-        exists: false,
-      );
-    } catch (e) {
-      return ExistenceCheckResult(
-        statusCode: '500',
-        statusMessage: 'Failed to check PAN existence: ${e.toString()}',
-        exists: false,
-      );
-    }
-  }
-
-  @override
-  Future<PanVerificationResponse> verifyPan({required String panNo, int userId = 0}) async {
-    try {
-      final url = ApiEndpoints.verifyPan;
-      final response = await _dio.post(
-        url,
-        data: {
-          'id_number': panNo,
-          'userId': userId,
-        },
-      );
-      final data = asResponseMap(response.data);
-      if (data != null) {
-        return PanVerificationResponse.fromJson(data, expectedPan: panNo);
-      }
-      return const PanVerificationResponse(
-        statusCode: '500',
-        statusMessage: 'Invalid response from PAN verification service.',
-        isSuccess: false,
-      );
-    } on DioException catch (e) {
-      if (e.response?.data != null) {
-        final errData = asResponseMap(e.response!.data);
-        if (errData != null) {
-          return PanVerificationResponse.fromJson(errData, expectedPan: panNo);
-        }
-      }
-      return PanVerificationResponse(
-        statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: 'Network error verifying PAN.',
-        isSuccess: false,
-      );
-    } catch (e) {
-      return PanVerificationResponse(
-        statusCode: '500',
-        statusMessage: 'PAN verification failed: ${e.toString()}',
-        isSuccess: false,
-      );
-    }
   }
 }

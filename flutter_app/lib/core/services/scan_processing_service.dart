@@ -68,8 +68,8 @@ class ScanProcessingService {
     final invoiceNo = int.tryParse(digitsOnly);
 
     if (invoiceNo == null || invoiceNo <= 0) {
-      throw const FormatException(
-        'Invalid DigiTP number in scanned code',
+      throw FormatException(
+        'Invalid invoice number in scanned code: "$cleanedValue"',
       );
     }
 

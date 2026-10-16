@@ -94,10 +94,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get vehicleNumber => 'वाहन नंबर';
 
   @override
-  String get ownerName => 'प्लॉट मालिक का नाम';
+  String get ownerName => 'मालिक का नाम';
 
   @override
-  String get ownerMobile => 'प्लॉट मालिक का मोबाइल';
+  String get ownerMobile => 'मालिक का मोबाइल';
 
   @override
   String get driverDetails => 'चालक का विवरण';
@@ -150,40 +150,30 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get refreshLocation => 'ताज़ा करें';
-
-  @override
-  String get refresh => 'ताज़ा करें';
+  String get refreshLocation => 'स्थान ताज़ा करें';
 
   @override
   String get inTransit => 'रास्ते में';
 
   @override
-  String get delivered => 'प्राप्त';
+  String get delivered => 'वितरित';
 
   @override
   String get enquiries => 'पूछताछ';
 
   @override
-  String get noActiveDeliveries => 'रास्ते में कोई पास नहीं';
+  String get noActiveDeliveries => 'कोई सक्रिय वितरण नहीं';
 
   @override
   String get noDeliveriesInTransitDesc =>
-      'वर्तमान में रास्ते में कोई पास नहीं है।';
+      'वर्तमान में रास्ते में कोई वितरण नहीं है।';
 
   @override
-  String get noDeliveredItems => 'कोई प्राप्त पास नहीं';
+  String get noDeliveredItems => 'कोई वितरित आइटम नहीं';
 
   @override
   String get noDeliveriesReceivedDesc =>
-      'आपको अभी तक कोई पास प्राप्त नहीं हुआ है।';
-
-  @override
-  String get noNotReceivedPasses => 'कोई अप्राप्त पास नहीं';
-
-  @override
-  String get noNotReceivedPassesDesc =>
-      'वर्तमान में कोई अप्राप्त पास नहीं हैं।';
+      'आपको अभी तक कोई वितरण प्राप्त नहीं हुआ है।';
 
   @override
   String get noActiveEnquiries => 'कोई सक्रिय पूछताछ नहीं';
@@ -222,7 +212,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get driver => 'ड्राइवर';
 
   @override
-  String get quarrySeller => 'खदान';
+  String get quarrySeller => 'खदान / विक्रेता';
 
   @override
   String get digiTpNo => 'डिजीटीपी नंबर';
@@ -234,10 +224,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get driverMobileNumber => 'चालक का मोबाइल नंबर';
 
   @override
-  String get ownerMobileNumber => 'प्लॉट मालिक का मोबाइल नंबर';
+  String get ownerMobileNumber => 'मालिक का मोबाइल नंबर';
 
   @override
-  String get plotProjectName => 'प्लॉट का नाम';
+  String get plotProjectName => 'प्लॉट / परियोजना का नाम';
 
   @override
   String get invoiceStatus => 'चालान की स्थिति';
@@ -247,12 +237,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get digiTpValidityDateAndTime => 'डिजीटीपी वैधता तिथि और समय';
-
-  @override
-  String get receivedDate => 'प्राप्त तिथि';
-
-  @override
-  String get receiveDate => 'प्राप्त तिथि';
 
   @override
   String get profileName => 'नाम';
@@ -283,9 +267,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get saveChanges => 'परिवर्तन सहेजें';
-
-  @override
-  String get kycVerification => 'केवाईसी सत्यापन';
 
   @override
   String get aadhaarKyc => 'आधार केवाईसी';
@@ -628,7 +609,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get enterTwelveDigitAadhaar => '12 अंकों का आधार दर्ज करें';
 
   @override
-  String get sendOtpBtn => 'ओटीपी भेजें';
+  String get sendOtpBtn => 'OTP भेजें';
 
   @override
   String get sixDigitAadhaarOtp => '6-अंकीय आधार OTP *';
@@ -728,7 +709,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get all => 'सभी';
 
   @override
-  String get noDeliveriesFound => 'कोई डिजीटीपी पास नहीं मिला';
+  String get noDeliveriesFound => 'कोई डिलीवरी नहीं मिली';
 
   @override
   String get noDeliveriesFoundDesc => 'आपके पास कोई डिजीटीपी पास नहीं है।';
@@ -787,7 +768,7 @@ class AppLocalizationsHi extends AppLocalizations {
       'आधार सत्यापन अनिवार्य नहीं है। आप किसी भी समय इस चरण को छोड़ सकते हैं और पंजीकरण पूरा कर सकते हैं।';
 
   @override
-  String get resendBtn => 'OTP पुनः भेजें';
+  String get resendBtn => 'पुनः भेजें';
 
   @override
   String get digitpsNotReceived => 'डिजीटीपी\nप्राप्त नहीं';
@@ -1136,103 +1117,101 @@ class AppLocalizationsHi extends AppLocalizations {
   String get inTransitStatus => 'मार्ग में';
 
   @override
-  String get roleBuilder => 'बिल्डर';
+  String get roleBuilder => 'Builder';
 
   @override
-  String get roleContractor => 'ठेकेदार';
+  String get roleContractor => 'Contractor';
 
   @override
-  String get roleGovernment => 'सरकारी';
+  String get roleGovernment => 'Government';
 
   @override
-  String get roleOrganization => 'संगठन';
+  String get roleOrganization => 'Organization';
 
   @override
-  String get mineralStoneAgg20 => 'गिट्टी २० मिमी';
+  String get mineralStoneAgg20 => 'Stone Aggregate 20mm';
 
   @override
-  String get mineralRiverSand => 'प्राकृतिक नदी रेत';
+  String get mineralRiverSand => 'Natural River Sand';
 
   @override
-  String get mineralMSand => 'एम-सैंड (M-Sand)';
+  String get mineralMSand => 'Manufactured Sand (M-Sand)';
 
   @override
-  String get mineralMurrum => 'मुर्रम / मिट्टी भराव';
+  String get mineralMurrum => 'Murrum / Soil Filling';
 
   @override
-  String get noEnquiriesRaised => 'कोई पूछताछ नहीं की गई।';
+  String get noEnquiriesRaised => 'No enquiries raised.';
 
   @override
-  String get quotationAccepted => 'कोटेशन स्वीकृत! औपचारिक आदेश में परिवर्तित।';
+  String get quotationAccepted =>
+      'Quotation accepted! Converted to formal statutory order.';
 
   @override
-  String get docOtherSupporting => 'अन्य सहायक दस्तावेज़';
+  String get docOtherSupporting => 'Other Supporting Document';
 
   @override
-  String get docSiteBoundary => 'साइट सीमा फोटो';
+  String get docSiteBoundary => 'Site Boundary Photo';
 
   @override
-  String get docNoc => 'पर्यावरण / ग्राम पंचायत एनओसी';
+  String get docNoc => 'Environmental / Gram Panchayat NOC';
 
   @override
-  String get docUploadedSuccess => 'दस्तावेज़ सफलतापूर्वक अपलोड किया गया!';
+  String get docUploadedSuccess => 'Document uploaded successfully!';
 
   @override
   String get queryResponseSubmitted =>
-      'पूछताछ प्रतिक्रिया सफलतापूर्वक प्रस्तुत की गई!';
+      'Query response submitted successfully! Status updated to Under Review.';
 
   @override
-  String get mineralStoneAgg20Basalt => 'गिट्टी २० मिमी (बेसाल्ट)';
+  String get mineralStoneAgg20Basalt => 'Stone Aggregate 20mm (Basalt)';
 
   @override
-  String get appBlocked => 'ऐप ब्लॉक किया गया';
+  String get appBlocked => 'App Blocked';
 
   @override
   String get accountBlockedLogout =>
-      'आपका ऐप ब्लॉक कर दिया गया है। आप लॉग आउट हो जाएंगे।';
+      'Your app has been blocked. You will be logged out.';
 
   @override
-  String get whatsapp => 'व्हाट्सएप';
+  String get whatsapp => 'WhatsApp';
 
   @override
-  String get gatePass => 'गेट पास';
+  String get gatePass => 'Gate Pass';
 
   @override
-  String get noMineralsStockPoint =>
-      'इस स्टॉक पॉइंट के लिए कोई खनिज सूचीबद्ध नहीं है।';
+  String get noMineralsStockPoint => 'No minerals listed for this stock point.';
 
   @override
-  String get noOrdersPlaced => 'अभी तक कोई ऑर्डर नहीं दिया गया है।';
+  String get noOrdersPlaced => 'No orders placed yet.';
 
   @override
-  String get noDeliveriesRecorded => 'कोई वितरण दर्ज नहीं किया गया।';
+  String get noDeliveriesRecorded => 'No deliveries recorded.';
 
   @override
-  String get discoverQuarries => 'इस पैकेज के लिए नजदीकी खदानें खोजें';
+  String get discoverQuarries => 'Discover nearby quarries for this package';
 
   @override
-  String get scanQrCodeTruck => 'साइट गेट पर ट्रक का क्यूआर कोड स्कैन करें';
+  String get scanQrCodeTruck => 'Scan QR code of truck at site gate';
 
   @override
-  String get issueTransferEtp =>
-      'अतिरिक्त खनिज के लिए ट्रांसफर ई-टीपी जारी करें';
+  String get issueTransferEtp => 'Issue Transfer e-TP to move mineral surplus';
 
   @override
-  String get noProjectsRegistered => 'कोई परियोजना पंजीकृत नहीं है।';
+  String get noProjectsRegistered => 'No projects registered.';
 
   @override
-  String get noPackagesAdded =>
-      'इस परियोजना में अभी तक कोई पैकेज नहीं जोड़ा गया है।';
+  String get noPackagesAdded => 'No packages added to this project yet.';
 
   @override
-  String get supervisorRegistered => 'पर्यवेक्षक सफलतापूर्वक पंजीकृत!';
+  String get supervisorRegistered => 'Supervisor registered successfully!';
 
   @override
   String get invalidDigiTpNumber =>
-      'कृपया एक मान्य अंकीय डिजी-टीपी नंबर दर्ज करें';
+      'Please enter a valid numeric DigiTP number';
 
   @override
-  String get deliveryNotFound => 'वितरण नहीं मिला';
+  String get deliveryNotFound => 'Delivery not found';
 
   @override
   String get langEnglish => 'English (EN)';
@@ -1244,320 +1223,35 @@ class AppLocalizationsHi extends AppLocalizations {
   String get langMarathi => 'मराठी (MR)';
 
   @override
-  String get errorUpdatingProfile => 'प्रोफाइल अपडेट करते समय त्रुटि हुई: ';
+  String get errorUpdatingProfile =>
+      'An error occurred while updating profile: ';
 
   @override
-  String get errorPrefix => 'त्रुटि: ';
+  String get errorPrefix => 'Error: ';
 
   @override
-  String get downloadedReceipt => 'डाउनलोड की गई रसीद: DigiTP_Receipt_';
+  String get downloadedReceipt => 'Downloaded DigiTP_Receipt_';
 
   @override
   String get statusNotReceived => 'प्राप्त नहीं हुआ';
 
   @override
-  String get statusArrivedAtSite => 'साइट पर पहुंचा';
+  String get statusArrivedAtSite => 'Arrived at Site';
 
   @override
-  String get statusPassIssued => 'पास जारी किया गया';
+  String get statusPassIssued => 'Pass Issued';
 
   @override
-  String get authorizedQuarry => 'अधिकृत खदान';
+  String get authorizedQuarry => 'Authorized Quarry';
 
   @override
   String financialYear(String yearRange) {
-    return 'वित्तीय वर्ष $yearRange';
+    return 'FY $yearRange';
   }
 
   @override
-  String get verifyDigiTp => 'डिजी-टीपी सत्यापित करें';
+  String get verifyDigiTp => 'Verify DigiTP';
 
   @override
   String get removeBtn => 'निकालें';
-
-  @override
-  String get contactPersonNameLabel => 'संपर्क व्यक्ति का नाम';
-
-  @override
-  String get contactPersonNameHint => 'संपर्क व्यक्ति का नाम दर्ज करें';
-
-  @override
-  String get contactPersonNameRequired => 'संपर्क व्यक्ति का नाम आवश्यक है।';
-
-  @override
-  String get orgPanRequired => 'संगठन का पैन नंबर आवश्यक है।';
-
-  @override
-  String get validPanRequired =>
-      '10 वर्णों का वैध पैन दर्ज करें (उदा. ABCDE1234F)।';
-
-  @override
-  String get organisationDetailsHeader => 'संस्था विवरण';
-
-  @override
-  String get contactPersonDetailsHeader => 'संपर्क व्यक्ति विवरण';
-
-  @override
-  String get locationDetailsHeader => 'स्थान विवरण';
-
-  @override
-  String get orgNameRequiredLabel => 'संस्था का नाम *';
-
-  @override
-  String get emailIdRequiredLabel => 'ईमेल आईडी *';
-
-  @override
-  String get addressRequiredLabel => 'पता *';
-
-  @override
-  String get contactPersonNameRequiredLabel => 'संपर्क व्यक्ति का नाम *';
-
-  @override
-  String get mobileNumberRequiredLabel => 'मोबाइल नं. *';
-
-  @override
-  String get contactPersonAadhaarOptionalLabel =>
-      'संपर्क व्यक्ति आधार नं. (वैकल्पिक)';
-
-  @override
-  String get enterOrgNameHint => 'संस्था / कंपनी / फर्म का नाम दर्ज करें';
-
-  @override
-  String get enterEmailHint => 'ईमेल पता दर्ज करें';
-
-  @override
-  String get registeredOfficeAddressHint => 'पंजीकृत कार्यालय का पता';
-
-  @override
-  String get enterContactPersonNameHint => 'संपर्क व्यक्ति का नाम दर्ज करें';
-
-  @override
-  String get enterTenDigitMobileHint => '१० अंकों का मोबाइल नंबर दर्ज करें';
-
-  @override
-  String get enterTwelveDigitAadhaarHint => '१२ अंकों का आधार नंबर दर्ज करें';
-
-  @override
-  String get emailRequired => 'ईमेल आईडी आवश्यक है।';
-
-  @override
-  String get enterValidAadhaarNumber =>
-      'मान्य १२ अंकों का आधार नंबर दर्ज करें।';
-
-  @override
-  String get aadhaarCannotStartWithZeroOrOne =>
-      'आधार नंबर ० या १ से शुरू नहीं हो सकता।';
-
-  @override
-  String get aadhaarAlreadyRegistered =>
-      'यह आधार कार्ड नंबर महाखनिज प्रणाली में पहले से पंजीकृत है।';
-
-  @override
-  String get invalidAadhaarNumber =>
-      'अमान्य आधार नंबर दर्ज किया गया है। कृपया जांचें और पुन: प्रयास करें।';
-
-  @override
-  String get aadhaarSendOtpFailed =>
-      'आधार पंजीकृत मोबाइल नंबर पर ओटीपी भेजने में विफल।';
-
-  @override
-  String get contactPersonAadhaarVerificationTitle =>
-      'संपर्क व्यक्ति आधार\\nसत्यापन';
-
-  @override
-  String get orgPanVerificationTitle => 'संस्था पैन सत्यापन';
-
-  @override
-  String get verifiedStatus => 'सत्यापित';
-
-  @override
-  String get notVerifiedStatus => 'सत्यापित नहीं';
-
-  @override
-  String get uploadAadhaarDocOptional => 'आधार दस्तावेज़ अपलोड करें (वैकल्पिक)';
-
-  @override
-  String get chooseAadhaarCardPhotoPdf => 'आधार कार्ड फोटो / पीडीएफ चुनें';
-
-  @override
-  String get otpSentToAadhaarMobileNotice =>
-      'आपके आधार पंजीकृत मोबाइल नंबर पर ओटीपी भेजा जाएगा';
-
-  @override
-  String get resendOtpBtn => 'ओटीपी पुनः भेजें';
-
-  @override
-  String get enterSixDigitOtpHint => '६ अंकों का ओटीपी दर्ज करें';
-
-  @override
-  String get enterValidAadhaarOtp => 'मान्य ६ अंकों का आधार ओटीपी दर्ज करें।';
-
-  @override
-  String get panNoOptionalLabel => 'पैन नं. (वैकल्पिक)';
-
-  @override
-  String get enterTenDigitPan => '१० अंकों का पैन दर्ज करें';
-
-  @override
-  String get uploadPanDocOptional => 'पैन दस्तावेज़ अपलोड करें (वैकल्पिक)';
-
-  @override
-  String get choosePanCardPhotoPdf => 'पैन कार्ड फोटो / पीडीएफ चुनें';
-
-  @override
-  String get verifyPanBtn => 'पैन सत्यापित करें';
-
-  @override
-  String get panStatusPrefix => 'स्थिति: ';
-
-  @override
-  String get panAlreadyRegistered =>
-      'यह पैन नंबर महाखनिज प्रणाली में पहले से पंजीकृत है।';
-
-  @override
-  String get invalidPanNumber =>
-      'अमान्य पैन नंबर दर्ज किया गया है। कृपया जांचें और पुन: प्रयास करें।';
-
-  @override
-  String get panVerificationFailed =>
-      'पैन सत्यापन विफल रहा। कृपया पुन: प्रयास करें।';
-
-  @override
-  String get orgDeclarationText =>
-      'मैं पुष्टि करता/करती हूँ कि ऊपर दी गई जानकारी सही है। यदि जानकारी गलत पाई जाती है, तो मुझे ज्ञात है कि मुझ पर लागू कानूनी कार्रवाई की जा सकती है।';
-
-  @override
-  String get confirmDeclarationRequired =>
-      'पंजीकरण पूरा करने के लिए कृपया घोषणा की पुष्टि करें।';
-
-  @override
-  String get organisationConsumer => 'संस्था उपभोक्ता';
-
-  @override
-  String get individualConsumer => 'व्यक्तिगत उपभोक्ता';
-
-  @override
-  String get requiresOrgKycSubtitle =>
-      'संपर्क व्यक्ति आधार और संस्था पैन आवश्यक';
-
-  @override
-  String get requiresIndividualKycSubtitle => 'व्यक्तिगत आधार सत्यापन आवश्यक';
-
-  @override
-  String get pendingBadge => 'लंबित';
-
-  @override
-  String get contactPersonAadhaarVerified => 'संपर्क व्यक्ति आधार सत्यापित';
-
-  @override
-  String get contactPersonAadhaarPending => 'संपर्क व्यक्ति आधार लंबित';
-
-  @override
-  String get authContactPersonIdentity => 'अधिकृत संपर्क व्यक्ति पहचान';
-
-  @override
-  String get nationalIdentityUidai => 'राष्ट्रीय पहचान (UIDAI)';
-
-  @override
-  String get contactPersonAadhaar => 'संपर्क व्यक्ति आधार';
-
-  @override
-  String get orgPanVerified => 'संस्था पैन सत्यापित';
-
-  @override
-  String get orgPanPending => 'संस्था पैन लंबित';
-
-  @override
-  String get incomeTaxDeptEntityPan => 'आयकर विभाग (संस्था पैन)';
-
-  @override
-  String get orgPan => 'संस्था पैन';
-
-  @override
-  String get verifyPanArrow => 'पैन सत्यापित करें →';
-
-  @override
-  String get kycDetailsSavedSuccessfully =>
-      'केवाईसी सत्यापन विवरण सफलतापूर्वक सहेजा गया';
-
-  @override
-  String get orgPanInfoTitle => 'संस्था पैन जानकारी';
-
-  @override
-  String get verifyOrgPanDesc =>
-      'संस्था पैन नंबर सत्यापित करें और पैन दस्तावेज़ की प्रति अपलोड करें';
-
-  @override
-  String get panNumberLabel => 'पैन नंबर';
-
-  @override
-  String get panVerificationLabel => 'पैन सत्यापन';
-
-  @override
-  String get verifiedUpper => 'सत्यापित';
-
-  @override
-  String get pendingUpper => 'लंबित';
-
-  @override
-  String get method1LivePanVerification => 'तरीका १: लाइव पैन सत्यापन';
-
-  @override
-  String get orgPanNumberRequired => 'संस्था पैन नंबर *';
-
-  @override
-  String get method2UploadPanCard =>
-      'तरीका २: पैन कार्ड दस्तावेज़ अपलोड करें (पीडीएफ / छवि)';
-
-  @override
-  String get choosePanPdfOrImage => 'पैन पीडीएफ या छवि चुनें';
-
-  @override
-  String get uploadingDots => 'अपलोड हो रहा है...';
-
-  @override
-  String get verifyOrgPanBeforeSaving =>
-      'कृपया सहेजने से पहले अपनी संस्था का पैन सत्यापित करें।';
-
-  @override
-  String get loadingConsumerProfile => 'उपभोक्ता प्रोफाइल लोड हो रहा है...';
-
-  @override
-  String get failedToFetchConsumerProfile =>
-      'उपभोक्ता प्रोफाइल प्राप्त करने में विफल';
-
-  @override
-  String get retryLoadingProfile => 'प्रोफाइल लोड करने का पुन: प्रयास करें';
-
-  @override
-  String resendInSeconds(String seconds) {
-    return '00:$seconds में पुनः भेजें';
-  }
-
-  @override
-  String verifiedCountSummary(String verifiedCount, String totalDocs) {
-    return '$totalDocs में से $verifiedCount सत्यापित';
-  }
-
-  @override
-  String get clientSessionExpired =>
-      'क्लाइंट सत्र समाप्त हो गया है। कृपया पुनः ओटीपी भेजें।';
-
-  @override
-  String get invalidAadhaarOtp =>
-      'अमान्य आधार ओटीपी। कृपया जांचें और पुनः प्रयास करें।';
-
-  @override
-  String get uploadFailedWithReason => 'अपलोड विफल: ';
-
-  @override
-  String get docUploadFailed =>
-      'दस्तावेज़ अपलोड विफल रहा। कृपया पुनः प्रयास करें।';
-
-  @override
-  String get panDocUploadFailed =>
-      'पैन दस्तावेज़ अपलोड विफल रहा। कृपया पुनः प्रयास करें।';
-
-  @override
-  String get failedToUpdateProfile => 'उपभोक्ता प्रोफ़ाइल अपडेट करने में विफल।';
 }

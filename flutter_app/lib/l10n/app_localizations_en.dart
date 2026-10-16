@@ -95,10 +95,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vehicleNumber => 'Vehicle Number';
 
   @override
-  String get ownerName => 'Plot Owner Name';
+  String get ownerName => 'Owner Name';
 
   @override
-  String get ownerMobile => 'Plot Owner Mobile';
+  String get ownerMobile => 'Owner Mobile';
 
   @override
   String get driverDetails => 'Driver Details';
@@ -151,40 +151,30 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get refreshLocation => 'Refresh';
-
-  @override
-  String get refresh => 'Refresh';
+  String get refreshLocation => 'Refresh Location';
 
   @override
   String get inTransit => 'In Transit';
 
   @override
-  String get delivered => 'Received';
+  String get delivered => 'Delivered';
 
   @override
   String get enquiries => 'Enquiries';
 
   @override
-  String get noActiveDeliveries => 'No Active Passes In Transit';
+  String get noActiveDeliveries => 'No Active Deliveries';
 
   @override
   String get noDeliveriesInTransitDesc =>
-      'There are currently no passes in transit.';
+      'There are currently no deliveries in transit.';
 
   @override
-  String get noDeliveredItems => 'No Received Passes';
+  String get noDeliveredItems => 'No Delivered Items';
 
   @override
   String get noDeliveriesReceivedDesc =>
-      'You have not received any passes yet.';
-
-  @override
-  String get noNotReceivedPasses => 'No Not Received Passes';
-
-  @override
-  String get noNotReceivedPassesDesc =>
-      'There are currently no not received passes.';
+      'You have not received any deliveries yet.';
 
   @override
   String get noActiveEnquiries => 'No Active Enquiries';
@@ -224,7 +214,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get driver => 'Driver';
 
   @override
-  String get quarrySeller => 'Quarry';
+  String get quarrySeller => 'Quarry / Seller';
 
   @override
   String get digiTpNo => 'DigiTP No';
@@ -236,10 +226,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get driverMobileNumber => 'Driver Mobile Number';
 
   @override
-  String get ownerMobileNumber => 'Plot Owner Mobile Number';
+  String get ownerMobileNumber => 'Owner Mobile Number';
 
   @override
-  String get plotProjectName => 'Plot Name';
+  String get plotProjectName => 'Plot / Project Name';
 
   @override
   String get invoiceStatus => 'Invoice Status';
@@ -249,12 +239,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get digiTpValidityDateAndTime => 'DigiTP validity date and time';
-
-  @override
-  String get receivedDate => 'Received Date';
-
-  @override
-  String get receiveDate => 'Receive Date';
 
   @override
   String get profileName => 'Name';
@@ -285,9 +269,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saveChanges => 'Save Changes';
-
-  @override
-  String get kycVerification => 'KYC Verification';
 
   @override
   String get aadhaarKyc => 'Aadhaar KYC';
@@ -729,7 +710,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get all => 'All';
 
   @override
-  String get noDeliveriesFound => 'No DigiTP Passes Found';
+  String get noDeliveriesFound => 'No Deliveries Found';
 
   @override
   String get noDeliveriesFoundDesc => 'You do not have any DigiTP passes.';
@@ -789,7 +770,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Aadhaar verification is non-mandatory. You can skip this step at any time and complete registration.';
 
   @override
-  String get resendBtn => 'Resend OTP';
+  String get resendBtn => 'Resend';
 
   @override
   String get digitpsNotReceived => 'DigiTPs\nNot Received';
@@ -1271,289 +1252,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get removeBtn => 'Remove';
-
-  @override
-  String get contactPersonNameLabel => 'Contact Person Name';
-
-  @override
-  String get contactPersonNameHint => 'Enter Contact Person Name';
-
-  @override
-  String get contactPersonNameRequired => 'Contact person name is required.';
-
-  @override
-  String get orgPanRequired => 'Organization PAN number is required.';
-
-  @override
-  String get validPanRequired =>
-      'Enter a valid 10-character PAN (e.g. ABCDE1234F).';
-
-  @override
-  String get organisationDetailsHeader => 'ORGANISATION DETAILS';
-
-  @override
-  String get contactPersonDetailsHeader => 'CONTACT PERSON DETAILS';
-
-  @override
-  String get locationDetailsHeader => 'LOCATION DETAILS';
-
-  @override
-  String get orgNameRequiredLabel => 'Organisation Name *';
-
-  @override
-  String get emailIdRequiredLabel => 'Email ID *';
-
-  @override
-  String get addressRequiredLabel => 'Address *';
-
-  @override
-  String get contactPersonNameRequiredLabel => 'Contact Person Name *';
-
-  @override
-  String get mobileNumberRequiredLabel => 'Mobile No. *';
-
-  @override
-  String get contactPersonAadhaarOptionalLabel =>
-      'Contact Person Aadhaar No. (optional)';
-
-  @override
-  String get enterOrgNameHint => 'Enter organisation / company / firm name';
-
-  @override
-  String get enterEmailHint => 'Enter email address';
-
-  @override
-  String get registeredOfficeAddressHint => 'Registered office address';
-
-  @override
-  String get enterContactPersonNameHint => 'Enter contact person name';
-
-  @override
-  String get enterTenDigitMobileHint => 'Enter 10-digit mobile number';
-
-  @override
-  String get enterTwelveDigitAadhaarHint => 'Enter 12-digit Aadhaar number';
-
-  @override
-  String get emailRequired => 'Email ID is required.';
-
-  @override
-  String get enterValidAadhaarNumber =>
-      'Enter a valid 12-digit Aadhaar number.';
-
-  @override
-  String get aadhaarCannotStartWithZeroOrOne =>
-      'Aadhaar number cannot start with 0 or 1.';
-
-  @override
-  String get aadhaarAlreadyRegistered =>
-      'This Aadhaar card number is already registered in Mahakhanij system.';
-
-  @override
-  String get invalidAadhaarNumber =>
-      'Invalid Aadhaar number entered. Please verify and try again.';
-
-  @override
-  String get aadhaarSendOtpFailed =>
-      'Failed to send OTP to Aadhaar-registered mobile number.';
-
-  @override
-  String get contactPersonAadhaarVerificationTitle =>
-      'Contact Person Aadhaar\\nVerification';
-
-  @override
-  String get orgPanVerificationTitle => 'Organisation PAN Verification';
-
-  @override
-  String get verifiedStatus => 'Verified';
-
-  @override
-  String get notVerifiedStatus => 'Not Verified';
-
-  @override
-  String get uploadAadhaarDocOptional => 'Upload Aadhaar Document (Optional)';
-
-  @override
-  String get chooseAadhaarCardPhotoPdf => 'Choose Aadhaar Card photo / PDF';
-
-  @override
-  String get otpSentToAadhaarMobileNotice =>
-      'OTP will be sent to your Aadhaar registered mobile number';
-
-  @override
-  String get resendOtpBtn => 'Resend OTP';
-
-  @override
-  String get enterSixDigitOtpHint => 'Enter 6-digit OTP';
-
-  @override
-  String get enterValidAadhaarOtp => 'Enter a valid 6-digit Aadhaar OTP.';
-
-  @override
-  String get panNoOptionalLabel => 'PAN No. (optional)';
-
-  @override
-  String get enterTenDigitPan => 'Enter 10 digit PAN';
-
-  @override
-  String get uploadPanDocOptional => 'Upload PAN Document (Optional)';
-
-  @override
-  String get choosePanCardPhotoPdf => 'Choose PAN Card photo / PDF';
-
-  @override
-  String get verifyPanBtn => 'Verify PAN';
-
-  @override
-  String get panStatusPrefix => 'Status: ';
-
-  @override
-  String get panAlreadyRegistered =>
-      'This PAN number is already registered in Mahakhanij system.';
-
-  @override
-  String get invalidPanNumber =>
-      'Invalid PAN number entered. Please verify and try again.';
-
-  @override
-  String get panVerificationFailed =>
-      'PAN verification failed. Please try again.';
-
-  @override
-  String get orgDeclarationText =>
-      'I confirm that the information provided above is correct. If the information is found to be incorrect, I understand that I may be subject to applicable legal action.';
-
-  @override
-  String get confirmDeclarationRequired =>
-      'Please confirm the declaration to complete registration.';
-
-  @override
-  String get organisationConsumer => 'Organisation Consumer';
-
-  @override
-  String get individualConsumer => 'Individual Consumer';
-
-  @override
-  String get requiresOrgKycSubtitle =>
-      'Requires Contact Person Aadhaar & Organisation PAN';
-
-  @override
-  String get requiresIndividualKycSubtitle =>
-      'Requires Individual Aadhaar Verification';
-
-  @override
-  String get pendingBadge => 'Pending';
-
-  @override
-  String get contactPersonAadhaarVerified => 'Contact Person Aadhaar Verified';
-
-  @override
-  String get contactPersonAadhaarPending => 'Contact Person Aadhaar Pending';
-
-  @override
-  String get authContactPersonIdentity => 'Authorized Contact Person Identity';
-
-  @override
-  String get nationalIdentityUidai => 'National Identity (UIDAI)';
-
-  @override
-  String get contactPersonAadhaar => 'Contact Person Aadhaar';
-
-  @override
-  String get orgPanVerified => 'Organisation PAN Verified';
-
-  @override
-  String get orgPanPending => 'Organisation PAN Pending';
-
-  @override
-  String get incomeTaxDeptEntityPan => 'Income Tax Department (Entity PAN)';
-
-  @override
-  String get orgPan => 'Organisation PAN';
-
-  @override
-  String get verifyPanArrow => 'Verify PAN →';
-
-  @override
-  String get kycDetailsSavedSuccessfully =>
-      'KYC verification details saved successfully';
-
-  @override
-  String get orgPanInfoTitle => 'Organisation PAN Information';
-
-  @override
-  String get verifyOrgPanDesc =>
-      'Verify organisation PAN number and upload PAN document copy';
-
-  @override
-  String get panNumberLabel => 'PAN Number';
-
-  @override
-  String get panVerificationLabel => 'PAN Verification';
-
-  @override
-  String get verifiedUpper => 'VERIFIED';
-
-  @override
-  String get pendingUpper => 'PENDING';
-
-  @override
-  String get method1LivePanVerification => 'Method 1: Live PAN Verification';
-
-  @override
-  String get orgPanNumberRequired => 'Organisation PAN Number *';
-
-  @override
-  String get method2UploadPanCard =>
-      'Method 2: Upload PAN Card Document (PDF / Image)';
-
-  @override
-  String get choosePanPdfOrImage => 'Choose PAN PDF or image';
-
-  @override
-  String get uploadingDots => 'Uploading...';
-
-  @override
-  String get verifyOrgPanBeforeSaving =>
-      'Please verify your Organisation PAN before saving.';
-
-  @override
-  String get loadingConsumerProfile => 'Loading Consumer Profile...';
-
-  @override
-  String get failedToFetchConsumerProfile => 'Failed to fetch Consumer Profile';
-
-  @override
-  String get retryLoadingProfile => 'Retry Loading Profile';
-
-  @override
-  String resendInSeconds(String seconds) {
-    return 'Resend in 00:$seconds';
-  }
-
-  @override
-  String verifiedCountSummary(String verifiedCount, String totalDocs) {
-    return '$verifiedCount of $totalDocs Verified';
-  }
-
-  @override
-  String get clientSessionExpired =>
-      'Client session expired. Please resend OTP.';
-
-  @override
-  String get invalidAadhaarOtp =>
-      'Invalid Aadhaar OTP. Please check and try again.';
-
-  @override
-  String get uploadFailedWithReason => 'Upload failed: ';
-
-  @override
-  String get docUploadFailed => 'Document upload failed. Please try again.';
-
-  @override
-  String get panDocUploadFailed =>
-      'PAN document upload failed. Please try again.';
-
-  @override
-  String get failedToUpdateProfile => 'Failed to update consumer profile.';
 }

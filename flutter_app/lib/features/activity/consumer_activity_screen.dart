@@ -86,7 +86,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
     final activeAsync = activeStatus == 0 ? allAsync : (activeStatus == 1 ? notReceivedAsync : (activeStatus == 2 ? inTransitAsync : deliveredAsync));
 
     return AppScaffold(
-      title: loc.digitpPasses.replaceAll('\n', ' '),
+      title: loc.digitpDeliveries.replaceAll('\n', ' '),
       showBackButton: Navigator.canPop(context),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -156,11 +156,11 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const CircularProgressIndicator(strokeWidth: 3),
-                          const SizedBox(height: 12),
+                          CircularProgressIndicator(strokeWidth: 3),
+                          SizedBox(height: 12),
                           Text(
                             loc.fetchingConsumerDigiTpRecords,
-                            style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary),
+                            style: TextStyle(fontSize: 13, color: AppColors.inkSecondary),
                           ),
                         ],
                       ),
@@ -201,18 +201,10 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                     final items = response.items;
 
                     if (items.isEmpty) {
-                      final titleStr = activeStatus == 0
-                          ? loc.noDeliveriesFound
-                          : (activeStatus == 1
-                              ? loc.noNotReceivedPasses
-                              : (activeStatus == 2 ? loc.noActiveDeliveries : loc.noDeliveredItems));
-                      final subStr = activeStatus == 0
-                          ? loc.noDeliveriesFoundDesc
-                          : (activeStatus == 1
-                              ? loc.noNotReceivedPassesDesc
-                              : (activeStatus == 2
-                                  ? loc.noDeliveriesInTransitDesc
-                                  : loc.noDeliveriesReceivedDesc));
+                      final titleStr = activeStatus == 0 ? loc.noDeliveriesFound : (activeStatus == 1 ? loc.noDeliveriesFound : (activeStatus == 2 ? loc.noActiveDeliveries : loc.noDeliveredItems));
+                      final subStr = activeStatus == 0 ? loc.noDeliveriesFoundDesc : (activeStatus == 1 ? loc.noDeliveriesFoundDesc : (activeStatus == 2
+                          ? loc.noDeliveriesInTransitDesc
+                          : loc.noDeliveriesReceivedDesc));
 
                       return Container(
                         padding: const EdgeInsets.all(24),
@@ -250,7 +242,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                             ),
                             const SizedBox(height: 16),
                             AppButton(
-                              label: loc.refresh,
+                              label: loc.refreshLocation,
                               size: AppButtonSize.small,
                               variant: AppButtonVariant.secondary,
                               icon: const Icon(Icons.refresh, size: 16),
@@ -296,10 +288,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
     } else if ((normalizedStatus.contains('RECEIV') && !normalizedStatus.contains('NOT')) || normalizedStatus.contains('DELIVER') || normalizedStatus == '3') {
       statusLabel = loc.delivered;
     }
-    final isDelivered = activeStatus == 3 ||
-        statusLabel.toLowerCase() == 'delivered' ||
-        statusLabel.toLowerCase() == 'received' ||
-        statusLabel == loc.delivered;
+    final isDelivered = activeStatus == 3 || statusLabel.toLowerCase() == 'delivered' || statusLabel == loc.delivered;
 
     final badgeBg = isDelivered ? const Color(0xFFF0FDF4) : const Color(0xFFF7F0FD);
     final badgeBorder = isDelivered ? const Color(0xFFBBF7D0) : const Color(0xFFEBD9FB);
@@ -313,7 +302,6 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
         ? '${item.driverName}${item.driverMobNo != null ? ' (${item.driverMobNo})' : ''}'
         : '-';
     final ownerStr = item.ownerName ?? loc.authorizedQuarry;
-    final plotName = item.plotName ?? '-';
 
     return Container(
       decoration: BoxDecoration(
@@ -421,22 +409,7 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('${loc.plotProjectName}:', style: const TextStyle(fontSize: 11, color: Color(0xFF737373))),
-                    Expanded(
-                      child: Text(
-                        plotName,
-                        textAlign: TextAlign.end,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.ink),
-                      ),
-                    ),
-
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('${loc.ownerName}:', style: const TextStyle(fontSize: 11, color: Color(0xFF737373))),
+                    Text('${loc.quarrySeller}:', style: const TextStyle(fontSize: 11, color: Color(0xFF737373))),
                     Expanded(
                       child: Text(
                         ownerStr,
@@ -445,7 +418,6 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.ink),
                       ),
                     ),
-
                   ],
                 ),
                 if (item.validityFrom != null || item.validityUpto != null) ...[
