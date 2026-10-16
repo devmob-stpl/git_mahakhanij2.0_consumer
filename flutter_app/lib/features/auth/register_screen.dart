@@ -7,9 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../../l10n/app_localizations.dart';
-import '../../core/config/app_config.dart';
 import '../../core/constants/app_colors.dart';
 import '../../domain/user.dart';
 import '../../domain/aadhaar_kyc_models.dart';
@@ -26,8 +24,8 @@ class RegisterScreen extends ConsumerStatefulWidget {
 }
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
-  // Step 1: Basic & Address details (1), Step 2: KYC Verification (2)
-  int _step = 1;
+  // Step 0: Choose Account Type, Step 1: Basic & Address details (1), Step 2: KYC Verification (2)
+  int _step = 0;
   UserType _userType = UserType.normalConsumer;
 
   // Step 1: Basic & Contact Details
@@ -37,14 +35,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   // Step 1: Organization Details
   final _orgNameController = TextEditingController();
-  String _orgType = 'CONTRACTOR'; // BUILDER, CONTRACTOR, GOVERNMENT, OTHER
-  final _gstController = TextEditingController();
-  final _regNumberController = TextEditingController();
-  bool _noGst = false;
-  String _gstStatus = 'idle'; // 'idle' | 'verifying' | 'verified' | 'error'
+  final _contactPersonController = TextEditingController();
 
   // Step 1: Address Details
   String _areaClassification = 'URBAN'; // 'URBAN' | 'RURAL'
+  int? _stateId = 1;
   String? _district;
   String? _taluka;
   int? _districtId;
@@ -90,12 +85,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   String? _aadhaarError;
   VerifyAadhaarOtpResponse? _aadhaarVerifiedData;
 
+  // PAN Verification State
+  bool _isCheckingPan = false;
+  bool _isVerifyingPan = false;
+  bool _isPanVerified = false;
+  String? _panClientId;
+  String? _panClientName;
+  String? _panClientStatus;
+  String? _panError;
+
   // Form Errors
   Map<String, String> _errors = {};
   bool _isSubmitting = false;
 
   Timer? _resendTimer;
   int _timerCountdown = 0;
+
+  bool _declarationConfirmed = false;
+
+
 
   @override
   void dispose() {
@@ -104,8 +112,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _mobileController.dispose();
     _emailController.dispose();
     _orgNameController.dispose();
-    _gstController.dispose();
-    _regNumberController.dispose();
+    _contactPersonController.dispose();
     _cityController.dispose();
     _villageController.dispose();
     _addressController.dispose();
@@ -136,14 +143,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _handleSendAadhaarOtp() async {
+    final l10n = AppLocalizations.of(context)!;
     final aadh = _aadhaarController.text.replaceAll(' ', '').trim();
     if (aadh.length != 12 || !RegExp(r'^\d{12}$').hasMatch(aadh)) {
-      setState(() => _aadhaarError = 'Enter a valid 12-digit Aadhaar number.');
+      setState(() => _aadhaarError = l10n.enterValidAadhaarNumber);
       return;
     }
     
     if (aadh.startsWith('0') || aadh.startsWith('1')) {
-      setState(() => _aadhaarError = 'Aadhaar number cannot start with 0 or 1.');
+      setState(() => _aadhaarError = l10n.aadhaarCannotStartWithZeroOrOne);
       return;
     }
 
@@ -162,7 +170,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (existRes.exists) {
       setState(() {
         _isCheckingAadhaar = false;
-        _aadhaarError = 'This Aadhaar card number is already registered in Mahakhanij system.';
+        _aadhaarError = l10n.aadhaarAlreadyRegistered;
       });
       return;
     }
@@ -184,9 +192,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         _aadhaarError = null;
         _startResendTimer();
       } else {
-        String msg = genRes.message ?? 'Failed to send OTP to Aadhaar-registered mobile number.';
+        String msg = genRes.message ?? l10n.aadhaarSendOtpFailed;
         if (msg.trim().toLowerCase() == 'verification_failed') {
-          msg = 'Invalid Aadhaar number entered. Please verify and try again.';
+          msg = l10n.invalidAadhaarNumber;
         }
         _aadhaarError = msg;
       }
@@ -194,14 +202,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _handleVerifyAadhaarOtp() async {
+    final l10n = AppLocalizations.of(context)!;
     final otp = _aadhaarOtpController.text.trim();
     if (otp.length != 6 || !RegExp(r'^\d{6}$').hasMatch(otp)) {
-      setState(() => _aadhaarError = 'Enter a valid 6-digit Aadhaar OTP.');
+      setState(() => _aadhaarError = l10n.enterValidAadhaarOtp);
       return;
     }
 
     if (_aadhaarClientId == null) {
-      setState(() => _aadhaarError = 'Client ID missing. Please resend OTP.');
+      setState(() => _aadhaarError = l10n.aadhaarSendOtpError);
       return;
     }
 
@@ -227,9 +236,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         _aadhaarVerifiedData = verifyRes;
         _aadhaarError = null;
       } else {
-        String msg = verifyRes.message ?? 'Aadhaar OTP verification failed. Invalid OTP.';
+        String msg = verifyRes.message ?? l10n.invalidAadhaarOtp;
         if (msg.toLowerCase() == 'verification_failed' || msg.toLowerCase().contains('invalid')) {
-          msg = 'Invalid OTP entered. Please try again.';
+          msg = l10n.invalidOtpServer;
         }
         _aadhaarError = msg;
       }
@@ -376,40 +385,85 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     });
   }
 
-  void _verifyGst() {
-    final gst = _gstController.text.trim().toUpperCase();
-    if (gst.isEmpty) {
-      setState(() => _errors['gstNumber'] = AppLocalizations.of(context)!.gstinRequired);
+  Future<void> _handleVerifyPan() async {
+    final l10n = AppLocalizations.of(context)!;
+    final pan = _panController.text.trim().toUpperCase();
+    if (pan.isEmpty) {
+      setState(() => _panError = l10n.orgPanRequired);
       return;
     }
-    if (gst.length != 15 || !RegExp(r'^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}$').hasMatch(gst)) {
-      setState(() {
-        _errors['gstNumber'] = AppLocalizations.of(context)!.validGstRequired;
-        _gstStatus = 'error';
-      });
+    if (pan.length != 10 || !RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(pan)) {
+      setState(() => _panError = l10n.validPanRequired);
+      return;
+    }
+
+    final mobile = _mobileController.text.trim();
+    if (mobile.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
+      setState(() => _panError = l10n.validMobileRequired);
       return;
     }
 
     setState(() {
-      _gstStatus = 'verifying';
-      _errors.remove('gstNumber');
+      _panError = null;
+      _isCheckingPan = true;
     });
 
-    Future.delayed(const Duration(milliseconds: 450), () {
-      if (!mounted) return;
+    final authRepo = ref.read(authRepositoryProvider);
+
+    // Step 1: Duplicate check via check-pan-exists-VehicleOwner
+    final checkRes = await authRepo.checkPanExists(
+      panNo: pan,
+      mobileNo: mobile,
+      id: 0,
+      userCategory: 2,
+    );
+
+    if (!mounted) return;
+
+    if (checkRes.exists) {
       setState(() {
-        _gstStatus = 'verified';
-        if (_orgNameController.text.trim().isEmpty) {
-          _orgNameController.text = 'Shree Infra & Constructions Pvt Ltd';
-        }
+        _isCheckingPan = false;
+        _isPanVerified = false;
+        _panError = checkRes.statusMessage.isNotEmpty
+            ? checkRes.statusMessage
+            : l10n.panAlreadyRegistered;
       });
+      return;
+    }
+
+    // Step 2: Verify PAN number via pan-verification_v1
+    setState(() {
+      _isCheckingPan = false;
+      _isVerifyingPan = true;
+    });
+
+    final verifyRes = await authRepo.verifyPan(panNo: pan, userId: 0);
+
+    if (!mounted) return;
+
+    setState(() {
+      _isVerifyingPan = false;
+      if (verifyRes.isSuccess) {
+        _isPanVerified = true;
+        _panClientId = verifyRes.clientId;
+        _panClientName = verifyRes.clientName;
+        _panClientStatus = verifyRes.clientStatus;
+        _panError = null;
+      } else {
+        _isPanVerified = false;
+        String msg = verifyRes.statusMessage.isNotEmpty ? verifyRes.statusMessage : l10n.panVerificationFailed;
+        if (msg.contains('Invalid PAN')) {
+          msg = l10n.invalidPanNumber;
+        }
+        _panError = msg;
+      }
     });
   }
 
   void _back() {
     setState(() {
       _errors.clear();
-      if (_step <= 1) {
+      if (_step <= 0) {
         context.pop();
       } else {
         _step--;
@@ -423,8 +477,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (found.isNotEmpty) {
       setState(() {
         _errors = found;
-        if (found.containsKey('aadhaar') && _userType == UserType.normalConsumer) {
+        if (found.containsKey('aadhaar')) {
           _aadhaarError = found['aadhaar'];
+        }
+        if (found.containsKey('pan')) {
+          _panError = found['pan'];
         }
       });
       return;
@@ -441,13 +498,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     // Step 2 complete -> Directly submit Sign Up API without OTP verification
     setState(() => _isSubmitting = true);
     final mobile = _mobileController.text.trim();
+    final l10n = AppLocalizations.of(context)!;
 
     final repo = ref.read(aadhaarKycRepositoryProvider);
     Future<String?> uploadLocal(String? path, String? name, Uint8List? bytes) async {
       if (path == null) return null;
       final res = await repo.uploadAadhaarDocument(filePath: path, fileName: name ?? 'doc', bytes: bytes);
       if (res.isSuccess && res.responseData != null) return res.responseData;
-      throw Exception(res.statusMessage ?? 'Document upload failed.');
+      throw Exception(res.statusMessage.isNotEmpty ? res.statusMessage : l10n.docUploadFailed);
     }
 
     try {
@@ -476,28 +534,41 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
 
+    final isOrg = _userType == UserType.organization;
+
     final Map<String, dynamic> signUpPayload = {
       'id': 0,
-      'consumerType': _userType == UserType.organization ? 1 : 0,
-      'name': _fullNameController.text.trim(),
+      'name': isOrg ? _orgNameController.text.trim() : _fullNameController.text.trim(),
       'mobileNo': mobile,
-      'emailId': _emailController.text.trim(),
-      'isTown': _areaClassification == 'URBAN',
-      'districtId': _districtId ?? 0,
-      'censusId': _censusId ?? 0,
-      'talukaId': _talukaId ?? 0,
-      'address': _addressController.text.trim(),
-      'pinCode': '',
       'aadharCardNo': _aadhaarController.text.replaceAll(' ', '').trim(),
-      'aadharDoc': _aadhaarDocUrl ?? _aadhaarSignatoryDocUrl ?? '',
-      'isAadharVerified': _isAadhaarVerified,
-      'panNo': _panController.text.trim(),
-      'panDoc': _panDocUrl ?? '',
-      'isPanVerified': false,
-      'gstNo': _gstController.text.trim(),
+      'emailId': _emailController.text.trim(),
+      'address': _addressController.text.trim(),
+      'stateId': _stateId ?? 1,
+      'districtId': _districtId ?? 0,
+      'talukaId': _talukaId ?? 0,
+      'isTown': _areaClassification == 'URBAN',
+      'censusId': _censusId ?? 0,
+      'createdBy': 0,
+      'flag': 'i',
+      'panNo': isOrg ? _panController.text.trim().toUpperCase() : '',
+      'gstNo': '',
+      'consumerType': isOrg ? CONSUMER_TYPE_ORGANISATION : CONSUMER_TYPE_INDIVIDUAL,
+      'rationCardId': '',
+      'aadharDoc': isOrg ? (_aadhaarSignatoryDocUrl ?? _aadhaarDocUrl ?? '') : (_aadhaarDocUrl ?? ''),
+      'panDoc': isOrg ? (_panDocUrl ?? '') : '',
+      'rcDoc': '',
+      'pinCode': '',
       'gstDoc': '',
-      'isGSTVerified': _gstStatus == 'verified',
-      'pageName': 'ConsumerSignUp',
+      'isAadharVerified': _isAadhaarVerified,
+      'aadharVerifiedName': _isAadhaarVerified ? (_aadhaarVerifiedData?.fullName ?? '') : '',
+      'aadharClientId': _isAadhaarVerified ? (_aadhaarClientId ?? '') : '',
+      'panClientId': (isOrg && _isPanVerified) ? (_panClientId ?? '') : '',
+      'isPanVerified': isOrg ? _isPanVerified : false,
+      'isCompulsoryVerification': false,
+      'otp': '',
+      'pageName': 'ConsumerReg',
+      'contactPersonName': isOrg ? _contactPersonController.text.trim() : '',
+      'insertDocuments': <Map<String, dynamic>>[],
     };
 
     final response = await ref.read(authRepositoryProvider).consumerSignUp(signUpPayload);
@@ -533,55 +604,125 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     final l10n = AppLocalizations.of(context)!;
     if (_step == 1) {
-      if (_fullNameController.text.trim().isEmpty) {
-        found['fullName'] = l10n.fullNameRequired;
-      }
-      final mobile = _mobileController.text.trim();
-      if (mobile.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
-        found['mobile'] = l10n.validMobileRequired;
-      }
-
-      if (_userType == UserType.organization) {
+      if (_userType == UserType.normalConsumer) {
+        if (_fullNameController.text.trim().isEmpty) {
+          found['fullName'] = l10n.fullNameRequired;
+        }
+        final mobile = _mobileController.text.trim();
+        if (mobile.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
+          found['mobile'] = l10n.validMobileRequired;
+        }
+        if (_addressController.text.trim().isEmpty) {
+          found['address'] = l10n.addressRequired;
+        }
+        if (_emailController.text.trim().isNotEmpty) {
+          final email = _emailController.text.trim();
+          final emailValid = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email) &&
+                             !email.startsWith('.') &&
+                             !email.contains('..');
+          if (!emailValid) {
+            found['email'] = l10n.validEmailRequired;
+          }
+        }
+        if (_districtId == null) {
+          found['district'] = l10n.districtRequired;
+        }
+        if (_talukaId == null && _areaClassification != 'URBAN') {
+          found['taluka'] = l10n.talukaRequired;
+        }
+        if (_censusId == null) {
+          found['villageCity'] = _areaClassification == 'URBAN'
+              ? l10n.cityCorpRequired
+              : l10n.villageRequired;
+        }
+      } else {
+        // Organisation registration Step 1 validation
         if (_orgNameController.text.trim().isEmpty) {
           found['orgName'] = l10n.orgNameRequired;
         }
-        if (!_noGst) {
-          if (_gstController.text.trim().isEmpty) {
-            found['gstNumber'] = l10n.gstinRequired;
+        final email = _emailController.text.trim();
+        if (email.isEmpty) {
+          found['email'] = l10n.emailRequired;
+        } else {
+          final emailValid = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email) &&
+                             !email.startsWith('.') &&
+                             !email.contains('..');
+          if (!emailValid) {
+            found['email'] = l10n.validEmailRequired;
           }
         }
-      }
-
-      if (_addressController.text.trim().isEmpty) {
-        found['address'] = l10n.addressRequired;
-      }
-
-      if (_emailController.text.trim().isNotEmpty) {
-        final email = _emailController.text.trim();
-        final emailValid = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email) &&
-                           !email.startsWith('.') &&
-                           !email.contains('..');
-        if (!emailValid) {
-          found['email'] = l10n.validEmailRequired;
+        if (_addressController.text.trim().isEmpty) {
+          found['address'] = l10n.addressRequired;
+        }
+        if (_districtId == null) {
+          found['district'] = l10n.districtRequired;
+        }
+        if (_talukaId == null && _areaClassification != 'URBAN') {
+          found['taluka'] = l10n.talukaRequired;
+        }
+        if (_censusId == null) {
+          found['villageCity'] = _areaClassification == 'URBAN'
+              ? l10n.cityCorpRequired
+              : l10n.villageRequired;
+        }
+        if (_contactPersonController.text.trim().isEmpty) {
+          found['contactPersonName'] = l10n.contactPersonNameRequired;
+        }
+        final mobile = _mobileController.text.trim();
+        if (mobile.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
+          found['mobile'] = l10n.validMobileRequired;
+        }
+        final aadh = _aadhaarController.text.replaceAll(' ', '').trim();
+        if (aadh.isNotEmpty && (aadh.length != 12 || !RegExp(r'^\d{12}$').hasMatch(aadh))) {
+          found['aadhaar'] = l10n.enterValidAadhaarNumber;
         }
       }
-
-      // Location validations
-      if (_districtId == null) {
-        found['district'] = l10n.districtRequired;
-      }
-      if (_talukaId == null && _areaClassification != 'URBAN') {
-        found['taluka'] = l10n.talukaRequired;
-      }
-      if (_censusId == null) {
-        found['villageCity'] = _areaClassification == 'URBAN'
-            ? l10n.cityCorpRequired
-            : l10n.villageRequired;
-      }
     } else if (_step == 2) {
-      final hasAadhaarDoc = _localAadhaarPath != null || _aadhaarDocUrl != null || _localSignatoryAadhaarPath != null || _aadhaarSignatoryDocUrl != null;
-      if (hasAadhaarDoc && !_isAadhaarVerified) {
-        found['aadhaar'] = l10n.aadhaarVerificationRequired;
+      if (_userType == UserType.normalConsumer) {
+        final aadh = _aadhaarController.text.replaceAll(' ', '').trim();
+        final hasAadhaarDoc = _localAadhaarPath != null || _aadhaarDocUrl != null;
+        final hasAadhaarInput = aadh.isNotEmpty || hasAadhaarDoc;
+
+        if (hasAadhaarInput) {
+          if (aadh.isEmpty || aadh.length != 12 || !RegExp(r'^\d{12}$').hasMatch(aadh)) {
+            found['aadhaar'] = l10n.enterValidAadhaarNumber;
+          } else if (!_isAadhaarVerified) {
+            found['aadhaar'] = l10n.aadhaarVerificationRequired;
+          }
+        }
+      } else {
+        // Organisation registration Step 2 validation
+        if (!_declarationConfirmed) {
+          found['declaration'] = l10n.confirmDeclarationRequired;
+        }
+
+        final pan = _panController.text.trim().toUpperCase();
+        final hasPanDoc = _localPanPath != null || _panDocUrl != null;
+        final hasPanInput = pan.isNotEmpty || hasPanDoc;
+
+        if (hasPanInput) {
+          if (pan.isEmpty) {
+            found['pan'] = l10n.orgPanRequired;
+          } else if (pan.length != 10 || !RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(pan)) {
+            found['pan'] = l10n.validPanRequired;
+          } else if (!_isPanVerified) {
+            found['pan'] = l10n.verifyOrgPanBeforeSaving;
+          }
+        }
+
+        final aadh = _aadhaarController.text.replaceAll(' ', '').trim();
+        final hasAadhaarDoc = _localSignatoryAadhaarPath != null || _aadhaarSignatoryDocUrl != null || _localAadhaarPath != null || _aadhaarDocUrl != null;
+        final hasAadhaarInput = aadh.isNotEmpty || hasAadhaarDoc;
+
+        if (hasAadhaarInput) {
+          if (aadh.isEmpty) {
+            found['aadhaar'] = l10n.enterValidAadhaarNumber;
+          } else if (aadh.length != 12 || !RegExp(r'^\d{12}$').hasMatch(aadh)) {
+            found['aadhaar'] = l10n.enterValidAadhaarNumber;
+          } else if (!_isAadhaarVerified) {
+            found['aadhaar'] = l10n.aadhaarVerificationRequired;
+          }
+        }
       }
     }
 
@@ -650,7 +791,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     label: _step == 0
                         ? AppLocalizations.of(context)!.continueBtn
                         : _step == 1
-                            ? AppLocalizations.of(context)!.continueToKyc
+                            ? (_userType == UserType.organization ? AppLocalizations.of(context)!.continueBtn : AppLocalizations.of(context)!.continueToKyc)
                             : AppLocalizations.of(context)!.completeRegistration,
                     isLoading: _isSubmitting,
                     fullWidth: true,
@@ -677,18 +818,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       children: [
         Text(
           l10n.chooseAccountType,
-          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
         ),
-        const SizedBox(height: 8),
-        Text(
-          l10n.howWillYouUse,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          l10n.chooseAccountDesc,
-          style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary),
-        ),
+
         const SizedBox(height: 24),
 
         // Individual Card
@@ -706,7 +838,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
             ),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Container(
                   width: 40,
@@ -723,84 +855,65 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(width: 14),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.individual,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        l10n.individualDesc,
-                        style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary, height: 1.3),
-                      ),
-                    ],
+                  child: Text(
+                    l10n.individual,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
                   ),
                 ),
               ],
             ),
           ),
         ),
-        if (AppConfig.enableOrganizationFlow) ...[
-          const SizedBox(height: 14),
-          // Organization Card
-          InkWell(
-            onTap: () => setState(() => _userType = UserType.organization),
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: _userType == UserType.organization ? const Color(0xFFEEF4FF) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: _userType == UserType.organization ? AppColors.primary700 : AppColors.line,
-                  width: _userType == UserType.organization ? 2 : 1,
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: _userType == UserType.organization ? AppColors.primary700 : const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      Icons.business_outlined,
-                      color: _userType == UserType.organization ? Colors.white : AppColors.ink,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.organization,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          l10n.organizationDesc,
-                          style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary, height: 1.3),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+        const SizedBox(height: 14),
+        // Organization Card
+        InkWell(
+          onTap: () => setState(() {
+            _userType = UserType.organization;
+          }),
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: _userType == UserType.organization ? const Color(0xFFEEF4FF) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _userType == UserType.organization ? AppColors.primary700 : AppColors.line,
+                width: _userType == UserType.organization ? 2 : 1,
               ),
             ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: _userType == UserType.organization ? AppColors.primary700 : const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.business_outlined,
+                    color: _userType == UserType.organization ? Colors.white : AppColors.ink,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    l10n.organization,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
 
         const SizedBox(height: 28),
         Row(
           children: [
-            Text(l10n.alreadyHaveAccount, style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary)),
+            Text(l10n.alreadyHaveAccount.trim(), style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary)),
+            const SizedBox(width: 4),
             GestureDetector(
               onTap: () => context.push('/login'),
               child: Text(
@@ -818,7 +931,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // STEP 1: Basic & Address Details
   // -------------------------------------------------------------
   Widget _buildStep1Details() {
-    final isOrg = _userType == UserType.organization;
+    if (_userType == UserType.organization) {
+      return _buildOrgStep1Details();
+    }
+    return _buildIndividualStep1Details();
+  }
+
+  // -------------------------------------------------------------
+  // STEP 1: Organisation Details (Matches Reference Screenshot 1)
+  // -------------------------------------------------------------
+  Widget _buildOrgStep1Details() {
     final l10n = AppLocalizations.of(context)!;
 
     return Column(
@@ -852,8 +974,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   color: Color(0xFF2563EB),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  isOrg ? Icons.business : Icons.person,
+                child: const Icon(
+                  Icons.business,
                   color: Colors.white,
                   size: 20,
                 ),
@@ -864,16 +986,285 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isOrg ? l10n.organization : l10n.individual,
+                      l10n.organization,
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isOrg ? l10n.personaOrganizationDesc : l10n.personaIndividualDesc,
+                      l10n.personaOrganizationDesc,
                       style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary),
                     ),
                   ],
                 ),
+              ),
+              TextButton(
+                onPressed: () => setState(() => _step = 0),
+                child: Text(l10n.changeBtn, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF2563EB))),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // 1. ORGANISATION DETAILS SECTION
+        _buildSectionHeader(Icons.domain_outlined, l10n.organisationDetailsHeader),
+        const SizedBox(height: 14),
+
+        _buildOrgFieldLabel(l10n.orgNameRequiredLabel),
+        const SizedBox(height: 6),
+        _buildOrgTextField(
+          controller: _orgNameController,
+          hint: l10n.enterOrgNameHint,
+          error: _errors['orgName'],
+          onChanged: (val) {
+            if (val.isNotEmpty && _errors.containsKey('orgName')) {
+              setState(() => _errors.remove('orgName'));
+            }
+          },
+        ),
+        const SizedBox(height: 14),
+
+        _buildOrgFieldLabel(l10n.emailIdRequiredLabel),
+        const SizedBox(height: 6),
+        _buildOrgTextField(
+          controller: _emailController,
+          hint: l10n.enterEmailHint,
+          keyboardType: TextInputType.emailAddress,
+          error: _errors['email'],
+          onChanged: (val) {
+            if (val.isNotEmpty && _errors.containsKey('email')) {
+              setState(() => _errors.remove('email'));
+            }
+          },
+        ),
+        const SizedBox(height: 14),
+
+        _buildOrgFieldLabel(l10n.addressRequiredLabel),
+        const SizedBox(height: 6),
+        _buildOrgTextField(
+          controller: _addressController,
+          hint: l10n.registeredOfficeAddressHint,
+          error: _errors['address'],
+          minLines: 2,
+          maxLines: 3,
+          onChanged: (val) {
+            if (val.isNotEmpty && _errors.containsKey('address')) {
+              setState(() => _errors.remove('address'));
+            }
+          },
+        ),
+        const SizedBox(height: 22),
+
+        // 2. LOCATION DETAILS SECTION
+        _buildSectionHeader(Icons.location_on, l10n.locationDetailsHeader),
+        const SizedBox(height: 14),
+
+        LocationDropdownSection(
+          initialCategory: _areaClassification,
+          initialDistrict: _district,
+          initialTaluka: _taluka,
+          initialVillageCity: _areaClassification == 'URBAN' ? _cityController.text : _villageController.text,
+          districtError: _errors['district'],
+          talukaError: _errors['taluka'],
+          villageCityError: _errors['villageCity'],
+          onChanged: (locData) {
+            setState(() {
+              _areaClassification = locData.category ?? 'URBAN';
+              _district = locData.districtName;
+              _taluka = locData.talukaName;
+              _stateId = locData.stateId ?? 1;
+              _districtId = locData.district?.id;
+              _talukaId = locData.taluka?.id;
+              _censusId = locData.villageCity?.id;
+
+              if (_districtId != null) _errors.remove('district');
+              if (_talukaId != null) _errors.remove('taluka');
+              if (_censusId != null) _errors.remove('villageCity');
+
+              if (locData.category == 'RURAL') {
+                _villageController.text = locData.villageCityName;
+                _cityController.text = '';
+              } else {
+                _cityController.text = locData.villageCityName;
+                _villageController.text = '';
+              }
+            });
+          },
+        ),
+        const SizedBox(height: 22),
+
+        // 3. CONTACT PERSON DETAILS SECTION
+        _buildSectionHeader(Icons.person, l10n.contactPersonDetailsHeader),
+        const SizedBox(height: 14),
+
+        _buildOrgFieldLabel(l10n.contactPersonNameRequiredLabel),
+        const SizedBox(height: 6),
+        _buildOrgTextField(
+          controller: _contactPersonController,
+          hint: l10n.enterContactPersonNameHint,
+          error: _errors['contactPersonName'],
+          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]'))],
+          onChanged: (val) {
+            if (val.isNotEmpty && _errors.containsKey('contactPersonName')) {
+              setState(() => _errors.remove('contactPersonName'));
+            }
+          },
+        ),
+        const SizedBox(height: 14),
+
+        // Mobile No. *
+        _buildOrgFieldLabel(l10n.mobileNumberRequiredLabel),
+        const SizedBox(height: 6),
+        TextField(
+          controller: _mobileController,
+          keyboardType: TextInputType.phone,
+          maxLength: 10,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink),
+          decoration: InputDecoration(
+            counterText: '',
+            filled: true,
+            fillColor: Colors.white,
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            hintText: l10n.enterTenDigitMobileHint,
+            hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: _errors.containsKey('mobile') ? AppColors.danger600 : AppColors.lineStrong),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: _errors.containsKey('mobile') ? AppColors.danger600 : AppColors.lineStrong),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: _errors.containsKey('mobile') ? AppColors.danger600 : AppColors.primary700, width: 1.5),
+            ),
+          ),
+          onChanged: (val) {
+            if (val.isNotEmpty && _errors.containsKey('mobile')) {
+              setState(() => _errors.remove('mobile'));
+            }
+          },
+        ),
+        if (_errors.containsKey('mobile')) ...[
+          const SizedBox(height: 4),
+          Text(_errors['mobile']!, style: const TextStyle(fontSize: 11, color: AppColors.danger700)),
+        ],
+        const SizedBox(height: 14),
+
+        // Contact Person Aadhaar No. (optional)
+        _buildOrgFieldLabel(l10n.contactPersonAadhaarOptionalLabel),
+        const SizedBox(height: 6),
+        TextField(
+          controller: _aadhaarController,
+          keyboardType: TextInputType.number,
+          maxLength: 14,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            _AadhaarNumberFormatter(),
+          ],
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink),
+          decoration: InputDecoration(
+            counterText: '',
+            filled: true,
+            fillColor: Colors.white,
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            hintText: l10n.enterTwelveDigitAadhaarHint,
+            hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: _errors.containsKey('aadhaar') ? AppColors.danger600 : AppColors.lineStrong),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: _errors.containsKey('aadhaar') ? AppColors.danger600 : AppColors.lineStrong),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: _errors.containsKey('aadhaar') ? AppColors.danger600 : AppColors.primary700, width: 1.5),
+            ),
+          ),
+          onChanged: (val) {
+            if (_errors.containsKey('aadhaar')) {
+              setState(() => _errors.remove('aadhaar'));
+            }
+          },
+        ),
+        if (_errors.containsKey('aadhaar')) ...[
+          const SizedBox(height: 4),
+          Text(_errors['aadhaar']!, style: const TextStyle(fontSize: 11, color: AppColors.danger700)),
+        ],
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  // -------------------------------------------------------------
+  // STEP 1: Individual Registration Details (Unchanged)
+  // -------------------------------------------------------------
+  Widget _buildIndividualStep1Details() {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.basicAndAddressDetails,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          l10n.enterPersonalContact,
+          style: const TextStyle(fontSize: 14, color: AppColors.inkSecondary, height: 1.3),
+        ),
+        const SizedBox(height: 20),
+
+        // Persona Summary Card
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEFF6FF),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFDBEAFE)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF2563EB),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.person,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.individual,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.personaIndividualDesc,
+                      style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () => setState(() => _step = 0),
+                child: Text(l10n.changeBtn, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF2563EB))),
               ),
             ],
           ),
@@ -897,42 +1288,42 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ),
         const SizedBox(height: 16),
 
-        // Mobile Number with +91 Prefix
+        // Mobile Number
         _buildFieldLabel(l10n.mobileNumber),
         const SizedBox(height: 6),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: _errors.containsKey('mobile') ? AppColors.danger700 : AppColors.line),
-          ),
-          child: Row(
-            children: [
-
-              Expanded(
-                child: TextField(
-                  controller: _mobileController,
-                  keyboardType: TextInputType.number,
-                  maxLength: 10,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                  ],
-                  onChanged: (val) {
-                    if (val.isNotEmpty && _errors.containsKey('mobile')) {
-                      setState(() => _errors.remove('mobile'));
-                    }
-                  },
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
-                  decoration: InputDecoration(
-                    hintText: l10n.tenDigitNumber,
-                    hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
-                    counterText: '',
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  ),
-                ),
-              ),
-            ],
+        TextField(
+          controller: _mobileController,
+          keyboardType: TextInputType.phone,
+          maxLength: 10,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+          ],
+          onChanged: (val) {
+            if (val.isNotEmpty && _errors.containsKey('mobile')) {
+              setState(() => _errors.remove('mobile'));
+            }
+          },
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink),
+          decoration: InputDecoration(
+            counterText: '',
+            filled: true,
+            fillColor: Colors.white,
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            hintText: l10n.tenDigitNumber,
+            hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: _errors.containsKey('mobile') ? AppColors.danger600 : AppColors.lineStrong),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: _errors.containsKey('mobile') ? AppColors.danger600 : AppColors.lineStrong),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: _errors.containsKey('mobile') ? AppColors.danger600 : AppColors.primary700, width: 1.5),
+            ),
           ),
         ),
         if (_errors.containsKey('mobile')) ...[
@@ -950,125 +1341,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         }),
         const SizedBox(height: 20),
 
-        // Organization Specific Fields if org
-        if (isOrg) ...[
-          _buildFieldLabel(l10n.orgNameLabel),
-          const SizedBox(height: 6),
-          _buildTextField(_orgNameController, hint: 'Shree Infra & Constructions Pvt Ltd', error: _errors['orgName'], onChanged: (val) {
-            if (val.isNotEmpty && _errors.containsKey('orgName')) {
-              setState(() => _errors.remove('orgName'));
-            }
-          }),
-          const SizedBox(height: 16),
-
-          _buildFieldLabel(l10n.orgTypeLabel),
-          const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.line),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _orgType,
-                isExpanded: true,
-                items: const [
-                  DropdownMenuItem(value: 'BUILDER', child: Text('Builder')),
-                  DropdownMenuItem(value: 'CONTRACTOR', child: Text('Contractor')),
-                  DropdownMenuItem(value: 'GOVERNMENT', child: Text('Government')),
-                  DropdownMenuItem(value: 'OTHER', child: Text('Organization')),
-                ],
-                onChanged: (val) => setState(() => _orgType = val!),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          if (!_noGst) ...[
-            _buildFieldLabel('GSTIN / GST Number'),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildTextField(
-                    _gstController,
-                    hint: '15-character GSTIN (e.g. 27AAAAA0000A1Z5)',
-                    error: _errors['gstNumber'],
-                    uppercase: true,
-                    onChanged: (val) {
-                      if (val.isNotEmpty && _errors.containsKey('gstNumber')) {
-                        setState(() => _errors.remove('gstNumber'));
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _gstStatus == 'verifying' ? null : _verifyGst,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary700,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                  ),
-                  child: _gstStatus == 'verifying'
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('Verify', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                ),
-              ],
-            ),
-            if (_gstStatus == 'verified') ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0FDF4),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFBBF7D0)),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.check_circle, size: 16, color: Color(0xFF15803D)),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('GSTIN Verified (Active)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF15803D))),
-                          Text('Entity verified with Maharashtra State GST Portal', style: TextStyle(fontSize: 11, color: Color(0xFF166534))),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-
-          Row(
-            children: [
-              Checkbox(
-                value: _noGst,
-                activeColor: AppColors.primary700,
-                onChanged: (val) => setState(() => _noGst = val ?? false),
-              ),
-              const Expanded(
-                child: Text('Entity does not have a GSTIN (Unregistered / Exemption)', style: TextStyle(fontSize: 12, color: AppColors.inkSecondary)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          _buildFieldLabel('Mahakhanij registration number (optional)'),
-          const SizedBox(height: 6),
-          _buildTextField(_regNumberController, hint: 'e.g. MH-2024-ORG-9988'),
-          const SizedBox(height: 20),
-        ],
-
-
-
         // Dynamic Location Dropdowns
         LocationDropdownSection(
           initialCategory: _areaClassification,
@@ -1083,6 +1355,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               _areaClassification = locData.category ?? 'URBAN';
               _district = locData.districtName;
               _taluka = locData.talukaName;
+              _stateId = locData.stateId ?? 1;
               _districtId = locData.district?.id;
               _talukaId = locData.taluka?.id;
               _censusId = locData.villageCity?.id;
@@ -1091,10 +1364,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               if (_talukaId != null) _errors.remove('taluka');
               if (_censusId != null) _errors.remove('villageCity');
 
-              if (locData.category == 'RURAL') { // Rural -> Village
+              if (locData.category == 'RURAL') {
                 _villageController.text = locData.villageCityName;
                 _cityController.text = '';
-              } else { // Urban -> City
+              } else {
                 _cityController.text = locData.villageCityName;
                 _villageController.text = '';
               }
@@ -1117,11 +1390,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   // -------------------------------------------------------------
-  // STEP 2: KYC Verification with Live Aadhaar Verification & Skip
+  // STEP 2: KYC Verification Dispatcher
   // -------------------------------------------------------------
   Widget _buildStep2Kyc() {
+    if (_userType == UserType.organization) {
+      return _buildOrgStep2Kyc();
+    }
+    return _buildIndividualStep2Kyc();
+  }
+
+  // -------------------------------------------------------------
+  // STEP 2: Organisation KYC (Matches Reference Screenshot 2)
+  // -------------------------------------------------------------
+  Widget _buildOrgStep2Kyc() {
     final l10n = AppLocalizations.of(context)!;
-    final isOrg = _userType == UserType.organization;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1130,308 +1412,548 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              isOrg ? l10n.orgKycVerification : l10n.aadhaarKyc,
+              l10n.orgKycVerification,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
             ),
           ],
         ),
-
         const SizedBox(height: 20),
 
-        if (!isOrg) ...[
-          // Interactive Aadhaar Verification Box
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: _isAadhaarVerified ? const Color(0xFFBBF7D0) : AppColors.line),
-              boxShadow: const [
-                BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
-              ],
+        // Card 1: Contact Person Aadhaar Verification
+        _buildOrgAadhaarVerificationCard(),
+        const SizedBox(height: 16),
+
+        // Card 2: Organisation PAN Verification
+        _buildOrgPanVerificationCard(),
+        const SizedBox(height: 16),
+
+        // Confirmation Checkbox (Declaration)
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: Checkbox(
+                value: _declarationConfirmed,
+                activeColor: const Color(0xFF2563EB),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                side: const BorderSide(color: Color(0xFF64748B), width: 1.5),
+                onChanged: (val) {
+                  setState(() {
+                    _declarationConfirmed = val ?? false;
+                    if (_declarationConfirmed) _errors.remove('declaration');
+                  });
+                },
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: _isAadhaarVerified ? const Color(0xFFDCFCE7) : const Color(0xFFEFF6FF),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        _isAadhaarVerified ? Icons.verified_user : Icons.badge_outlined,
-                        color: _isAadhaarVerified ? const Color(0xFF15803D) : const Color(0xFF2563EB),
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _isAadhaarVerified ? l10n.aadhaarIdentityVerified : l10n.aadhaarCardOtpVerification,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: _isAadhaarVerified ? const Color(0xFF15803D) : AppColors.ink,
-                            ),
-                          ),
-                          Text(
-                            _isAadhaarVerified ? l10n.aadhaarVerifiedNationalId : l10n.enterTwelveDigitAadhaarToReceiveOtp,
-                            style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                l10n.orgDeclarationText,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF475569),
+                  height: 1.35,
                 ),
-                const SizedBox(height: 16),
-
-                if (_isAadhaarVerified) ...[
-                  // Verified State Summary Banner
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0FDF4),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFBBF7D0)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.check_circle, size: 16, color: Color(0xFF15803D)),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      _aadhaarVerifiedData?.fullName ?? 'Suraj Akil Atar',
-                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF15803D)),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Aadhaar: ${_aadhaarVerifiedData?.aadharNumber ?? "XXXX-XXXX-2902"}',
-                                style: const TextStyle(fontSize: 12, color: Color(0xFF166534), fontFamily: 'monospace'),
-                              ),
-                              Text(
-                                'Address: ${_aadhaarVerifiedData?.loc ?? "at post tungat taluka pandharpur"}, ${_aadhaarVerifiedData?.dist ?? "Solapur"}, ${_aadhaarVerifiedData?.state ?? "Maharashtra"} - ${_aadhaarVerifiedData?.zip ?? "413304"}',
-                                style: const TextStyle(fontSize: 11, color: Color(0xFF166534)),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.edit, size: 18, color: Color(0xFF15803D)),
-                          onPressed: () {
-                            setState(() {
-                              _isAadhaarVerified = false;
-                              _aadhaarVerifiedData = null;
-                              _isAadhaarOtpSent = false;
-                              _aadhaarOtpController.clear();
-                              _aadhaarController.clear();
-                              _aadhaarError = null;
-                              _aadhaarClientId = null;
-                              _resendTimer?.cancel();
-                              _timerCountdown = 60;
-                            });
-                          },
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
-                      ],
-                    ),
-                  ),
-                ] else ...[
-                  // Aadhaar Number Input Row
-                  _buildFieldLabel(l10n.aadhaarCardNumberLabel),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _aadhaarController,
-                          keyboardType: TextInputType.number,
-                          maxLength: 12,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          onChanged: (val) {
-                            if (_aadhaarError != null) {
-                              setState(() => _aadhaarError = null);
-                            }
-                            if (_isAadhaarOtpSent) {
-                              setState(() {
-                                _isAadhaarOtpSent = false;
-                                _aadhaarOtpController.clear();
-                              });
-                            }
-                          },
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
-                          decoration: InputDecoration(
-                            hintText: l10n.twelveDigitAadhaarHint,
-                            hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
-                            counterText: '',
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.line)),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.line)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: (_isCheckingAadhaar || _isGeneratingAadhaarOtp || (_isAadhaarOtpSent && _timerCountdown > 0)) ? null : _handleSendAadhaarOtp,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary700,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                        ),
-                        child: (_isCheckingAadhaar || _isGeneratingAadhaarOtp)
-                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : Text(
-                                _isAadhaarOtpSent
-                                    ? (_timerCountdown > 0
-                                        ? '00:${_timerCountdown.toString().padLeft(2, '0')}'
-                                        : l10n.resendBtn)
-                                    : l10n.sendOtpBtn,
-                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                              ),
-                      ),
-                    ],
-                  ),
-
-                  if (_isAadhaarOtpSent) ...[
-                    const SizedBox(height: 14),
-                    _buildFieldLabel(l10n.enterSixDigitAadhaarOtpLabel),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _aadhaarOtpController,
-                            keyboardType: TextInputType.number,
-                            maxLength: 6,
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
-                            decoration: InputDecoration(
-                              hintText: l10n.sixDigitOtpHint,
-                              hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
-                              counterText: '',
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.line)),
-                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.line)),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: _isVerifyingAadhaarOtp ? null : _handleVerifyAadhaarOtp,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF15803D),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                          ),
-                          child: _isVerifyingAadhaarOtp
-                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                              : Text(l10n.verifyOtpBtn, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                        ),
-                      ],
-                    ),
-                  ],
-
-                  if (_aadhaarError != null) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFFCA5A5)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.error_outline, size: 16, color: AppColors.danger700),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _aadhaarError!,
-                              style: const TextStyle(fontSize: 12, color: AppColors.danger700, fontWeight: FontWeight.w500),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ],
+              ),
             ),
+          ],
+        ),
+        if (_errors.containsKey('declaration')) ...[
+          const SizedBox(height: 6),
+          Text(
+            _errors['declaration']!,
+            style: const TextStyle(fontSize: 12, color: AppColors.danger700),
           ),
-          const SizedBox(height: 16),
+        ],
+        const SizedBox(height: 24),
+      ],
+    );
+  }
 
-          // Upload Aadhaar Card (Optional Document)
+  // -------------------------------------------------------------
+  // STEP 2: Individual KYC (Unchanged)
+  // -------------------------------------------------------------
+  Widget _buildIndividualStep2Kyc() {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              l10n.aadhaarKyc,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.5),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // Interactive Aadhaar Verification Box
+        _buildAadhaarVerificationCard(isOrg: false),
+        const SizedBox(height: 16),
+
+        // Upload Aadhaar Card (Optional Document)
+        _buildUploadCard(
+          title: l10n.uploadAadhaarCardOptional,
+          hint: l10n.frontOrCombinedAadhaar,
+          fileName: _kycFileName,
+          docUrl: _aadhaarDocUrl,
+          localPath: _localAadhaarPath,
+          isLoading: _isUploadingAadhaarDoc,
+          error: _errors['kycFile'],
+          onPick: () => _pickAndUploadDocument(isPan: false),
+          onRemove: () {
+            setState(() {
+              _localAadhaarPath = null;
+              _localAadhaarBytes = null;
+              _kycFileName = null;
+              _aadhaarDocUrl = null;
+            });
+          },
+        ),
+        const SizedBox(height: 20),
+
+        // Non-Mandatory Notice Box
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0FDF4),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFBBF7D0)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.shield_outlined, size: 18, color: Color(0xFF15803D)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  l10n.aadhaarNonMandatoryNotice,
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF166534), height: 1.3),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  // -------------------------------------------------------------
+  // Organisation KYC Cards
+  // -------------------------------------------------------------
+  Widget _buildOrgAadhaarVerificationCard() {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _isAadhaarVerified ? const Color(0xFFBBF7D0) : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: const [
+          BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.check_circle, color: Color(0xFF2563EB), size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  l10n.contactPersonAadhaarVerificationTitle,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1E293B),
+                    height: 1.25,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _isAadhaarVerified ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  _isAadhaarVerified ? l10n.verifiedStatus : l10n.notVerifiedStatus,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: _isAadhaarVerified ? const Color(0xFF15803D) : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Field: Contact Person Aadhaar No. (optional)
+          _buildOrgFieldLabel(l10n.contactPersonAadhaarOptionalLabel),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _aadhaarController,
+            keyboardType: TextInputType.number,
+            maxLength: 14,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              _AadhaarNumberFormatter(),
+            ],
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink),
+            decoration: InputDecoration(
+              counterText: '',
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary700,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Icon(Icons.badge, color: Colors.white, size: 16),
+                ),
+              ),
+              hintText: l10n.enterTwelveDigitAadhaar,
+              hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: _aadhaarError != null || _errors.containsKey('aadhaar') ? AppColors.danger600 : AppColors.lineStrong,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: _aadhaarError != null || _errors.containsKey('aadhaar') ? AppColors.danger600 : AppColors.lineStrong,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: _aadhaarError != null || _errors.containsKey('aadhaar') ? AppColors.danger600 : AppColors.primary700,
+                  width: 1.5,
+                ),
+              ),
+            ),
+            onChanged: (val) {
+              if (_aadhaarError != null) setState(() => _aadhaarError = null);
+              if (_errors.containsKey('aadhaar')) setState(() => _errors.remove('aadhaar'));
+              if (_isAadhaarVerified) {
+                setState(() {
+                  _isAadhaarVerified = false;
+                  _aadhaarVerifiedData = null;
+                });
+              }
+            },
+          ),
+          if (_aadhaarError != null || _errors.containsKey('aadhaar')) ...[
+            const SizedBox(height: 4),
+            Text(
+              _aadhaarError ?? _errors['aadhaar'] ?? '',
+              style: const TextStyle(fontSize: 12, color: AppColors.danger700),
+            ),
+          ],
+          const SizedBox(height: 14),
+
+          // Upload Aadhaar Document (with View, Change, Delete actions)
           _buildUploadCard(
-            title: l10n.uploadAadhaarCardOptional,
-            hint: l10n.frontOrCombinedAadhaar,
-            fileName: _kycFileName,
-            docUrl: _aadhaarDocUrl,
-            localPath: _localAadhaarPath,
+            title: l10n.uploadAadhaarDocOptional,
+            hint: l10n.chooseAadhaarCardPhotoPdf,
+            fileName: _localSignatoryAadhaarName ?? _localAadhaarName ?? _aadhaarFileName,
+            docUrl: _aadhaarSignatoryDocUrl ?? _aadhaarDocUrl,
+            localPath: _localSignatoryAadhaarPath ?? _localAadhaarPath,
             isLoading: _isUploadingAadhaarDoc,
-            error: _errors['kycFile'],
-            onPick: () => _pickAndUploadDocument(isPan: false),
+            error: _errors['aadhaarFile'],
+            onPick: () => _pickAndUploadDocument(isPan: false, isSignatoryAadhaar: true),
             onRemove: () {
               setState(() {
+                _localSignatoryAadhaarPath = null;
+                _localSignatoryAadhaarName = null;
+                _localSignatoryAadhaarBytes = null;
+                _aadhaarFileName = null;
+                _aadhaarSignatoryDocUrl = null;
                 _localAadhaarPath = null;
+                _localAadhaarName = null;
                 _localAadhaarBytes = null;
-                _kycFileName = null;
                 _aadhaarDocUrl = null;
+                if (_errors.containsKey('aadhaarFile')) _errors.remove('aadhaarFile');
               });
             },
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 14),
 
-          // Non-Mandatory Notice Box
+          // Info Box: OTP will be sent to your Aadhaar registered mobile number
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFBBF7D0)),
+              color: AppColors.primary50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.primary100),
             ),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.shield_outlined, size: 18, color: Color(0xFF15803D)),
+                const Icon(Icons.info, color: AppColors.primary700, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    l10n.aadhaarNonMandatoryNotice,
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF166534), height: 1.3),
+                    l10n.otpSentToAadhaarMobileNotice,
+                    style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary, height: 1.25),
                   ),
                 ),
               ],
             ),
           ),
-        ] else ...[
-          // Organization PAN & Signatory Aadhaar
-          _buildFieldLabel('Organization PAN number'),
-          const SizedBox(height: 6),
-          _buildTextField(_panController, hint: '10-character PAN (e.g. ABCDE1234F)', error: _errors['pan'], uppercase: true),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
+          // Action: Send OTP button
+          if (!_isAadhaarVerified) ...[
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: OutlinedButton(
+                onPressed: (_isCheckingAadhaar || _isGeneratingAadhaarOtp || (_isAadhaarOtpSent && _timerCountdown > 0))
+                    ? null
+                    : _handleSendAadhaarOtp,
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.primary700, width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: (_isCheckingAadhaar || _isGeneratingAadhaarOtp)
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary700))
+                    : Text(
+                        _isAadhaarOtpSent
+                            ? (_timerCountdown > 0 ? l10n.resendInSeconds(_timerCountdown.toString().padLeft(2, '0')) : l10n.resendOtpBtn)
+                            : l10n.sendOtpBtn,
+                        style: const TextStyle(color: AppColors.primary700, fontWeight: FontWeight.w700, fontSize: 14),
+                      ),
+              ),
+            ),
+
+            if (_isAadhaarOtpSent) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _aadhaarOtpController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink),
+                      decoration: InputDecoration(
+                        hintText: l10n.enterSixDigitOtpHint,
+                        hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
+                        counterText: '',
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                          borderSide: BorderSide(color: AppColors.lineStrong),
+                        ),
+                        enabledBorder: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                          borderSide: BorderSide(color: AppColors.lineStrong),
+                        ),
+                        focusedBorder: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                          borderSide: BorderSide(color: AppColors.primary700, width: 1.5),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: _isVerifyingAadhaarOtp ? null : _handleVerifyAadhaarOtp,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF15803D),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                      ),
+                      child: _isVerifyingAadhaarOtp
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : Text(l10n.verifyOtpBtn, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle, size: 16, color: Color(0xFF15803D)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      _aadhaarVerifiedData?.fullName ?? _contactPersonController.text.trim(),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF15803D)),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit, size: 16, color: Color(0xFF15803D)),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () {
+                      setState(() {
+                        _isAadhaarVerified = false;
+                        _aadhaarVerifiedData = null;
+                        _isAadhaarOtpSent = false;
+                        _aadhaarOtpController.clear();
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrgPanVerificationCard() {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _isPanVerified ? const Color(0xFFBBF7D0) : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: const [
+          BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row
+          Row(
+            children: [
+              const Icon(Icons.check_circle, color: Color(0xFF2563EB), size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  l10n.orgPanVerificationTitle,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _isPanVerified ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  _isPanVerified ? l10n.verifiedStatus : l10n.notVerifiedStatus,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: _isPanVerified ? const Color(0xFF15803D) : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Field: PAN No. (optional)
+          _buildOrgFieldLabel(l10n.panNoOptionalLabel),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _panController,
+            maxLength: 10,
+            textCapitalization: TextCapitalization.characters,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink),
+            decoration: InputDecoration(
+              counterText: '',
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary700,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Icon(Icons.badge, color: Colors.white, size: 16),
+                ),
+              ),
+              hintText: l10n.enterTenDigitPan,
+              hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: _panError != null || _errors.containsKey('pan') ? AppColors.danger600 : AppColors.lineStrong,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: _panError != null || _errors.containsKey('pan') ? AppColors.danger600 : AppColors.lineStrong,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: _panError != null || _errors.containsKey('pan') ? AppColors.danger600 : AppColors.primary700,
+                  width: 1.5,
+                ),
+              ),
+            ),
+            onChanged: (val) {
+              if (_panError != null) setState(() => _panError = null);
+              if (_errors.containsKey('pan')) setState(() => _errors.remove('pan'));
+              if (_isPanVerified) setState(() => _isPanVerified = false);
+            },
+          ),
+          if (_panError != null || _errors.containsKey('pan')) ...[
+            const SizedBox(height: 4),
+            Text(
+              _panError ?? _errors['pan'] ?? '',
+              style: const TextStyle(fontSize: 12, color: AppColors.danger700),
+            ),
+          ],
+          const SizedBox(height: 14),
+
+          // Upload PAN Document (with View, Change, Delete actions)
           _buildUploadCard(
-            title: 'Upload Organization PAN Card',
-            hint: 'Clear copy of entity PAN card (PDF / Image)',
-            fileName: _panFileName,
+            title: l10n.uploadPanDocOptional,
+            hint: l10n.choosePanCardPhotoPdf,
+            fileName: _localPanName ?? _panFileName,
             docUrl: _panDocUrl,
             localPath: _localPanPath,
             isLoading: _isUploadingPanDoc,
@@ -1440,41 +1962,417 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             onRemove: () {
               setState(() {
                 _localPanPath = null;
+                _localPanName = null;
                 _localPanBytes = null;
                 _panFileName = null;
                 _panDocUrl = null;
+                if (_errors.containsKey('panFile')) _errors.remove('panFile');
               });
             },
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 14),
 
-          _buildFieldLabel('Signatory Aadhaar Card Number'),
-          const SizedBox(height: 6),
-          _buildTextField(_aadhaarController, hint: '12-digit Aadhaar number', error: _errors['aadhaar']),
+          // Action: Verify PAN button
+          if (!_isPanVerified) ...[
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: OutlinedButton(
+                onPressed: (_isCheckingPan || _isVerifyingPan) ? null : _handleVerifyPan,
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.primary700, width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: (_isCheckingPan || _isVerifyingPan)
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary700))
+                    : Text(
+                        l10n.verifyPanBtn,
+                        style: const TextStyle(color: AppColors.primary700, fontWeight: FontWeight.w700, fontSize: 14),
+                      ),
+              ),
+            ),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle, size: 16, color: Color(0xFF15803D)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _panClientName ?? _orgNameController.text.trim(),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF15803D)),
+                        ),
+                        if (_panClientStatus != null && _panClientStatus!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text('${l10n.panStatusPrefix}$_panClientStatus', style: const TextStyle(fontSize: 11, color: Color(0xFF166534))),
+                        ],
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit, size: 16, color: Color(0xFF15803D)),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () {
+                      setState(() {
+                        _isPanVerified = false;
+                        _panClientId = null;
+                        _panClientName = null;
+                        _panClientStatus = null;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+
+
+  // -------------------------------------------------------------
+  // Section Headers & Field Helpers
+  // -------------------------------------------------------------
+  Widget _buildSectionHeader(IconData icon, String title) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: AppColors.inkSecondary),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppColors.inkSecondary,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOrgFieldLabel(String label) {
+    return Text(
+      label,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: AppColors.ink,
+      ),
+    );
+  }
+
+  Widget _buildOrgTextField({
+    required TextEditingController controller,
+    String? hint,
+    String? error,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    int? minLines,
+    int? maxLines = 1,
+    ValueChanged<String>? onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          minLines: minLines,
+          maxLines: maxLines,
+          inputFormatters: inputFormatters,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: error != null ? AppColors.danger600 : AppColors.lineStrong,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: error != null ? AppColors.danger600 : AppColors.lineStrong,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: error != null ? AppColors.danger600 : AppColors.primary700,
+                width: 1.5,
+              ),
+            ),
+          ),
+          onChanged: onChanged,
+        ),
+        if (error != null) ...[
+          const SizedBox(height: 4),
+          Text(error, style: const TextStyle(fontSize: 12, color: AppColors.danger700)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildAadhaarVerificationCard({required bool isOrg}) {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _isAadhaarVerified ? const Color(0xFFBBF7D0) : AppColors.line),
+        boxShadow: const [
+          BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: _isAadhaarVerified ? const Color(0xFFDCFCE7) : const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  _isAadhaarVerified ? Icons.verified_user : Icons.badge_outlined,
+                  color: _isAadhaarVerified ? const Color(0xFF15803D) : const Color(0xFF2563EB),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _isAadhaarVerified
+                          ? (isOrg ? 'Authorized Signatory Aadhaar Verified' : l10n.aadhaarIdentityVerified)
+                          : (isOrg ? 'Signatory Aadhaar Verification' : l10n.aadhaarCardOtpVerification),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: _isAadhaarVerified ? const Color(0xFF15803D) : AppColors.ink,
+                      ),
+                    ),
+                    Text(
+                      _isAadhaarVerified
+                          ? (isOrg ? 'Signatory identity verified with UIDAI' : l10n.aadhaarVerifiedNationalId)
+                          : (isOrg
+                              ? 'Enter 12-digit Aadhaar number of authorized signatory to receive OTP'
+                              : l10n.enterTwelveDigitAadhaarToReceiveOtp),
+                      style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
 
-          _buildUploadCard(
-            title: 'Upload Signatory Aadhaar Card',
-            hint: 'Clear copy of authorized signatory Aadhaar (PDF / Image)',
-            fileName: _aadhaarFileName,
-            docUrl: _aadhaarSignatoryDocUrl ?? _aadhaarDocUrl,
-            localPath: _localSignatoryAadhaarPath,
-            isLoading: _isUploadingAadhaarDoc,
-            error: _errors['aadhaarFile'],
-            onPick: () => _pickAndUploadDocument(isPan: false, isSignatoryAadhaar: true),
-            onRemove: () {
-              setState(() {
-                _localSignatoryAadhaarPath = null;
-                _localSignatoryAadhaarBytes = null;
-                _aadhaarFileName = null;
-                _aadhaarSignatoryDocUrl = null;
-              });
-            },
-          ),
-        ],
+          if (_isAadhaarVerified) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.check_circle, size: 16, color: Color(0xFF15803D)),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                _aadhaarVerifiedData?.fullName ?? (isOrg ? _contactPersonController.text.trim() : 'Suraj Akil Atar'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF15803D)),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Aadhaar: ${_aadhaarVerifiedData?.aadharNumber ?? "XXXX-XXXX-${_aadhaarController.text.length >= 4 ? _aadhaarController.text.substring(_aadhaarController.text.length - 4) : '2902'}"}',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF166534), fontFamily: 'monospace'),
+                        ),
+                        if (_aadhaarVerifiedData?.loc != null || _aadhaarVerifiedData?.dist != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            'Address: ${_aadhaarVerifiedData?.loc ?? ""}, ${_aadhaarVerifiedData?.dist ?? ""}, ${_aadhaarVerifiedData?.state ?? ""} - ${_aadhaarVerifiedData?.zip ?? ""}',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF166534)),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit, size: 18, color: Color(0xFF15803D)),
+                    onPressed: () {
+                      setState(() {
+                        _isAadhaarVerified = false;
+                        _aadhaarVerifiedData = null;
+                        _isAadhaarOtpSent = false;
+                        _aadhaarOtpController.clear();
+                        _aadhaarController.clear();
+                        _aadhaarError = null;
+                        _aadhaarClientId = null;
+                        _resendTimer?.cancel();
+                        _timerCountdown = 60;
+                      });
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            _buildFieldLabel(isOrg ? 'Signatory Aadhaar Card Number' : l10n.aadhaarCardNumberLabel),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _aadhaarController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 12,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onChanged: (val) {
+                      if (_aadhaarError != null) setState(() => _aadhaarError = null);
+                      if (_errors.containsKey('aadhaar')) setState(() => _errors.remove('aadhaar'));
+                      if (_isAadhaarOtpSent) {
+                        setState(() {
+                          _isAadhaarOtpSent = false;
+                          _aadhaarOtpController.clear();
+                        });
+                      }
+                    },
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
+                    decoration: InputDecoration(
+                      hintText: l10n.twelveDigitAadhaarHint,
+                      hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
+                      counterText: '',
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.line)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.line)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: (_isCheckingAadhaar || _isGeneratingAadhaarOtp || (_isAadhaarOtpSent && _timerCountdown > 0)) ? null : _handleSendAadhaarOtp,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary700,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  ),
+                  child: (_isCheckingAadhaar || _isGeneratingAadhaarOtp)
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : Text(
+                          _isAadhaarOtpSent
+                              ? (_timerCountdown > 0
+                                  ? '00:${_timerCountdown.toString().padLeft(2, '0')}'
+                                  : l10n.resendBtn)
+                              : l10n.sendOtpBtn,
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                        ),
+                ),
+              ],
+            ),
 
-        const SizedBox(height: 24),
-      ],
+            if (_isAadhaarOtpSent) ...[
+              const SizedBox(height: 14),
+              _buildFieldLabel(l10n.enterSixDigitAadhaarOtpLabel),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _aadhaarOtpController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
+                      decoration: InputDecoration(
+                        hintText: l10n.sixDigitOtpHint,
+                        hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
+                        counterText: '',
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.line)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.line)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: _isVerifyingAadhaarOtp ? null : _handleVerifyAadhaarOtp,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF15803D),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                    ),
+                    child: _isVerifyingAadhaarOtp
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : Text(l10n.verifyOtpBtn, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  ),
+                ],
+              ),
+            ],
+
+            if (_aadhaarError != null || _errors.containsKey('aadhaar')) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF2F2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFFCA5A5)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, size: 16, color: AppColors.danger700),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _aadhaarError ?? _errors['aadhaar'] ?? '',
+                        style: const TextStyle(fontSize: 12, color: AppColors.danger700, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
     );
   }
 
@@ -1501,31 +2399,37 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: error != null ? AppColors.danger700 : AppColors.line),
-          ),
-          child: TextField(
-            controller: controller,
-            textCapitalization: uppercase ? TextCapitalization.characters : TextCapitalization.words,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
-            inputFormatters: [
-              FilteringTextInputFormatter.deny(
-                RegExp(r'(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]|[\u2700-\u27bf])'),
-              ),
-              ...?inputFormatters,
-            ],
-            keyboardType: keyboardType,
-            maxLength: maxLength,
-            onChanged: onChanged,
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
-              border: InputBorder.none,
-              counterText: '',
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        TextField(
+          controller: controller,
+          textCapitalization: uppercase ? TextCapitalization.characters : TextCapitalization.words,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
+          inputFormatters: [
+            FilteringTextInputFormatter.deny(
+              RegExp(r'(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]|[\u2700-\u27bf])'),
+            ),
+            ...?inputFormatters,
+          ],
+          keyboardType: keyboardType,
+          maxLength: maxLength,
+          onChanged: onChanged,
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
+            counterText: '',
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: error != null ? AppColors.danger600 : AppColors.lineStrong),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: error != null ? AppColors.danger600 : AppColors.lineStrong),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: error != null ? AppColors.danger600 : AppColors.primary700, width: 1.5),
             ),
           ),
         ),
@@ -1566,6 +2470,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             await launchUrl(url, mode: LaunchMode.externalApplication);
                           } catch (_) {}
                         }
+                      } else if (localPath != null) {
+                        try {
+                          await OpenFile.open(localPath);
+                        } catch (_) {}
                       }
                     }
                   : onPick),
@@ -1607,7 +2515,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        hasFile ? (fileName ?? 'Aadhaar_Document.pdf') : title,
+                        hasFile ? fileName : title,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -1699,6 +2607,31 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _AadhaarNumberFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    if (digits.length > 12) {
+      return oldValue;
+    }
+    final buffer = StringBuffer();
+    for (int i = 0; i < digits.length; i++) {
+      if (i > 0 && i % 4 == 0) {
+        buffer.write(' ');
+      }
+      buffer.write(digits[i]);
+    }
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

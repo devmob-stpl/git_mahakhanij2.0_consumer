@@ -15,15 +15,15 @@ class ApiEndpoints {
   static String demoMineralProjectBaseUrl = 'https://mineral-project.mahakhanij.in';
   static String demoMineralMappingBaseUrl = 'https://mineral-mapping.mahakhanij.in';
   static String demoMasterBaseUrl = 'https://master.mahakhanij.in';
+  static String demoMahaServiceBaseUrl = 'https://mahaservice.mahakhanij.in/service.asmx';
   static String demoBaseUrl = 'https://mineral-mapping.mahakhanij.in';
-  static String demoMahaServiceBaseUrl = 'https://mahaservice.mahakhanij.in';
 
   // Live / Production Environment Base URLs
   static String liveMineralProjectBaseUrl = 'https://mahakhanij.maharashtra.gov.in';
   static String liveMineralMappingBaseUrl = 'https://mahakhanij.maharashtra.gov.in';
   static String liveMasterBaseUrl = 'https://mahakhanij.maharashtra.gov.in';
+  static String liveMahaServiceBaseUrl = 'https://mahakhanij.maharashtra.gov.in/mahaservice/service.asmx';
   static String liveBaseUrl = 'https://mahakhanij.maharashtra.gov.in';
-  static String liveMahaServiceBaseUrl = 'https://mahakhanij.maharashtra.gov.in/mahaservice';
 
   // Dynamic Base URL getters evaluated at runtime based on active environment
   static String get mineralProjectBaseUrl =>
@@ -32,11 +32,14 @@ class ApiEndpoints {
   static String get mineralMappingBaseUrl =>
       activeEnvironment == ApiEnvironment.demo ? demoMineralMappingBaseUrl : liveMineralMappingBaseUrl;
 
+  static String get mahaServiceBaseUrl =>
+      activeEnvironment == ApiEnvironment.demo ? demoMahaServiceBaseUrl : liveMahaServiceBaseUrl;
+
   static String get masterBaseUrl =>
       activeEnvironment == ApiEnvironment.demo ? demoMasterBaseUrl : liveMasterBaseUrl;
 
-  static String get baseUrl =>      activeEnvironment == ApiEnvironment.demo ? demoBaseUrl : liveBaseUrl;
-  static String get mahaServiceBaseUrl =>      activeEnvironment == ApiEnvironment.demo ? demoMahaServiceBaseUrl : liveMahaServiceBaseUrl;
+  static String get baseUrl =>
+      activeEnvironment == ApiEnvironment.demo ? demoBaseUrl : liveBaseUrl;
 
   // ===========================================================================
   // DYNAMIC ENDPOINT PATHS & URL BUILDERS
@@ -65,7 +68,36 @@ class ApiEndpoints {
   static String get verifyAadhaarOtp => '$mineralMappingBaseUrl/mineral-mapping/aadhar-verification/submit-otp';
   static String get uploadPhoto => '$mineralMappingBaseUrl/mineral-mapping/uploads/upload-photo';
 
-  static String get consumerSignUp => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/consumer-signup-v1';
+  // Organisation GST & PAN Verification Endpoints
+  static String get checkGstExists =>
+      '$mineralMappingBaseUrl/mineral-mapping/vehicle_owner_registration/check-gst-exists-VehicleOwner';
+  static String getCheckGstExistsUrl({
+    required String gstNo,
+    required String mobileNo,
+    int id = 0,
+    int userCategory = 2,
+  }) =>
+      '$checkGstExists?GSTNo=$gstNo&MobileNo=$mobileNo&Id=$id&UserCategory=$userCategory';
+
+  static String get verifyGstin =>
+      '$mineralMappingBaseUrl/mineral-mapping/pan-validation/gstin-verification';
+
+  static String get checkPanExists =>
+      '$mineralMappingBaseUrl/mineral-mapping/vehicle_owner_registration/check-pan-exists-VehicleOwner';
+  static String getCheckPanExistsUrl({
+    required String panNo,
+    required String mobileNo,
+    int id = 0,
+    int userCategory = 2,
+  }) =>
+      '$checkPanExists?PanNo=$panNo&MobileNo=$mobileNo&Id=$id&UserCategory=$userCategory';
+
+  static String get verifyPan =>
+      '$mineralMappingBaseUrl/mineral-mapping/pan-validation/pan-verification_v1';
+
+  static String get saveUpdateConsumerDetails =>
+      '$mineralMappingBaseUrl/mineral-mapping/consumer-project/save-update-consumer-Details';
+  static String get consumerSignUp => saveUpdateConsumerDetails;
   static String get consumerProfileUpdate => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/update-consumer-profile';
   static String get consumerProfile => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/get-Consumer-Profile';
   static String getConsumerProfileUrl(String mobileNo) => '$consumerProfile?mobileNo=$mobileNo';
@@ -128,7 +160,7 @@ class ApiEndpoints {
     required bool isTown,
     int userId = 0,
   }) =>
-      '$mahaServiceBaseUrl/service.asmx/GetCensusVillageTownDetails_1_7?DistrictId=$districtId&TalukaId=$talukaId&IsTown=${isTown ? 1 : 0}&UserId=$userId&VillageUpdatedDate=&TownUpdatedDate=&PlotId=0&ReceiverPlotUpdatedDate=';
+      '$mahaServiceBaseUrl/GetCensusVillageTownDetails_1_7?DistrictId=$districtId&TalukaId=$talukaId&IsTown=${isTown ? 1 : 0}&UserId=$userId&VillageUpdatedDate=&TownUpdatedDate=&PlotId=0&ReceiverPlotUpdatedDate=';
 
   // Minerals & Stock Points
   static String get minerals => '$baseUrl/minerals';

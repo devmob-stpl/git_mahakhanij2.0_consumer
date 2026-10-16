@@ -21,7 +21,6 @@ class HomeScreen extends ConsumerWidget {
 
     switch (user.userType) {
       case UserType.organization:
-        return const OrganizationDashboard();
       case UserType.normalConsumer:
         return const ConsumerDashboard();
       case UserType.supervisor:

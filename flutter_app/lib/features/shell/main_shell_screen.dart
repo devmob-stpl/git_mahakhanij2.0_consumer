@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/config/app_config.dart';
 import '../../core/constants/app_colors.dart';
-import '../../domain/user.dart';
-import '../../providers/session_provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/consumer_dashboard_count_provider.dart';
 import '../../providers/consumer_digitp_provider.dart';
@@ -19,25 +16,13 @@ class MainShellScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(sessionProvider).currentUser;
-    final isOrg = AppConfig.enableOrganizationFlow && (user?.userType == UserType.organization);
-
-    // Organization: Home(0) -> Projects(1) -> Activity(2) -> More(4)
-    // Consumer:     Home(0) -> Activity(2) -> More(4)
     final loc = AppLocalizations.of(context)!;
-    final tabConfigs = isOrg
-        ? [
-            _TabConfig(label: loc.home, icon: Icons.home_outlined, activeIcon: Icons.home, branchIndex: 0),
-            const _TabConfig(label: 'Projects', icon: Icons.layers_outlined, activeIcon: Icons.layers, branchIndex: 1),
-            _TabConfig(label: loc.activityTab, icon: Icons.show_chart, activeIcon: Icons.show_chart, branchIndex: 2),
-            const _TabConfig(label: 'More', icon: Icons.more_horiz, activeIcon: Icons.more_horiz, branchIndex: 4),
-          ]
-        : [
-            _TabConfig(label: loc.home, icon: Icons.home_outlined, activeIcon: Icons.home, branchIndex: 0),
-            _TabConfig(label: loc.activityTab, icon: Icons.show_chart, activeIcon: Icons.show_chart, branchIndex: 2),
-            _TabConfig(label: loc.reports, icon: Icons.insert_chart_outlined, activeIcon: Icons.insert_chart, branchIndex: 3),
-            _TabConfig(label: loc.aadhaarKyc, icon: Icons.person, activeIcon: Icons.person, branchIndex: 4),
-          ];
+    final tabConfigs = [
+      _TabConfig(label: loc.home, icon: Icons.home_outlined, activeIcon: Icons.home, branchIndex: 0),
+      _TabConfig(label: loc.activityTab, icon: Icons.show_chart, activeIcon: Icons.show_chart, branchIndex: 2),
+      _TabConfig(label: loc.reports, icon: Icons.insert_chart_outlined, activeIcon: Icons.insert_chart, branchIndex: 3),
+      _TabConfig(label: loc.kycVerification, icon: Icons.person_outline, activeIcon: Icons.person, branchIndex: 4),
+    ];
 
     return PopScope(
       canPop: false,
@@ -62,6 +47,7 @@ class MainShellScreen extends ConsumerWidget {
                 : 8,
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: List.generate(tabConfigs.length, (index) {
               final tab = tabConfigs[index];
               final isActive = navigationShell.currentIndex == tab.branchIndex;
@@ -113,6 +99,9 @@ class MainShellScreen extends ConsumerWidget {
                       const SizedBox(height: 3),
                       Text(
                         tab.label,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,

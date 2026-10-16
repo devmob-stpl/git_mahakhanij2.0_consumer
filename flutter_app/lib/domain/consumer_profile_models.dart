@@ -1,3 +1,6 @@
+import '../core/constants/app_constants.dart';
+export '../core/constants/app_constants.dart';
+
 class ConsumerProfileData {
   final int id;
   final int consumerType;
@@ -56,6 +59,12 @@ class ConsumerProfileData {
     bool? isAadharVerified,
     String? aadharCardNo,
     String? aadharDoc,
+    String? panNo,
+    String? panDoc,
+    bool? isPanVerified,
+    String? gstNo,
+    String? gstDoc,
+    bool? isGstVerified,
   }) {
     return ConsumerProfileData(
       id: id,
@@ -76,19 +85,22 @@ class ConsumerProfileData {
       aadharCardNo: aadharCardNo ?? this.aadharCardNo,
       aadharDoc: aadharDoc ?? this.aadharDoc,
       isAadharVerified: isAadharVerified ?? this.isAadharVerified,
-      panNo: panNo,
-      panDoc: panDoc,
-      isPanVerified: isPanVerified,
-      gstNo: gstNo,
-      gstDoc: gstDoc,
-      isGstVerified: isGstVerified,
+      panNo: panNo ?? this.panNo,
+      panDoc: panDoc ?? this.panDoc,
+      isPanVerified: isPanVerified ?? this.isPanVerified,
+      gstNo: gstNo ?? this.gstNo,
+      gstDoc: gstDoc ?? this.gstDoc,
+      isGstVerified: isGstVerified ?? this.isGstVerified,
     );
   }
+
+  bool get isOrganization => consumerType == CONSUMER_TYPE_ORGANISATION;
+  bool get isIndividual => consumerType == CONSUMER_TYPE_INDIVIDUAL;
 
   factory ConsumerProfileData.fromJson(Map<String, dynamic> json) {
     return ConsumerProfileData(
       id: json['id'] is int ? json['id'] as int : int.tryParse(json['id']?.toString() ?? '') ?? 0,
-      consumerType: json['consumerType'] is int ? json['consumerType'] as int : int.tryParse(json['consumerType']?.toString() ?? '') ?? 1,
+      consumerType: json['consumerType'] is int ? json['consumerType'] as int : int.tryParse(json['consumerType']?.toString() ?? '') ?? CONSUMER_TYPE_INDIVIDUAL,
       name: json['name']?.toString() ?? json['fullName']?.toString() ?? '',
       mobileNo: json['mobileNo']?.toString() ?? json['mobileNumber']?.toString() ?? '',
       emailId: json['emailId']?.toString() ?? json['email']?.toString(),
@@ -108,12 +120,18 @@ class ConsumerProfileData {
       villageName: json['villageName']?.toString() ?? json['village']?.toString() ?? json['ruralLocation']?.toString(),
       address: json['address']?.toString() ?? json['addressLine']?.toString(),
       pinCode: json['pinCode']?.toString() ?? json['pincode']?.toString(),
-      aadharCardNo: json['aadharCardNo']?.toString() ?? json['aadharNo']?.toString(),
-      aadharDoc: json['aadharDoc']?.toString(),
-      isAadharVerified: json['isAadharVerified'] == true || json['isAadharVerified']?.toString().toLowerCase() == 'true',
-      panNo: json['panNo']?.toString(),
-      panDoc: json['panDoc']?.toString(),
-      isPanVerified: json['isPanVerified'] == true || json['isPanVerified']?.toString().toLowerCase() == 'true',
+      aadharCardNo: json['aadharCardNo']?.toString() ?? json['aadharNo']?.toString() ?? json['aadharNumber']?.toString(),
+      aadharDoc: json['aadharDoc']?.toString() ?? json['aadharDocument']?.toString(),
+      isAadharVerified: json['isAadharVerified'] == true ||
+          json['isAadharVerified']?.toString().toLowerCase() == 'true' ||
+          json['isAadhaarVerified'] == true ||
+          json['isAadhaarVerified']?.toString().toLowerCase() == 'true',
+      panNo: json['panNo']?.toString() ?? json['panNumber']?.toString() ?? json['panCardNo']?.toString(),
+      panDoc: json['panDoc']?.toString() ?? json['panDocument']?.toString(),
+      isPanVerified: json['isPanVerified'] == true ||
+          json['isPanVerified']?.toString().toLowerCase() == 'true' ||
+          json['isPANVerified'] == true ||
+          json['isPANVerified']?.toString().toLowerCase() == 'true',
       gstNo: json['gstNo']?.toString(),
       gstDoc: json['gstDoc']?.toString(),
       isGstVerified: json['isGSTVerified'] == true || json['isGSTVerified']?.toString().toLowerCase() == 'true',

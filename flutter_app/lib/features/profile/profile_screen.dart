@@ -2,10 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_file/open_file.dart';
-import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../../core/constants/app_colors.dart';
 import '../../domain/consumer_profile_models.dart';
 import '../../data/repositories/aadhaar_kyc_repository.dart';
@@ -15,7 +13,6 @@ import '../../providers/session_provider.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
-import '../../shared/widgets/location_dropdown_section.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -62,6 +59,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String? _profileAadhaarDocError;
   bool _isProfileUploadingDoc = false;
 
+  // Live PAN Verification State (Profile)
+  final _profilePanController = TextEditingController();
+  bool _isProfilePanVerifying = false;
+  String? _profilePanError;
+  String? _profilePanDocUrl;
+  String? _profilePanDocError;
+  bool _isProfileUploadingPanDoc = false;
+  String? _localProfilePanPath;
+  String? _localProfilePanName;
+  Uint8List? _localProfilePanBytes;
+  bool? _tempIsPanVerified;
+  String? _tempPanNo;
+  String? _tempPanClientName;
+
   bool _isSaving = false;
   bool _showSaveToast = false;
 
@@ -72,6 +83,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   // KYC Modal State
   KycStep _kycStep = KycStep.view;
   String _uploadedDocName = '';
+  KycStep _panKycStep = KycStep.view;
+  String _uploadedPanDocName = '';
   
   String? _localProfileAadhaarPath;
   String? _localProfileAadhaarName;
@@ -110,6 +123,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _cityVillageController.dispose();
     _profileAadhaarController.dispose();
     _profileAadhaarOtpController.dispose();
+    _profilePanController.dispose();
     _profileAadhaarResendTimer?.cancel();
     super.dispose();
   }
@@ -138,6 +152,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     if (profile.aadharDoc != null && profile.aadharDoc!.isNotEmpty) {
       _profileAadhaarDocUrl = profile.aadharDoc;
+      _uploadedDocName = profile.aadharDoc!.split('/').last;
+    }
+
+    if (profile.panNo != null && profile.panNo!.isNotEmpty) {
+      _profilePanController.text = profile.panNo!;
+    }
+
+    if (profile.panDoc != null && profile.panDoc!.isNotEmpty) {
+      _profilePanDocUrl = profile.panDoc;
+      _uploadedPanDocName = profile.panDoc!.split('/').last;
     }
 
     if (profile.districtName != null && profile.districtName!.isNotEmpty) {
@@ -171,14 +195,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _handleProfileSendAadhaarOtp(StateSetter setModalState) async {
+    final loc = AppLocalizations.of(context)!;
     final aadh = _profileAadhaarController.text.replaceAll(' ', '').trim();
     if (aadh.length != 12 || !RegExp(r'^\d{12}$').hasMatch(aadh)) {
-      setModalState(() => _profileAadhaarError = 'Enter a valid 12-digit Aadhaar number.');
+      setModalState(() => _profileAadhaarError = loc.enterValidAadhaarNumber);
       return;
     }
     
     if (aadh.startsWith('0') || aadh.startsWith('1')) {
-      setModalState(() => _profileAadhaarError = 'Aadhaar number cannot start with 0 or 1.');
+      setModalState(() => _profileAadhaarError = loc.aadhaarCannotStartWithZeroOrOne);
       return;
     }
 
@@ -195,7 +220,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (existRes.exists) {
       setModalState(() {
         _isProfileAadhaarChecking = false;
-        _profileAadhaarError = 'This Aadhaar card number is already registered in Mahakhanij system.';
+        _profileAadhaarError = existRes.statusMessage.isNotEmpty
+            ? existRes.statusMessage
+            : loc.aadhaarAlreadyRegistered;
       });
       return;
     }
@@ -231,9 +258,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           });
         });
       } else {
-        String msg = genRes.message ?? 'Failed to send OTP to Aadhaar-registered mobile number.';
+        String msg = genRes.message ?? loc.aadhaarSendOtpFailed;
         if (msg.trim().toLowerCase() == 'verification_failed') {
-          msg = 'Invalid Aadhaar number entered. Please verify and try again.';
+          msg = loc.invalidAadhaarNumber;
         }
         _profileAadhaarError = msg;
       }
@@ -241,14 +268,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _handleProfileVerifyAadhaarOtp(StateSetter setModalState) async {
+    final loc = AppLocalizations.of(context)!;
     final otp = _profileAadhaarOtpController.text.trim();
     if (otp.length != 6 || !RegExp(r'^\d{6}$').hasMatch(otp)) {
-      setModalState(() => _profileAadhaarError = 'Enter a valid 6-digit Aadhaar OTP.');
+      setModalState(() => _profileAadhaarError = loc.enterValidAadhaarOtp);
       return;
     }
 
     if (_profileAadhaarClientId == null) {
-      setModalState(() => _profileAadhaarError = 'Client session expired. Please resend OTP.');
+      setModalState(() => _profileAadhaarError = loc.clientSessionExpired);
       return;
     }
 
@@ -277,9 +305,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         }
         setState(() {});
       } else {
-        String msg = res.message ?? 'Invalid Aadhaar OTP. Please check and try again.';
+        String msg = res.message ?? loc.invalidAadhaarOtp;
         if (msg.toLowerCase() == 'verification_failed' || msg.toLowerCase().contains('invalid')) {
-          msg = 'Invalid OTP entered. Please try again.';
+          msg = loc.invalidOtpServer;
         }
         _profileAadhaarError = msg;
       }
@@ -328,6 +356,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _processProfilePickImage(ImageSource source, StateSetter setModalState) async {
+    final loc = AppLocalizations.of(context)!;
     try {
 
       final picker = ImagePicker();
@@ -345,12 +374,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
       setModalState(() {
         _isProfileUploadingDoc = false;
-        _profileAadhaarDocError = 'Upload failed: ${e.toString()}';
+        _profileAadhaarDocError = '${loc.uploadFailedWithReason}${e.toString()}';
       });
     }
   }
 
   Future<void> _processProfilePickFile(StateSetter setModalState) async {
+    final loc = AppLocalizations.of(context)!;
     try {
 
       final result = await FilePicker.platform.pickFiles(
@@ -372,7 +402,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
       setModalState(() {
         _isProfileUploadingDoc = false;
-        _profileAadhaarDocError = 'Upload failed: ${e.toString()}';
+        _profileAadhaarDocError = '${loc.uploadFailedWithReason}${e.toString()}';
       });
     }
   }
@@ -387,6 +417,173 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _uploadedDocName = name;
       setState(() {});
     });
+  }
+
+  Future<void> _handleProfileVerifyPan(StateSetter setModalState) async {
+    final loc = AppLocalizations.of(context)!;
+    final pan = _profilePanController.text.trim().toUpperCase();
+    if (pan.isEmpty) {
+      setModalState(() => _profilePanError = loc.orgPanRequired);
+      return;
+    }
+    if (pan.length != 10 || !RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(pan)) {
+      setModalState(() => _profilePanError = loc.validPanRequired);
+      return;
+    }
+
+    final mobile = _mobileController.text.trim();
+    if (mobile.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
+      setModalState(() => _profilePanError = loc.validMobileRequired);
+      return;
+    }
+
+    setModalState(() {
+      _profilePanError = null;
+      _isProfilePanVerifying = true;
+    });
+
+    final authRepo = ref.read(authRepositoryProvider);
+
+    // Step 1: Duplicate check via check-pan-exists-VehicleOwner
+    final checkRes = await authRepo.checkPanExists(
+      panNo: pan,
+      mobileNo: mobile,
+      id: 0,
+      userCategory: 2,
+    );
+
+    if (!mounted) return;
+
+    if (checkRes.exists) {
+      setModalState(() {
+        _isProfilePanVerifying = false;
+        _profilePanError = checkRes.statusMessage.isNotEmpty
+            ? checkRes.statusMessage
+            : loc.panAlreadyRegistered;
+      });
+      return;
+    }
+
+    // Step 2: Verify PAN via verifyPan
+    final verifyRes = await authRepo.verifyPan(panNo: pan, userId: 0);
+
+    if (!mounted) return;
+
+    setModalState(() {
+      _isProfilePanVerifying = false;
+      if (verifyRes.isSuccess) {
+        _tempIsPanVerified = true;
+        _tempPanNo = pan;
+        _tempPanClientName = verifyRes.clientName;
+        _profilePanError = null;
+        if (_activeProfileData != null) {
+          _activeProfileData = _activeProfileData!.copyWith(
+            isPanVerified: true,
+            panNo: pan,
+          );
+        }
+        setState(() {});
+      } else {
+        _profilePanError = verifyRes.statusMessage.isNotEmpty
+            ? verifyRes.statusMessage
+            : loc.panVerificationFailed;
+      }
+    });
+  }
+
+  Future<void> _handleProfileUploadPanDoc(StateSetter setModalState) async {
+    final loc = AppLocalizations.of(context)!;
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: Text(loc.cameraBtn),
+                onTap: () {
+                  Navigator.pop(context);
+                  _processProfilePickPanImage(ImageSource.camera, setModalState);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: Text(loc.galleryBtn),
+                onTap: () {
+                  Navigator.pop(context);
+                  _processProfilePickPanImage(ImageSource.gallery, setModalState);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.insert_drive_file),
+                title: Text(loc.fileDocumentBtn),
+                onTap: () {
+                  Navigator.pop(context);
+                  _processProfilePickPanFile(setModalState);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _processProfilePickPanImage(ImageSource source, StateSetter setModalState) async {
+    final loc = AppLocalizations.of(context)!;
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: source);
+      if (pickedFile == null) return;
+
+      final bytes = await pickedFile.readAsBytes();
+      setModalState(() {
+        _localProfilePanPath = pickedFile.path;
+        _localProfilePanName = pickedFile.name;
+        _localProfilePanBytes = bytes;
+        _profilePanDocUrl = null;
+        _profilePanDocError = null;
+        _uploadedPanDocName = pickedFile.name;
+        setState(() {});
+      });
+    } catch (e) {
+      setModalState(() {
+        _isProfileUploadingPanDoc = false;
+        _profilePanDocError = '${loc.uploadFailedWithReason}${e.toString()}';
+      });
+    }
+  }
+
+  Future<void> _processProfilePickPanFile(StateSetter setModalState) async {
+    final loc = AppLocalizations.of(context)!;
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      );
+
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+      if (file.path == null) return;
+
+      setModalState(() {
+        _localProfilePanPath = file.path!;
+        _localProfilePanName = file.name;
+        _localProfilePanBytes = file.bytes;
+        _profilePanDocUrl = null;
+        _profilePanDocError = null;
+        _uploadedPanDocName = file.name;
+        setState(() {});
+      });
+    } catch (e) {
+      setModalState(() {
+        _isProfileUploadingPanDoc = false;
+        _profilePanDocError = '${loc.uploadFailedWithReason}${e.toString()}';
+      });
+    }
   }
 
   Future<bool> _handleSaveProfile() async {
@@ -413,6 +610,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     setState(() => _isSaving = true);
 
+    final isOrg = (user?.isOrganization ?? false) || (_activeProfileData?.isOrganization ?? false);
+
     if (_tempIsAadharVerified != null && _activeProfileData != null) {
       _activeProfileData = _activeProfileData!.copyWith(
         name: _tempAadharName ?? _activeProfileData!.name,
@@ -425,6 +624,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _tempIsAadharVerified = null;
       _tempAadharCardNo = null;
       _tempAadharName = null;
+    }
+
+    if (_tempIsPanVerified != null && _activeProfileData != null) {
+      _activeProfileData = _activeProfileData!.copyWith(
+        isPanVerified: _tempIsPanVerified,
+        panNo: _tempPanNo ?? _activeProfileData!.panNo,
+      );
+      _tempIsPanVerified = null;
+      _tempPanNo = null;
+      _tempPanClientName = null;
     }
 
     if (_localProfileAadhaarPath != null) {
@@ -444,7 +653,32 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         setState(() => _isSaving = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(uploadRes.statusMessage ?? 'Document upload failed. Please try again.'),
+            content: Text(uploadRes.statusMessage.isNotEmpty ? uploadRes.statusMessage : l10n.docUploadFailed),
+            backgroundColor: AppColors.danger700,
+          ),
+        );
+        return false;
+      }
+    }
+
+    if (isOrg && _localProfilePanPath != null) {
+      final repo = ref.read(aadhaarKycRepositoryProvider);
+      final uploadRes = await repo.uploadAadhaarDocument(
+        filePath: _localProfilePanPath!,
+        fileName: _localProfilePanName ?? 'pan_doc',
+        bytes: _localProfilePanBytes,
+      );
+      if (uploadRes.isSuccess && uploadRes.responseData != null) {
+        _profilePanDocUrl = uploadRes.responseData;
+        if (_activeProfileData != null) {
+          _activeProfileData = _activeProfileData!.copyWith(panDoc: _profilePanDocUrl);
+        }
+      } else {
+        if (!mounted) return false;
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(uploadRes.statusMessage.isNotEmpty ? uploadRes.statusMessage : l10n.panDocUploadFailed),
             backgroundColor: AppColors.danger700,
           ),
         );
@@ -453,10 +687,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
 
     final isAadhaarVerified = _activeProfileData?.isAadharVerified ?? false;
+    final isPanVerified = _activeProfileData?.isPanVerified ?? false;
 
     final Map<String, dynamic> updatePayload = {
       'id': user!.consumerId,
-      'consumerType': (user.isOrganization) ? 1 : 0,
+      'consumerType': isOrg ? CONSUMER_TYPE_ORGANISATION : CONSUMER_TYPE_INDIVIDUAL,
       'name': _nameController.text.trim(),
       'mobileNo': mobile,
       'emailId': _emailController.text.trim(),
@@ -469,6 +704,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       'aadharCardNo': _profileAadhaarController.text.replaceAll(' ', '').trim(),
       'aadharDoc': _profileAadhaarDocUrl ?? '',
       'isAadharVerified': isAadhaarVerified,
+      if (isOrg) ...{
+        'panNo': _profilePanController.text.replaceAll(' ', '').trim().toUpperCase(),
+        'panDoc': _profilePanDocUrl ?? '',
+        'isPanVerified': isPanVerified,
+        'contactPersonName': _nameController.text.trim(),
+      },
       'pageName': 'ConsumerProfileUpdate',
     };
 
@@ -480,6 +721,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       setState(() => _isSaving = false);
 
       if (response.isSuccess) {
+        _localProfileAadhaarPath = null;
+        _localProfileAadhaarName = null;
+        _localProfileAadhaarBytes = null;
+        _localProfilePanPath = null;
+        _localProfilePanName = null;
+        _localProfilePanBytes = null;
         ref.invalidate(consumerProfileProvider(mobile));
         setState(() => _showSaveToast = true);
 
@@ -492,7 +739,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           SnackBar(
             content: Text(response.statusMessage.isNotEmpty
                 ? response.statusMessage
-                : 'Failed to update consumer profile.'),
+                : l10n.failedToUpdateProfile),
             backgroundColor: Colors.red,
           ),
         );
@@ -503,7 +750,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('An error occurred while updating profile: ${e.toString()}'),
+          content: Text('${l10n.errorUpdatingProfile}${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -544,7 +791,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     if (_kycStep == KycStep.view) ...[
                       Text(
                         loc.aadhaarEkycInfoTitle,
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink),
+                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink),
                       ),
 
                       const SizedBox(height: 16),
@@ -560,7 +807,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       const SizedBox(height: 10),
                       _buildKycDetailRow(
                         loc.aadhaarVerificationLabel,
-                        (_tempIsAadharVerified ?? _activeProfileData?.isAadharVerified == true) ? 'VERIFIED' : 'PENDING',
+                        (_tempIsAadharVerified ?? _activeProfileData?.isAadharVerified == true) ? loc.verifiedUpper : loc.pendingUpper,
                       ),
                       const SizedBox(height: 10),
 
@@ -580,7 +827,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary700),
                                 onPressed: () => setModalState(() => _kycStep = KycStep.upload),
-                                child: Text(loc.verifyAadhaarBtn, style: TextStyle(color: Colors.white)),
+                                child: Text(loc.verifyAadhaarBtn, style: const TextStyle(color: Colors.white)),
                               ),
                             ),
                           ],
@@ -589,12 +836,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ] else if (_kycStep == KycStep.upload) ...[
                       Text(
                         loc.aadhaarIdentityVerificationTitle,
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink),
+                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         loc.aadhaarIdentityVerificationDesc,
-                        style: TextStyle(fontSize: 12, color: AppColors.inkSecondary),
+                        style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary),
                       ),
                       const SizedBox(height: 16),
 
@@ -666,7 +913,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(loc.method1LiveOtp, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF))),
+                              Text(loc.method1LiveOtp, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF))),
                               const SizedBox(height: 8),
                             AppTextField(
                               label: loc.twelveDigitAadhaarNumber,
@@ -700,7 +947,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       ),
                                       child: (_isProfileAadhaarChecking || _isProfileAadhaarGenerating)
                                           ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                          : Text(loc.sendOtpBtn, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                                          : Text(loc.sendOtpBtn, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
                                     ),
                             ),
                             if (_isProfileAadhaarOtpSent) ...[
@@ -723,12 +970,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   ),
                                   child: _isProfileAadhaarVerifying
                                       ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                      : Text(loc.verifyOtpBtn, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                                      : Text(loc.verifyOtpBtn, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
                                 ),
                               ),
                               if (_profileAadhaarTimerCountdown > 0) ...[
                                 const SizedBox(height: 6),
-                                Text('Resend OTP in 00:${_profileAadhaarTimerCountdown.toString().padLeft(2, '0')}', style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary)),
+                                Text(loc.resendInSeconds(_profileAadhaarTimerCountdown.toString().padLeft(2, '0')), style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary)),
                               ] else ...[
                                 const SizedBox(height: 6),
                                 InkWell(
@@ -767,7 +1014,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           children: [
                             Text(
                               loc.method2UploadAadhaar,
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink),
                             ),
 
                             const SizedBox(height: 10),
@@ -807,7 +1054,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                           ),
                                           if (_isProfileUploadingDoc) ...[
                                             const SizedBox(height: 2),
-                                            Text(loc.uploadingToMahakhanijServer, style: TextStyle(fontSize: 10.5, color: AppColors.primary700)),
+                                            Text(loc.uploadingToMahakhanijServer, style: const TextStyle(fontSize: 10.5, color: AppColors.primary700)),
                                           ],
 
                                         ],
@@ -915,7 +1162,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
                               onPressed: () => Navigator.pop(modalContext),
-                              child: Text(loc.closeBtn, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.inkSecondary)),
+                              child: Text(loc.closeBtn, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.inkSecondary)),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -942,7 +1189,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 final success = await _handleSaveProfile();
                                 if (mounted) {
                                   setModalState(() => _isSaving = false);
-                                  if (success) {
+                                  if (success && modalContext.mounted) {
                                     Navigator.pop(modalContext);
                                   }
                                 }
@@ -967,13 +1214,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       const SizedBox(height: 14),
                       Text(
                         loc.aadhaarVerificationCompleted,
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink),
+                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         loc.aadhaarVerificationSuccessDesc,
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 13, color: AppColors.inkSecondary),
+                        style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary),
                       ),
                       const SizedBox(height: 20),
                       AppButton(
@@ -994,28 +1241,445 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  void _openPanModal(KycStep initialStep) {
+    final loc = AppLocalizations.of(context)!;
+    final mobileNo = ref.read(sessionProvider).currentUser?.mobileNumber ?? '';
+    final isServerVerified = ref.read(consumerProfileProvider(mobileNo)).value?.responseData?.isPanVerified == true;
+    setState(() => _panKycStep = initialStep);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final isPanVerified = _tempIsPanVerified ?? _activeProfileData?.isPanVerified == true;
+            final panNo = (_tempPanNo != null && _tempPanNo!.isNotEmpty)
+                ? _tempPanNo!
+                : (_activeProfileData?.panNo != null && _activeProfileData!.panNo!.isNotEmpty)
+                    ? _activeProfileData!.panNo!
+                    : '';
+            final orgName = _tempPanClientName ?? _orgNameController.text.trim();
+
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(modalContext).viewInsets.bottom + 24,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+                    const SizedBox(height: 16),
+
+                    if (_panKycStep == KycStep.view) ...[
+                      Text(
+                        loc.orgPanInfoTitle,
+                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildKycDetailRow(
+                        loc.panNumberLabel,
+                        panNo.isNotEmpty ? panNo : 'N/A',
+                      ),
+                      const SizedBox(height: 10),
+                      _buildKycDetailRow(
+                        loc.panVerificationLabel,
+                        isPanVerified ? loc.verifiedUpper : loc.pendingUpper,
+                      ),
+                      if (orgName.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        _buildKycDetailRow(
+                          loc.orgNameLabel,
+                          orgName,
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 44),
+                                side: const BorderSide(color: AppColors.line),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: () => Navigator.pop(modalContext),
+                              child: Text(loc.closeBtn, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.inkSecondary)),
+                            ),
+                          ),
+                          if (!isPanVerified) ...[
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary700,
+                                  minimumSize: const Size(double.infinity, 44),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                onPressed: () => setModalState(() => _panKycStep = KycStep.upload),
+                                child: Text(loc.verifyPanBtn, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ] else if (_panKycStep == KycStep.upload) ...[
+                      Text(
+                        loc.orgPanVerificationTitle,
+                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        loc.verifyOrgPanDesc,
+                        style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Method 1: Live PAN Verification
+                      if (isPanVerified) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDF4),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFBBF7D0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(loc.method1LivePanVerification, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF166534))),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  const Icon(Icons.check_circle, color: Color(0xFF15803D), size: 20),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _profilePanController.text.isNotEmpty ? _profilePanController.text : panNo,
+                                          style: const TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w700),
+                                        ),
+                                        if (orgName.isNotEmpty) ...[
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            orgName,
+                                            style: const TextStyle(color: Color(0xFF15803D), fontSize: 12, fontWeight: FontWeight.w500),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  if (!isServerVerified)
+                                    GestureDetector(
+                                      onTap: () {
+                                        setModalState(() {
+                                          if (_activeProfileData != null) {
+                                            _activeProfileData = _activeProfileData!.copyWith(isPanVerified: false, panNo: '');
+                                          }
+                                          _tempIsPanVerified = null;
+                                          _tempPanNo = null;
+                                          _tempPanClientName = null;
+                                          _profilePanController.clear();
+                                          _profilePanError = null;
+                                          _profilePanDocUrl = null;
+                                        });
+                                      },
+                                      child: const Padding(
+                                        padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                                        child: Icon(Icons.edit, color: AppColors.primary700, size: 20),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ] else ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFBFDBFE)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(loc.method1LivePanVerification, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF))),
+                              const SizedBox(height: 8),
+                              AppTextField(
+                                label: loc.orgPanNumberRequired,
+                                controller: _profilePanController,
+                                keyboardType: TextInputType.text,
+                                maxLength: 10,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+                                  _UpperCaseTextFormatter(),
+                                ],
+                                hint: 'ABCDE1234F',
+                                suffixIcon: ElevatedButton(
+                                  onPressed: _isProfilePanVerifying ? null : () => _handleProfileVerifyPan(setModalState),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary700,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: _isProfilePanVerifying
+                                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                      : Text(loc.verifyPanBtn, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                                ),
+                              ),
+                              if (_profilePanError != null) ...[
+                                const SizedBox(height: 6),
+                                Text(_profilePanError!, style: const TextStyle(fontSize: 11, color: AppColors.danger700, fontWeight: FontWeight.w500)),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 14),
+
+                      // Method 2: Live PAN Document Upload
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _profilePanDocError != null
+                                ? AppColors.danger700
+                                : (_profilePanDocUrl != null || _localProfilePanPath != null ? const Color(0xFFBBF7D0) : const Color(0xFFE2E8F0)),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              loc.method2UploadPanCard,
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink),
+                            ),
+                            const SizedBox(height: 10),
+                            InkWell(
+                              onTap: _isProfileUploadingPanDoc ? null : () => _handleProfileUploadPanDoc(setModalState),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    _isProfileUploadingPanDoc
+                                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary700))
+                                        : Icon(
+                                            (_profilePanDocUrl != null || _localProfilePanPath != null) ? Icons.check_circle : Icons.upload_file,
+                                            color: (_profilePanDocUrl != null || _localProfilePanPath != null) ? const Color(0xFF15803D) : AppColors.inkSecondary,
+                                            size: 20,
+                                          ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _uploadedPanDocName.isNotEmpty ? _uploadedPanDocName : loc.choosePanPdfOrImage,
+                                            style: TextStyle(
+                                              fontSize: 12.5,
+                                              fontWeight: FontWeight.w700,
+                                              color: (_profilePanDocUrl != null || _localProfilePanPath != null) ? const Color(0xFF15803D) : AppColors.ink,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if ((_profilePanDocUrl != null || _localProfilePanPath != null) && !_isProfileUploadingPanDoc) ...[
+                                      GestureDetector(
+                                        onTap: () => _handleProfileUploadPanDoc(setModalState),
+                                        child: const Padding(
+                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                          child: Icon(Icons.edit, color: AppColors.primary700, size: 20),
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () async {
+                                          if (_profilePanDocUrl != null) {
+                                            final url = Uri.tryParse(_profilePanDocUrl!);
+                                            if (url != null) {
+                                              try {
+                                                await launchUrl(url, mode: LaunchMode.externalApplication);
+                                              } catch (_) {}
+                                            }
+                                          } else if (_localProfilePanPath != null) {
+                                            try {
+                                              await OpenFile.open(_localProfilePanPath!);
+                                            } catch (_) {}
+                                          }
+                                        },
+                                        child: const Padding(
+                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                          child: Icon(Icons.visibility, color: AppColors.primary700, size: 20),
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          setModalState(() {
+                                            _localProfilePanPath = null;
+                                            _localProfilePanBytes = null;
+                                            _localProfilePanName = null;
+                                            _profilePanDocUrl = null;
+                                            _uploadedPanDocName = '';
+                                            setState(() {});
+                                          });
+                                        },
+                                        child: const Padding(
+                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                          child: Icon(Icons.delete_outline, color: AppColors.danger700, size: 20),
+                                        ),
+                                      ),
+                                    ] else ...[
+                                      ElevatedButton(
+                                        onPressed: _isProfileUploadingPanDoc ? null : () => _handleProfileUploadPanDoc(setModalState),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.primary700,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                          minimumSize: Size.zero,
+                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                        child: Text(
+                                          _isProfileUploadingPanDoc ? loc.uploadingDots : loc.uploadBtn,
+                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                            if (_profilePanDocError != null) ...[
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      _profilePanDocError!,
+                                      style: const TextStyle(fontSize: 11, color: AppColors.danger700, fontWeight: FontWeight.w500),
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => _handleProfileUploadPanDoc(setModalState),
+                                    child: Text(
+                                      loc.retryBtn,
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.danger700, decoration: TextDecoration.underline),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 44),
+                                side: const BorderSide(color: AppColors.line),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: () => Navigator.pop(modalContext),
+                              child: Text(loc.closeBtn, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.inkSecondary)),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 44),
+                                backgroundColor: AppColors.primary700,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: _isSaving ? null : () async {
+                                final isVerified = _tempIsPanVerified == true || _activeProfileData?.isPanVerified == true;
+                                if (!isVerified) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(loc.verifyOrgPanBeforeSaving),
+                                      backgroundColor: AppColors.danger700,
+                                    ),
+                                  );
+                                  return;
+                                }
+                                setModalState(() => _isSaving = true);
+                                final success = await _handleSaveProfile();
+                                if (mounted) {
+                                  setModalState(() => _isSaving = false);
+                                  if (success && modalContext.mounted) {
+                                    Navigator.pop(modalContext);
+                                  }
+                                }
+                              },
+                              child: _isSaving 
+                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                : Text(loc.saveBtn, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(sessionProvider).currentUser;
-    final isOrg = user?.isOrganization ?? false;
     final mobileNo = user?.mobileNumber ?? '';
     final loc = AppLocalizations.of(context)!;
 
     final profileAsync = ref.watch(consumerProfileProvider(mobileNo));
+    final cachedProfile = profileAsync.value?.responseData ?? _activeProfileData;
+    final isOrgHeader = (cachedProfile?.isOrganization ?? false) || (user?.isOrganization ?? false);
 
     return AppScaffold(
-      title: loc.aadhaarKyc,
+      title: isOrgHeader ? loc.orgKycVerification : loc.kycVerification,
       showBackButton: false,
       body: profileAsync.when(
-        loading: () => const Center(
+        loading: () => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(strokeWidth: 3),
-              SizedBox(height: 12),
+              const CircularProgressIndicator(strokeWidth: 3),
+              const SizedBox(height: 12),
               Text(
-                'Loading Consumer Profile...',
-                style: TextStyle(fontSize: 13, color: AppColors.inkSecondary),
+                loc.loadingConsumerProfile,
+                style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary),
               ),
             ],
           ),
@@ -1028,9 +1692,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               children: [
                 const Icon(Icons.error_outline, size: 48, color: Color(0xFFDC2626)),
                 const SizedBox(height: 12),
-                const Text(
-                  'Failed to fetch Consumer Profile',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
+                Text(
+                  loc.failedToFetchConsumerProfile,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -1040,7 +1704,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 const SizedBox(height: 16),
                 AppButton(
-                  label: 'Retry Loading Profile',
+                  label: loc.retryLoadingProfile,
                   size: AppButtonSize.small,
                   onPressed: () => ref.invalidate(consumerProfileProvider(mobileNo)),
                 ),
@@ -1054,162 +1718,51 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           }
 
           final profile = response.responseData;
-          final isAadhaarVerified = _activeProfileData?.isAadharVerified ?? profile?.isAadharVerified ?? false;
+          final isOrg = (profile?.isOrganization ?? false) || (user?.isOrganization ?? false) || (_activeProfileData?.isOrganization ?? false);
+          final isAadhaarVerified = _tempIsAadharVerified ?? _activeProfileData?.isAadharVerified ?? profile?.isAadharVerified ?? false;
+          final isPanVerified = _tempIsPanVerified ?? _activeProfileData?.isPanVerified ?? profile?.isPanVerified ?? false;
           final displayAadhaarNo = _tempAadharCardNo ?? _activeProfileData?.aadharCardNo ?? profile?.aadharCardNo ?? '';
           final displayAadhaarName = _tempAadharName ?? _activeProfileData?.name ?? profile?.name ?? '';
+          final displayPanNo = _tempPanNo ?? _activeProfileData?.panNo ?? profile?.panNo ?? '';
+          final displayPanName = _tempPanClientName ?? _orgNameController.text.trim();
 
           return Stack(
             children: [
               SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 2) AADHAAR KYC VERIFICATION STATUS CARD
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: isAadhaarVerified ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isAadhaarVerified ? const Color(0xFFA7F3D0) : const Color(0xFFFDE68A),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      width: 38,
-                                      height: 38,
-                                      decoration: BoxDecoration(
-                                        color: isAadhaarVerified ? const Color(0xFF059669) : const Color(0xFFD97706),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Icon(
-                                        isAadhaarVerified ? Icons.verified_user : Icons.warning_amber_rounded,
-                                        color: Colors.white,
-                                        size: 22,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  isAadhaarVerified ? loc.aadhaarVerified : loc.aadhaarPending,
-                                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink),
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                decoration: BoxDecoration(
-                                                  color: isAadhaarVerified ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
-                                                  borderRadius: BorderRadius.circular(10),
-                                                  border: Border.all(
-                                                    color: isAadhaarVerified ? const Color(0xFF86EFAC) : const Color(0xFFFCD34D),
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  isAadhaarVerified ? loc.aadhaarVerified : loc.actionRequiredLabel,
-                                                  style: TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: isAadhaarVerified ? const Color(0xFF15803D) : const Color(0xFFB45309),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 4),
-
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 14),
-
-                                // Aadhaar Checklist Card
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      _buildChecklistRow(
-                                        icon: Icons.person_outline,
-                                        label: loc.aadhaarAuthenticationLabel,
-                                        subtitle: isAadhaarVerified ? '${displayAadhaarNo.isNotEmpty ? displayAadhaarNo : 'N/A'}\n${displayAadhaarName.isNotEmpty ? displayAadhaarName : 'N/A'}' : null,
-                                        isVerified: isAadhaarVerified,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: OutlinedButton(
-                                        style: OutlinedButton.styleFrom(
-                                          minimumSize: const Size(double.infinity, 40),
-                                          backgroundColor: Colors.white,
-                                          side: const BorderSide(color: Color(0xFFCBD5E1)),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                        ),
-                                        onPressed: (profile?.aadharDoc == null || profile!.aadharDoc!.isEmpty)
-                                            ? null
-                                            : () async {
-                                                final url = Uri.tryParse(profile!.aadharDoc!);
-                                                if (url != null) {
-                                                  try {
-                                                    await launchUrl(url, mode: LaunchMode.externalApplication);
-                                                  } catch (_) {}
-                                                }
-                                              },
-                                        child: Text(loc.viewDocument, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: (profile?.aadharDoc != null && profile!.aadharDoc!.isNotEmpty) ? AppColors.ink : Colors.grey)),
-                                      ),
-                                    ),
-                                    if (!isAadhaarVerified || profile?.aadharDoc == null || profile!.aadharDoc!.isEmpty) ...[
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            minimumSize: const Size(double.infinity, 40),
-                                            backgroundColor: AppColors.primary700,
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                          ),
-                                          onPressed: () => _openKycModal(KycStep.upload),
-                                          child: Text(isAadhaarVerified ? 'Upload Document' : '${loc.verifyAadhaar} →', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 1) Dynamic Consumer Type Header Banner
+                      _buildConsumerTypeHeader(
+                        isOrg: isOrg,
+                        isAadhaarVerified: isAadhaarVerified,
+                        isPanVerified: isPanVerified,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+
+                      // 2) Document 1: Aadhaar Verification Card
+                      _buildAadhaarCard(
+                        isOrg: isOrg,
+                        isAadhaarVerified: isAadhaarVerified,
+                        displayAadhaarNo: displayAadhaarNo,
+                        displayAadhaarName: displayAadhaarName,
+                        profile: profile,
+                      ),
+
+                      // 3) Document 2: Organisation PAN Verification Card (Shown only for Organisation)
+                      if (isOrg) ...[
+                        const SizedBox(height: 16),
+                        _buildPanCard(
+                          isPanVerified: isPanVerified,
+                          displayPanNo: displayPanNo,
+                          displayPanName: displayPanName,
+                          profile: profile,
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
 
@@ -1234,7 +1787,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         const Icon(Icons.check_circle, color: Colors.white, size: 18),
                         const SizedBox(width: 8),
                         Text(
-                          loc.aadhaarDetailsSavedSuccessfully,
+                          isOrg ? loc.kycDetailsSavedSuccessfully : loc.aadhaarDetailsSavedSuccessfully,
                           style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ],
@@ -1248,7 +1801,463 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildChecklistRow({required IconData icon, required String label, String? subtitle, required bool isVerified}) {
+  Widget _buildConsumerTypeHeader({
+    required bool isOrg,
+    required bool isAadhaarVerified,
+    required bool isPanVerified,
+  }) {
+    final loc = AppLocalizations.of(context)!;
+    final totalDocs = isOrg ? 2 : 1;
+    final verifiedCount = (isAadhaarVerified ? 1 : 0) + (isOrg && isPanVerified ? 1 : 0);
+    final allVerified = verifiedCount == totalDocs;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.line),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: isOrg ? const Color(0xFFEFF6FF) : const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isOrg ? const Color(0xFFBFDBFE) : const Color(0xFFBBF7D0),
+              ),
+            ),
+            child: Icon(
+              isOrg ? Icons.business_outlined : Icons.person_outline,
+              color: isOrg ? const Color(0xFF1D4ED8) : const Color(0xFF15803D),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isOrg ? loc.organisationConsumer : loc.individualConsumer,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  isOrg
+                      ? loc.requiresOrgKycSubtitle
+                      : loc.requiresIndividualKycSubtitle,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    color: AppColors.inkSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: allVerified ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: allVerified ? const Color(0xFF86EFAC) : const Color(0xFFFCD34D),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  allVerified ? Icons.check_circle : Icons.pending_actions,
+                  size: 13,
+                  color: allVerified ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  isOrg ? loc.verifiedCountSummary(verifiedCount.toString(), totalDocs.toString()) : (allVerified ? loc.aadhaarVerified : loc.pendingBadge),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: allVerified ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAadhaarCard({
+    required bool isOrg,
+    required bool isAadhaarVerified,
+    required String displayAadhaarNo,
+    required String displayAadhaarName,
+    required ConsumerProfileData? profile,
+  }) {
+    final loc = AppLocalizations.of(context)!;
+    final hasDoc = (profile?.aadharDoc != null && profile!.aadharDoc!.isNotEmpty) ||
+        (_profileAadhaarDocUrl != null && _profileAadhaarDocUrl!.isNotEmpty) ||
+        _localProfileAadhaarPath != null;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isAadhaarVerified ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isAadhaarVerified ? const Color(0xFFA7F3D0) : const Color(0xFFFDE68A),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: isAadhaarVerified ? const Color(0xFF059669) : const Color(0xFFD97706),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  isAadhaarVerified ? Icons.verified_user : Icons.warning_amber_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            isOrg
+                                ? (isAadhaarVerified ? loc.contactPersonAadhaarVerified : loc.contactPersonAadhaarPending)
+                                : (isAadhaarVerified ? loc.aadhaarVerified : loc.aadhaarPending),
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: isAadhaarVerified ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isAadhaarVerified ? const Color(0xFF86EFAC) : const Color(0xFFFCD34D),
+                            ),
+                          ),
+                          child: Text(
+                            isAadhaarVerified ? loc.verifiedUpper : loc.actionRequiredLabel,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: isAadhaarVerified ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isOrg ? loc.authContactPersonIdentity : loc.nationalIdentityUidai,
+                      style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Aadhaar Details Box
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              children: [
+                _buildChecklistRow(
+                  icon: Icons.person_outline,
+                  label: isOrg ? loc.contactPersonAadhaar : loc.aadhaarAuthenticationLabel,
+                  subtitle: isAadhaarVerified
+                      ? '${displayAadhaarNo.isNotEmpty ? displayAadhaarNo : 'N/A'}\n${displayAadhaarName.isNotEmpty ? displayAadhaarName : 'N/A'}'
+                      : null,
+                  isVerified: isAadhaarVerified,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 40),
+                    backgroundColor: Colors.white,
+                    side: const BorderSide(color: Color(0xFFCBD5E1)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: !hasDoc
+                      ? null
+                      : () async {
+                          final docUrl = _profileAadhaarDocUrl ?? profile?.aadharDoc;
+                          if (docUrl != null && docUrl.isNotEmpty) {
+                            final url = Uri.tryParse(docUrl);
+                            if (url != null) {
+                              try {
+                                await launchUrl(url, mode: LaunchMode.externalApplication);
+                              } catch (_) {}
+                            }
+                          } else if (_localProfileAadhaarPath != null) {
+                            try {
+                              await OpenFile.open(_localProfileAadhaarPath!);
+                            } catch (_) {}
+                          }
+                        },
+                  child: Text(
+                    loc.viewDocument,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: hasDoc ? AppColors.ink : Colors.grey,
+                    ),
+                  ),
+                ),
+              ),
+              if (!isAadhaarVerified || !hasDoc) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 40),
+                      backgroundColor: AppColors.primary700,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: () => _openKycModal(KycStep.upload),
+                    child: Text(
+                      isAadhaarVerified ? loc.uploadDocument : '${loc.verifyAadhaar} →',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPanCard({
+    required bool isPanVerified,
+    required String displayPanNo,
+    required String displayPanName,
+    required ConsumerProfileData? profile,
+  }) {
+    final loc = AppLocalizations.of(context)!;
+    final hasDoc = (profile?.panDoc != null && profile!.panDoc!.isNotEmpty) ||
+        (_profilePanDocUrl != null && _profilePanDocUrl!.isNotEmpty) ||
+        _localProfilePanPath != null;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isPanVerified ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isPanVerified ? const Color(0xFFA7F3D0) : const Color(0xFFFDE68A),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: isPanVerified ? const Color(0xFF059669) : const Color(0xFFD97706),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  isPanVerified ? Icons.business : Icons.warning_amber_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            isPanVerified ? loc.orgPanVerified : loc.orgPanPending,
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: isPanVerified ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isPanVerified ? const Color(0xFF86EFAC) : const Color(0xFFFCD34D),
+                            ),
+                          ),
+                          child: Text(
+                            isPanVerified ? loc.verifiedUpper : loc.actionRequiredLabel,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: isPanVerified ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      loc.incomeTaxDeptEntityPan,
+                      style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // PAN Details Box
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              children: [
+                _buildChecklistRow(
+                  icon: Icons.badge_outlined,
+                  label: loc.orgPan,
+                  subtitle: isPanVerified
+                      ? '${displayPanNo.isNotEmpty ? displayPanNo : 'N/A'}${displayPanName.isNotEmpty ? '\n$displayPanName' : ''}'
+                      : null,
+                  isVerified: isPanVerified,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 40),
+                    backgroundColor: Colors.white,
+                    side: const BorderSide(color: Color(0xFFCBD5E1)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: !hasDoc
+                      ? null
+                      : () async {
+                          final docUrl = _profilePanDocUrl ?? profile?.panDoc;
+                          if (docUrl != null && docUrl.isNotEmpty) {
+                            final url = Uri.tryParse(docUrl);
+                            if (url != null) {
+                              try {
+                                await launchUrl(url, mode: LaunchMode.externalApplication);
+                              } catch (_) {}
+                            }
+                          } else if (_localProfilePanPath != null) {
+                            try {
+                              await OpenFile.open(_localProfilePanPath!);
+                            } catch (_) {}
+                          }
+                        },
+                  child: Text(
+                    loc.viewDocument,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: hasDoc ? AppColors.ink : Colors.grey,
+                    ),
+                  ),
+                ),
+              ),
+              if (!isPanVerified || !hasDoc) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 40),
+                      backgroundColor: AppColors.primary700,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: () => _openPanModal(KycStep.upload),
+                    child: Text(
+                      isPanVerified ? loc.uploadDocument : loc.verifyPanArrow,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChecklistRow({
+    required IconData icon,
+    required String label,
+    String? subtitle,
+    required bool isVerified,
+    String? verifiedText,
+    String? pendingText,
+  }) {
     final loc = AppLocalizations.of(context)!;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1295,7 +2304,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             const SizedBox(width: 4),
             Text(
-              isVerified ? loc.aadhaarVerified : loc.aadhaarPending,
+              isVerified ? (verifiedText ?? loc.aadhaarVerified) : (pendingText ?? loc.aadhaarPending),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
@@ -1326,3 +2335,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 }
+
+class _UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    return TextEditingValue(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
+    );
+  }
+}
+

@@ -4,20 +4,20 @@ import '../../domain/consumer_digitp_models.dart';
 import '../../l10n/app_localizations.dart';
 
 void showDigiTpPassModal(
-  BuildContext context, {
-  ConsumerDigiTpItem? item,
-  String? digiTpNumber,
-  String? vehicleNumber,
-  String? driverName,
-  String? driverMobile,
-  String? ownerName,
-  String? ownerMobile,
-  String? plotName,
-  String? destination,
-  String? distance,
-  String? createdAt,
-  String? validity,
-}) {
+    BuildContext context, {
+      ConsumerDigiTpItem? item,
+      String? digiTpNumber,
+      String? vehicleNumber,
+      String? driverName,
+      String? driverMobile,
+      String? ownerName,
+      String? ownerMobile,
+      String? plotName,
+      String? destination,
+      String? distance,
+      String? createdAt,
+      String? validity,
+    }) {
   final invoiceNoStr = item?.invoiceNo ?? digiTpNumber ?? 'N/A';
   final vehicleNoStr = item?.vehicleNo ?? vehicleNumber ?? 'N/A';
   final driverNameStr = item?.driverName ?? driverName ?? 'N/A';
@@ -35,13 +35,16 @@ void showDigiTpPassModal(
   final receiveDateRaw = item?.receiveApprovedDate;
   final receiveDateStr = receiveDateRaw != null && receiveDateRaw.isNotEmpty ? AppDateFormatter.formatDateTime(receiveDateRaw) : null;
   final loc = AppLocalizations.of(context)!;
-  
+
   String? localizedStatus;
   if (statusStr != null) {
-    if (statusStr.toLowerCase() == 'delivered') {
+    final statusLower = statusStr.toLowerCase();
+    if (statusLower == 'delivered' || statusLower == 'received') {
       localizedStatus = loc.delivered;
-    } else if (statusStr.toLowerCase() == 'in transit') {
+    } else if (statusLower == 'in transit' || statusLower == 'intransit') {
       localizedStatus = loc.inTransit;
+    } else if (statusLower == 'not received' || statusLower == 'notreceived') {
+      localizedStatus = loc.notReceived;
     } else {
       localizedStatus = statusStr;
     }
@@ -148,7 +151,7 @@ void showDigiTpPassModal(
                       _buildTableRow(loc.digiTpValidityDateAndTime, validityStr, isLast: receiveDateStr == null),
                       if (receiveDateStr != null && receiveDateStr.isNotEmpty) ...[
                         const Divider(height: 16, color: Color(0xFFF1F5F9)),
-                        _buildTableRow('Receive Approved Date', receiveDateStr, isLast: true),
+                        _buildTableRow(loc.receivedDate, receiveDateStr, isLast: true),
                       ],
                     ],
                   ),

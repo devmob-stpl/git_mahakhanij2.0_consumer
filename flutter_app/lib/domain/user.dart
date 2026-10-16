@@ -1,4 +1,6 @@
 import 'common.dart';
+import '../core/constants/app_constants.dart';
+export '../core/constants/app_constants.dart';
 
 enum UserType {
   normalConsumer('NORMAL_CONSUMER'),
@@ -7,6 +9,17 @@ enum UserType {
 
   final String value;
   const UserType(this.value);
+
+  int get consumerType => this == UserType.organization
+      ? CONSUMER_TYPE_ORGANISATION
+      : CONSUMER_TYPE_INDIVIDUAL;
+
+  static UserType fromConsumerType(int? type) {
+    if (type == CONSUMER_TYPE_ORGANISATION) {
+      return UserType.organization;
+    }
+    return UserType.normalConsumer;
+  }
 
   static UserType fromString(String val) {
     switch (val) {
@@ -55,6 +68,7 @@ class User {
   bool get isOrganization => userType == UserType.organization;
   bool get isConsumer => userType == UserType.normalConsumer;
   bool get isSupervisor => userType == UserType.supervisor;
+  int get consumerType => userType.consumerType;
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
@@ -65,7 +79,11 @@ class User {
       fullName: json['fullName'] ?? '',
       mobileNumber: json['mobileNumber'] ?? '',
       email: json['email'],
-      userType: UserType.fromString(json['userType'] ?? 'NORMAL_CONSUMER'),
+      userType: json['consumerType'] != null
+          ? UserType.fromConsumerType(json['consumerType'] is int
+              ? json['consumerType'] as int
+              : int.tryParse(json['consumerType']?.toString() ?? ''))
+          : UserType.fromString(json['userType'] ?? 'NORMAL_CONSUMER'),
       organizationId: json['organizationId'],
       designation: json['designation'],
       assignedPackageId: json['assignedPackageId'],
@@ -87,6 +105,7 @@ class User {
     'mobileNumber': mobileNumber,
     if (email != null) 'email': email,
     'userType': userType.value,
+    'consumerType': consumerType,
     if (organizationId != null) 'organizationId': organizationId,
     if (designation != null) 'designation': designation,
     if (assignedPackageId != null) 'assignedPackageId': assignedPackageId,

@@ -223,13 +223,6 @@ class _ConsumerReportsScreenState extends ConsumerState<ConsumerReportsScreen> {
                                   letterSpacing: 0.5,
                                 ),
                               ),
-                              Text(
-                                loc.byVolume,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.neutral500,
-                                ),
-                              ),
                             ],
                           ),
                           const SizedBox(height: 20),
