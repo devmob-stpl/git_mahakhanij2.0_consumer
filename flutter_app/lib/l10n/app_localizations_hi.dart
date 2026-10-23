@@ -165,25 +165,25 @@ class AppLocalizationsHi extends AppLocalizations {
   String get enquiries => 'पूछताछ';
 
   @override
-  String get noActiveDeliveries => 'रास्ते में कोई पास नहीं';
+  String get noActiveDeliveries => 'रास्ते में कोई डिजीटीपी नहीं';
 
   @override
   String get noDeliveriesInTransitDesc =>
-      'वर्तमान में रास्ते में कोई पास नहीं है।';
+      'वर्तमान में रास्ते में कोई डिजीटीपी नहीं है।';
 
   @override
-  String get noDeliveredItems => 'कोई प्राप्त पास नहीं';
+  String get noDeliveredItems => 'कोई प्राप्त डिजीटीपी नहीं';
 
   @override
   String get noDeliveriesReceivedDesc =>
-      'आपको अभी तक कोई पास प्राप्त नहीं हुआ है।';
+      'आपको अभी तक कोई डिजीटीपी प्राप्त नहीं हुआ है।';
 
   @override
-  String get noNotReceivedPasses => 'कोई अप्राप्त पास नहीं';
+  String get noNotReceivedPasses => 'कोई अप्राप्त डिजीटीपी नहीं';
 
   @override
   String get noNotReceivedPassesDesc =>
-      'वर्तमान में कोई अप्राप्त पास नहीं हैं।';
+      'वर्तमान में कोई अप्राप्त डिजीटीपी नहीं हैं।';
 
   @override
   String get noActiveEnquiries => 'कोई सक्रिय पूछताछ नहीं';
@@ -616,10 +616,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get aadhaarIdentityVerificationDesc =>
-      'अपना आधार OTP सत्यापित करें या दस्तावेज़ फ़ोटो अपलोड करें';
+      'अपना आधार ओटीपी सत्यापित करें या दस्तावेज़ फ़ोटो अपलोड करें';
 
   @override
-  String get method1LiveOtp => 'विधि 1: OTP सत्यापन';
+  String get method1LiveOtp => 'विधि 1: ओटीपी सत्यापन';
 
   @override
   String get twelveDigitAadhaarNumber => '12-अंकीय आधार संख्या *';
@@ -631,24 +631,24 @@ class AppLocalizationsHi extends AppLocalizations {
   String get sendOtpBtn => 'ओटीपी भेजें';
 
   @override
-  String get sixDigitAadhaarOtp => '6-अंकीय आधार OTP *';
+  String get sixDigitAadhaarOtp => '6-अंकीय आधार ओटीपी *';
 
   @override
-  String get enterSixDigitOtp => '6 अंकों का OTP दर्ज करें';
+  String get enterSixDigitOtp => '6 अंकों का ओटीपी दर्ज करें';
 
   @override
-  String get verifyOtpBtn => 'OTP सत्यापित करें';
+  String get verifyOtpBtn => 'ओटीपी सत्यापित करें';
 
   @override
   String get method2UploadAadhaar =>
-      'विधि 2: आधार कार्ड दस्तावेज़ अपलोड करें (PDF / चित्र)';
+      'विधि 2: आधार कार्ड दस्तावेज़ अपलोड करें (पीडीएफ / छवि)';
 
   @override
   String get uploadAadhaarDesc =>
       'महाखनिज दस्तावेज़ सर्वर के माध्यम से अपलोड करने के लिए दस्तावेज़ फ़ाइल चुनें';
 
   @override
-  String get chooseAadhaarPdfOrImage => 'आधार PDF या चित्र चुनें';
+  String get chooseAadhaarPdfOrImage => 'आधार पीडीएफ या चित्र चुनें';
 
   @override
   String get uploadingToMahakhanijServer =>
@@ -748,14 +748,14 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get verifyIdentityOrSkip =>
-      'आधार OTP के माध्यम से पहचान सत्यापित करें या अपना पंजीकरण पूरा करने के लिए छोड़ें।';
+      'आधार ओटीपी के माध्यम से पहचान सत्यापित करें या अपना पंजीकरण पूरा करने के लिए छोड़ें।';
 
   @override
-  String get aadhaarCardOtpVerification => 'आधार कार्ड OTP सत्यापन';
+  String get aadhaarCardOtpVerification => 'आधार कार्ड ओटीपी सत्यापन';
 
   @override
   String get enterTwelveDigitAadhaarToReceiveOtp =>
-      'OTP प्राप्त करने के लिए 12-अंकीय आधार दर्ज करें';
+      'ओटीपी प्राप्त करने के लिए 12-अंकीय आधार दर्ज करें';
 
   @override
   String get aadhaarCardNumberLabel => 'आधार कार्ड नंबर';
@@ -764,10 +764,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get twelveDigitAadhaarHint => '12-अंकीय आधार नंबर';
 
   @override
-  String get enterSixDigitAadhaarOtpLabel => '6-अंकीय आधार OTP दर्ज करें';
+  String get enterSixDigitAadhaarOtpLabel => '6-अंकीय आधार ओटीपी दर्ज करें';
 
   @override
-  String get sixDigitOtpHint => '6-अंकीय OTP';
+  String get sixDigitOtpHint => '6-अंकीय ओटीपी';
 
   @override
   String get aadhaarIdentityVerified => 'आधार पहचान सत्यापित';
@@ -780,14 +780,14 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get frontOrCombinedAadhaar =>
-      'आधार कार्ड की फ्रंट या संयुक्त कॉपी (PDF / Image)';
+      'आधार कार्ड की फ्रंट या संयुक्त कॉपी (पीडीएफ / छवि)';
 
   @override
   String get aadhaarNonMandatoryNotice =>
       'आधार सत्यापन अनिवार्य नहीं है। आप किसी भी समय इस चरण को छोड़ सकते हैं और पंजीकरण पूरा कर सकते हैं।';
 
   @override
-  String get resendBtn => 'OTP पुनः भेजें';
+  String get resendBtn => 'ओटीपी पुनः भेजें';
 
   @override
   String get digitpsNotReceived => 'डिजीटीपी\nप्राप्त नहीं';
@@ -827,7 +827,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get invalidOtpServer =>
-      'अवैध OTP दर्ज किया गया। कृपया पुनः प्रयास करें।';
+      'अवैध ओटीपी दर्ज किया गया। कृपया पुनः प्रयास करें।';
 
   @override
   String get maharashtraState => 'महाराष्ट्र';
@@ -943,7 +943,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get aadhaarSendOtpError =>
-      'आधार OTP भेजने में विफल। कृपया पुनः प्रयास करें।';
+      'आधार ओटीपी भेजने में विफल। कृपया पुनः प्रयास करें।';
 
   @override
   String get msgRegSuccessSignIn =>
@@ -1075,7 +1075,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get errEnterValidDigitp =>
-      'कृपया एक वैध संख्यात्मक DigiTP नंबर दर्ज करें।';
+      'कृपया एक वैध संख्यात्मक डिजीटीपी नंबर दर्ज करें।';
 
   @override
   String get inTransitVehiclesTitle => 'मार्ग में वाहन';
@@ -1129,7 +1129,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get selectVehicleAndTrackLive => 'वाहन चुनें और लाइव ट्रैक करें';
 
   @override
-  String get digiTpLabel => 'DigiTP:';
+  String get digiTpLabel => 'डिजीटीपी:';
 
   @override
   String get inTransitStatus => 'मार्ग में';

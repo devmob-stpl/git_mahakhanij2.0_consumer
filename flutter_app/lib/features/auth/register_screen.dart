@@ -248,10 +248,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final existRes = await repo.checkAadhaarExists(aadh, mobileNo: mobileNo);
     if (!mounted) return;
 
-    if (existRes.statusCode == '408' ||
-        existRes.statusCode == '504' ||
-        existRes.statusMessage.contains('Aadhaar server error') ||
-        existRes.statusMessage.toLowerCase().contains('timeout')) {
+    final existStatusCode = existRes.statusCode.trim();
+    final existStatusMsg = existRes.statusMessage.toLowerCase();
+
+    if (existStatusCode == '408' ||
+        existStatusCode == '504' ||
+        existStatusCode == '500' ||
+        existStatusCode == '502' ||
+        existStatusCode == '503' ||
+        existStatusCode == '0' ||
+        existStatusMsg.contains('aadhaar server error') ||
+        existStatusMsg.contains('timeout') ||
+        existStatusMsg.contains('timed out') ||
+        existStatusMsg.contains('server error') ||
+        existStatusMsg.contains('unexpected') ||
+        existStatusMsg.contains('network error') ||
+        existStatusMsg.contains('failed')) {
       setState(() {
         _isCheckingAadhaar = false;
         _aadhaarError = l10n.aadhaarServerError;
@@ -278,24 +290,47 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     setState(() {
       _isGeneratingAadhaarOtp = false;
-      if (genRes.statusCode == '408' ||
-          genRes.statusCode == '504' ||
-          (genRes.message != null && (genRes.message!.contains('Aadhaar server error') || genRes.message!.toLowerCase().contains('timeout'))) ||
-          genRes.statusMessage.contains('Aadhaar server error') ||
-          genRes.statusMessage.toLowerCase().contains('timeout')) {
-        _aadhaarError = l10n.aadhaarServerError;
-      } else if (genRes.isSuccess && genRes.clientId != null) {
+      if (genRes.isSuccess && genRes.clientId != null) {
         _isAadhaarOtpSent = true;
         _aadhaarClientId = genRes.clientId;
         _aadhaarError = null;
         _aadhaarOtpError = null;
         _startResendTimer();
       } else {
-        String msg = genRes.message ?? l10n.aadhaarSendOtpFailed;
-        if (msg.trim().toLowerCase() == 'verification_failed') {
-          msg = l10n.invalidAadhaarNumber;
+        final genStatusCode = genRes.statusCode.trim();
+        final genRawMsg = genRes.message?.trim() ?? '';
+        final genStatusMsg = genRes.statusMessage.trim();
+        final genCombined = '${genRawMsg.toLowerCase()} ${genStatusMsg.toLowerCase()}';
+
+        final isServerErrorOrTimeout = genStatusCode != '200' && genStatusCode != '200.0' ||
+            genStatusCode == '408' ||
+            genStatusCode == '504' ||
+            genStatusCode == '500' ||
+            genStatusCode == '502' ||
+            genStatusCode == '503' ||
+            genStatusCode == '0' ||
+            genRawMsg.isEmpty ||
+            genCombined.contains('aadhaar server error') ||
+            genCombined.contains('timeout') ||
+            genCombined.contains('timed out') ||
+            genCombined.contains('server error') ||
+            genCombined.contains('internal') ||
+            genCombined.contains('gateway') ||
+            genCombined.contains('service unavailable') ||
+            genCombined.contains('verification_failed') ||
+            genCombined.contains('verification failed') ||
+            genCombined.contains('unexpected') ||
+            genCombined.contains('failed');
+
+        if (genCombined.contains('already exists') || genCombined.contains('already registered')) {
+          _aadhaarError = l10n.aadhaarAlreadyRegistered;
+        } else if (isServerErrorOrTimeout) {
+          _aadhaarError = l10n.aadhaarServerError;
+        } else if (genRawMsg.toLowerCase().contains('invalid')) {
+          _aadhaarError = l10n.invalidAadhaarNumber;
+        } else {
+          _aadhaarError = l10n.aadhaarServerError;
         }
-        _aadhaarError = msg;
       }
     });
   }
@@ -314,6 +349,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
 
     setState(() {
+      _aadhaarError = null;
       _aadhaarOtpError = null;
       _isVerifyingAadhaarOtp = true;
     });
@@ -330,13 +366,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     setState(() {
       _isVerifyingAadhaarOtp = false;
-      if (verifyRes.statusCode == '408' ||
-          verifyRes.statusCode == '504' ||
-          (verifyRes.message != null && (verifyRes.message!.contains('Aadhaar server error') || verifyRes.message!.toLowerCase().contains('timeout'))) ||
-          verifyRes.statusMessage.contains('Aadhaar server error') ||
-          verifyRes.statusMessage.toLowerCase().contains('timeout')) {
-        _aadhaarOtpError = l10n.aadhaarServerError;
-      } else if (verifyRes.isSuccess) {
+      if (verifyRes.isSuccess) {
         _isAadhaarVerified = true;
         _aadhaarVerifiedData = verifyRes;
         _aadhaarOtpError = null;
@@ -356,11 +386,44 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           } catch (_) {}
         }
       } else {
-        String msg = verifyRes.message ?? l10n.invalidAadhaarOtp;
-        if (msg.toLowerCase() == 'verification_failed' || msg.toLowerCase().contains('invalid')) {
-          msg = l10n.invalidOtpServer;
+        final statusCode = verifyRes.statusCode.trim();
+        final rawMsg = verifyRes.message?.trim() ?? '';
+        final statusMsg = verifyRes.statusMessage.trim();
+        final combined = '${rawMsg.toLowerCase()} ${statusMsg.toLowerCase()}';
+
+        final isServerErrorOrTimeout = statusCode != '200' && statusCode != '200.0' ||
+            statusCode == '408' ||
+            statusCode == '504' ||
+            statusCode == '500' ||
+            statusCode == '502' ||
+            statusCode == '503' ||
+            statusCode == '0' ||
+            rawMsg.isEmpty ||
+            combined.contains('aadhaar server error') ||
+            combined.contains('timeout') ||
+            combined.contains('timed out') ||
+            combined.contains('server error') ||
+            combined.contains('internal') ||
+            combined.contains('gateway') ||
+            combined.contains('service unavailable') ||
+            combined.contains('verification_failed') ||
+            combined.contains('verification failed') ||
+            combined.contains('unexpected') ||
+            combined.contains('failed');
+
+        final isExplicitInvalidOtp = !isServerErrorOrTimeout &&
+            (combined.contains('invalid otp') ||
+             combined.contains('incorrect otp') ||
+             combined.contains('otp does not match') ||
+             combined.contains('wrong otp') ||
+             combined.contains('otp mismatch') ||
+             combined.contains('invalid_otp'));
+
+        if (isExplicitInvalidOtp) {
+          _aadhaarOtpError = l10n.invalidOtpServer;
+        } else {
+          _aadhaarOtpError = l10n.aadhaarServerError;
         }
-        _aadhaarOtpError = msg;
       }
     });
   }
@@ -1226,7 +1289,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           hint: l10n.enterOrgNameHint,
           error: _errors['orgName'],
           inputFormatters: [
-            FilteringTextInputFormatter.deny(RegExp(r'[0-9\u0966-\u096F]')),
+            FilteringTextInputFormatter.allow(
+              RegExp(r'[a-zA-Z ]'),
+            ),
           ],
           onChanged: (val) {
             if (val.isNotEmpty && _errors.containsKey('orgName')) {

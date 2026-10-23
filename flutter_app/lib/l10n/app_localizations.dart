@@ -403,37 +403,37 @@ abstract class AppLocalizations {
   /// No description provided for @noActiveDeliveries.
   ///
   /// In en, this message translates to:
-  /// **'No Active Passes In Transit'**
+  /// **'No Active DigiTP In Transit'**
   String get noActiveDeliveries;
 
   /// No description provided for @noDeliveriesInTransitDesc.
   ///
   /// In en, this message translates to:
-  /// **'There are currently no passes in transit.'**
+  /// **'There are currently no DigiTP in transit.'**
   String get noDeliveriesInTransitDesc;
 
   /// No description provided for @noDeliveredItems.
   ///
   /// In en, this message translates to:
-  /// **'No Received Passes'**
+  /// **'No Received DigiTP'**
   String get noDeliveredItems;
 
   /// No description provided for @noDeliveriesReceivedDesc.
   ///
   /// In en, this message translates to:
-  /// **'You have not received any passes yet.'**
+  /// **'You have not received any DigiTP yet.'**
   String get noDeliveriesReceivedDesc;
 
   /// No description provided for @noNotReceivedPasses.
   ///
   /// In en, this message translates to:
-  /// **'No Not Received Passes'**
+  /// **'No Not Received DigiTP'**
   String get noNotReceivedPasses;
 
   /// No description provided for @noNotReceivedPassesDesc.
   ///
   /// In en, this message translates to:
-  /// **'There are currently no not received passes.'**
+  /// **'There are currently no not received DigiTP.'**
   String get noNotReceivedPassesDesc;
 
   /// No description provided for @noActiveEnquiries.

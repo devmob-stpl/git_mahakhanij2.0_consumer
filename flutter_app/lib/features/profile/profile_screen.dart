@@ -53,6 +53,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _isProfileAadhaarOtpSent = false;
   bool _isProfileAadhaarChecking = false;
   bool _isProfileAadhaarGenerating = false;
+  bool _isProfileAadhaarResending = false;
   bool _isProfileAadhaarVerifying = false;
   String? _profileAadhaarError;
   Timer? _profileAadhaarResendTimer;
@@ -324,33 +325,54 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       return;
     }
 
+    final isResend = _isProfileAadhaarOtpSent;
+
     _safeSetModalState(() {
       _profileAadhaarError = null;
-      _isProfileAadhaarChecking = true;
+      if (isResend) {
+        _isProfileAadhaarResending = true;
+      } else {
+        _isProfileAadhaarChecking = true;
+      }
     });
 
     final repo = ref.read(aadhaarKycRepositoryProvider);
-    final mobileNo = _mobileController.text.trim();
-    final existRes = await repo.checkAadhaarExists(aadh, mobileNo: mobileNo);
-    if (!mounted) return;
 
-    if (existRes.statusCode == '408' ||
-        existRes.statusCode == '504' ||
-        existRes.statusMessage.contains('Aadhaar server error') ||
-        existRes.statusMessage.toLowerCase().contains('timeout')) {
-      _safeSetModalState(() {
-        _isProfileAadhaarChecking = false;
-        _profileAadhaarError = loc.aadhaarServerError;
-      });
-      return;
-    }
+    if (!isResend) {
+      final mobileNo = _mobileController.text.trim();
+      final existRes = await repo.checkAadhaarExists(aadh, mobileNo: mobileNo);
+      if (!mounted) return;
 
-    if (existRes.exists) {
-      _safeSetModalState(() {
-        _isProfileAadhaarChecking = false;
-        _profileAadhaarError =  loc.aadhaarAlreadyRegistered;
-      });
-      return;
+      final existStatusCode = existRes.statusCode.trim();
+      final existStatusMsg = existRes.statusMessage.toLowerCase();
+
+      if (existStatusCode == '408' ||
+          existStatusCode == '504' ||
+          existStatusCode == '500' ||
+          existStatusCode == '502' ||
+          existStatusCode == '503' ||
+          existStatusCode == '0' ||
+          existStatusMsg.contains('aadhaar server error') ||
+          existStatusMsg.contains('timeout') ||
+          existStatusMsg.contains('timed out') ||
+          existStatusMsg.contains('server error') ||
+          existStatusMsg.contains('unexpected') ||
+          existStatusMsg.contains('network error') ||
+          existStatusMsg.contains('failed')) {
+        _safeSetModalState(() {
+          _isProfileAadhaarChecking = false;
+          _profileAadhaarError = loc.aadhaarServerError;
+        });
+        return;
+      }
+
+      if (existRes.exists) {
+        _safeSetModalState(() {
+          _isProfileAadhaarChecking = false;
+          _profileAadhaarError = loc.aadhaarAlreadyRegistered;
+        });
+        return;
+      }
     }
 
     _safeSetModalState(() {
@@ -358,31 +380,64 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _isProfileAadhaarGenerating = true;
     });
 
-    final genRes = await repo.generateAadhaarOtp(aadh, createdBy: 0);
-    if (!mounted) return;
+    try {
+      final genRes = await repo.generateAadhaarOtp(aadh, createdBy: 0);
+      if (!mounted) return;
 
-    _safeSetModalState(() {
-      _isProfileAadhaarGenerating = false;
-      if (genRes.statusCode == '408' ||
-          genRes.statusCode == '504' ||
-          (genRes.message != null && (genRes.message!.contains('Aadhaar server error') || genRes.message!.toLowerCase().contains('timeout'))) ||
-          genRes.statusMessage.contains('Aadhaar server error') ||
-          genRes.statusMessage.toLowerCase().contains('timeout')) {
-        _profileAadhaarError = loc.aadhaarServerError;
-      } else if (genRes.isSuccess && genRes.clientId != null) {
-        _isProfileAadhaarOtpSent = true;
-        _profileAadhaarClientId = genRes.clientId;
-        _profileAadhaarError = null;
-        
-        _startProfileAadhaarTimer(seconds: 60);
-      } else {
-        String msg = genRes.message ?? loc.aadhaarSendOtpFailed;
-        if (msg.trim().toLowerCase() == 'verification_failed') {
-          msg = loc.invalidAadhaarNumber;
+      _safeSetModalState(() {
+        _isProfileAadhaarGenerating = false;
+        _isProfileAadhaarResending = false;
+
+        final genStatusCode = genRes.statusCode.trim();
+        final genRawMsg = genRes.message?.trim() ?? '';
+        final genStatusMsg = genRes.statusMessage.trim();
+        final genCombined = '${genRawMsg.toLowerCase()} ${genStatusMsg.toLowerCase()}';
+
+        final isServerErrorOrTimeout = genStatusCode != '200' && genStatusCode != '200.0' ||
+            genStatusCode == '408' ||
+            genStatusCode == '504' ||
+            genStatusCode == '500' ||
+            genStatusCode == '502' ||
+            genStatusCode == '503' ||
+            genStatusCode == '0' ||
+            genRawMsg.isEmpty ||
+            genCombined.contains('aadhaar server error') ||
+            genCombined.contains('timeout') ||
+            genCombined.contains('timed out') ||
+            genCombined.contains('server error') ||
+            genCombined.contains('internal') ||
+            genCombined.contains('gateway') ||
+            genCombined.contains('service unavailable') ||
+            genCombined.contains('verification_failed') ||
+            genCombined.contains('verification failed') ||
+            genCombined.contains('unexpected') ||
+            genCombined.contains('failed');
+
+        if (genRes.isSuccess && genRes.clientId != null) {
+          _isProfileAadhaarOtpSent = true;
+          _profileAadhaarClientId = genRes.clientId;
+          _profileAadhaarError = null;
+
+          // Start OTP countdown timer only after the API call succeeds!
+          _startProfileAadhaarTimer(seconds: 60);
+        } else if (genCombined.contains('already exists') || genCombined.contains('already registered')) {
+          _profileAadhaarError = loc.aadhaarAlreadyRegistered;
+        } else if (isServerErrorOrTimeout) {
+          _profileAadhaarError = loc.aadhaarServerError;
+        } else if (genRawMsg.toLowerCase().contains('invalid')) {
+          _profileAadhaarError = loc.invalidAadhaarNumber;
+        } else {
+          _profileAadhaarError = loc.aadhaarServerError;
         }
-        _profileAadhaarError = msg;
-      }
-    });
+      });
+    } catch (_) {
+      if (!mounted) return;
+      _safeSetModalState(() {
+        _isProfileAadhaarGenerating = false;
+        _isProfileAadhaarResending = false;
+        _profileAadhaarError = loc.aadhaarServerError;
+      });
+    }
   }
 
   Future<void> _handleProfileVerifyAadhaarOtp(StateSetter setModalState) async {
@@ -415,17 +470,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     _safeSetModalState(() {
       _isProfileAadhaarVerifying = false;
-      if (res.statusCode == '408' ||
-          res.statusCode == '504' ||
-          (res.message != null && (res.message!.contains('Aadhaar server error') || res.message!.toLowerCase().contains('timeout'))) ||
-          res.statusMessage.contains('Aadhaar server error') ||
-          res.statusMessage.toLowerCase().contains('timeout')) {
-        _profileAadhaarError = loc.aadhaarServerError;
-      } else if (res.isSuccess) {
+      if (res.isSuccess) {
         _profileAadhaarResendTimer?.cancel();
         _profileAadhaarResendTimer = null;
         _profileAadhaarOtpTargetTime = null;
         _profileAadhaarTimerCountdown = 60;
+        _profileAadhaarError = null;
         if (_activeProfileData != null) {
           final newName = (res.fullName != null && res.fullName!.trim().isNotEmpty)
               ? res.fullName!
@@ -446,11 +496,44 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         }
         setState(() {});
       } else {
-        String msg = res.message ?? loc.invalidAadhaarOtp;
-        if (msg.toLowerCase() == 'verification_failed' || msg.toLowerCase().contains('invalid')) {
-          msg = loc.invalidOtpServer;
+        final statusCode = res.statusCode.trim();
+        final rawMsg = res.message?.trim() ?? '';
+        final statusMsg = res.statusMessage.trim();
+        final combined = '${rawMsg.toLowerCase()} ${statusMsg.toLowerCase()}';
+
+        final isServerErrorOrTimeout = statusCode != '200' && statusCode != '200.0' ||
+            statusCode == '408' ||
+            statusCode == '504' ||
+            statusCode == '500' ||
+            statusCode == '502' ||
+            statusCode == '503' ||
+            statusCode == '0' ||
+            rawMsg.isEmpty ||
+            combined.contains('aadhaar server error') ||
+            combined.contains('timeout') ||
+            combined.contains('timed out') ||
+            combined.contains('server error') ||
+            combined.contains('internal') ||
+            combined.contains('gateway') ||
+            combined.contains('service unavailable') ||
+            combined.contains('verification_failed') ||
+            combined.contains('verification failed') ||
+            combined.contains('unexpected') ||
+            combined.contains('failed');
+
+        final isExplicitInvalidOtp = !isServerErrorOrTimeout &&
+            (combined.contains('invalid otp') ||
+             combined.contains('incorrect otp') ||
+             combined.contains('otp does not match') ||
+             combined.contains('wrong otp') ||
+             combined.contains('otp mismatch') ||
+             combined.contains('invalid_otp'));
+
+        if (isExplicitInvalidOtp) {
+          _profileAadhaarError = loc.invalidOtpServer;
+        } else {
+          _profileAadhaarError = loc.aadhaarServerError;
         }
-        _profileAadhaarError = msg;
       }
     });
   }
@@ -1306,6 +1389,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         _profileAadhaarTimerCountdown = 60;
                                         setModalState(() {
                                           _isProfileAadhaarOtpSent = false;
+                                          _isProfileAadhaarResending = false;
                                           _profileAadhaarOtpController.clear();
                                           _profileAadhaarError = null;
                                         });
@@ -1350,13 +1434,39 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       : Text(loc.verifyOtpBtn, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
                                 ),
                               ),
-                              if (_profileAadhaarTimerCountdown > 0) ...[
+                              if (_isProfileAadhaarResending) ...[
+                                const SizedBox(height: 6),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Color(0xFF2563EB),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      loc.resendBtn,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF2563EB),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ] else if (_profileAadhaarTimerCountdown > 0) ...[
                                 const SizedBox(height: 6),
                                 Text(loc.resendInSeconds(_profileAadhaarTimerCountdown.toString().padLeft(2, '0')), style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary)),
                               ] else ...[
                                 const SizedBox(height: 6),
                                 InkWell(
-                                  onTap: _isProfileAadhaarGenerating ? null : () => _handleProfileSendAadhaarOtp(setModalState),
+                                  onTap: (_isProfileAadhaarResending || _isProfileAadhaarGenerating || _isProfileAadhaarChecking)
+                                      ? null
+                                      : () => _handleProfileSendAadhaarOtp(setModalState),
                                   child: Text(
                                     loc.resendBtn,
                                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF2563EB)),

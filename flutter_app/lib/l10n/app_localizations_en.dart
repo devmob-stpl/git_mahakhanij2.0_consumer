@@ -166,25 +166,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enquiries => 'Enquiries';
 
   @override
-  String get noActiveDeliveries => 'No Active Passes In Transit';
+  String get noActiveDeliveries => 'No Active DigiTP In Transit';
 
   @override
   String get noDeliveriesInTransitDesc =>
-      'There are currently no passes in transit.';
+      'There are currently no DigiTP in transit.';
 
   @override
-  String get noDeliveredItems => 'No Received Passes';
+  String get noDeliveredItems => 'No Received DigiTP';
 
   @override
   String get noDeliveriesReceivedDesc =>
-      'You have not received any passes yet.';
+      'You have not received any DigiTP yet.';
 
   @override
-  String get noNotReceivedPasses => 'No Not Received Passes';
+  String get noNotReceivedPasses => 'No Not Received DigiTP';
 
   @override
   String get noNotReceivedPassesDesc =>
-      'There are currently no not received passes.';
+      'There are currently no not received DigiTP.';
 
   @override
   String get noActiveEnquiries => 'No Active Enquiries';

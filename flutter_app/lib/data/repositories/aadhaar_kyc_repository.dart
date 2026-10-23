@@ -43,7 +43,7 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
 
       return const AadhaarExistResponse(
         statusCode: '500',
-        statusMessage: 'Unexpected format returned from server.',
+        statusMessage: 'Aadhaar server error. Please try again.',
         exists: false,
         id: 0,
       );
@@ -51,8 +51,10 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout ||
           e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.connectionError ||
           e.response?.statusCode == 408 ||
-          e.response?.statusCode == 504) {
+          e.response?.statusCode == 504 ||
+          (e.response?.statusCode != null && e.response!.statusCode! >= 500)) {
         return const AadhaarExistResponse(
           statusCode: '408',
           statusMessage: 'Aadhaar server error. Please try again.',
@@ -66,24 +68,16 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
           return AadhaarExistResponse.fromJson(errData);
         }
       }
-      return AadhaarExistResponse(
-        statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: 'Network error checking Aadhaar card existence.',
+      return const AadhaarExistResponse(
+        statusCode: '500',
+        statusMessage: 'Aadhaar server error. Please try again.',
         exists: false,
         id: 0,
       );
     } catch (e) {
-      if (e is TimeoutException) {
-        return const AadhaarExistResponse(
-          statusCode: '408',
-          statusMessage: 'Aadhaar server error. Please try again.',
-          exists: false,
-          id: 0,
-        );
-      }
-      return AadhaarExistResponse(
+      return const AadhaarExistResponse(
         statusCode: '500',
-        statusMessage: 'Error checking Aadhaar existence: ${e.toString()}',
+        statusMessage: 'Aadhaar server error. Please try again.',
         exists: false,
         id: 0,
       );
@@ -110,15 +104,18 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
 
       return const GenerateAadhaarOtpResponse(
         statusCode: '500',
-        statusMessage: 'Unexpected format from OTP service.',
+        statusMessage: 'Aadhaar server error. Please try again.',
+        message: 'Aadhaar server error. Please try again.',
         isSuccess: false,
       );
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout ||
           e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.connectionError ||
           e.response?.statusCode == 408 ||
-          e.response?.statusCode == 504) {
+          e.response?.statusCode == 504 ||
+          (e.response?.statusCode != null && e.response!.statusCode! >= 500)) {
         return const GenerateAadhaarOtpResponse(
           statusCode: '408',
           statusMessage: 'Aadhaar server error. Please try again.',
@@ -132,23 +129,17 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
           return GenerateAadhaarOtpResponse.fromJson(errData);
         }
       }
-      return GenerateAadhaarOtpResponse(
-        statusCode: e.response?.statusCode?.toString() ?? '422',
-        statusMessage: 'Failed to generate Aadhaar OTP.',
+      return const GenerateAadhaarOtpResponse(
+        statusCode: '500',
+        statusMessage: 'Aadhaar server error. Please try again.',
+        message: 'Aadhaar server error. Please try again.',
         isSuccess: false,
       );
     } catch (e) {
-      if (e is TimeoutException) {
-        return const GenerateAadhaarOtpResponse(
-          statusCode: '408',
-          statusMessage: 'Aadhaar server error. Please try again.',
-          message: 'Aadhaar server error. Please try again.',
-          isSuccess: false,
-        );
-      }
-      return GenerateAadhaarOtpResponse(
+      return const GenerateAadhaarOtpResponse(
         statusCode: '500',
-        statusMessage: 'Error generating Aadhaar OTP: ${e.toString()}',
+        statusMessage: 'Aadhaar server error. Please try again.',
+        message: 'Aadhaar server error. Please try again.',
         isSuccess: false,
       );
     }
@@ -180,16 +171,19 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
       }
 
       return const VerifyAadhaarOtpResponse(
-        statusCode: '0',
-        statusMessage: 'Unexpected format from verification service.',
+        statusCode: '500',
+        statusMessage: 'Aadhaar server error. Please try again.',
+        message: 'Aadhaar server error. Please try again.',
         isSuccess: false,
       );
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout ||
           e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.connectionError ||
           e.response?.statusCode == 408 ||
-          e.response?.statusCode == 504) {
+          e.response?.statusCode == 504 ||
+          (e.response?.statusCode != null && e.response!.statusCode! >= 500)) {
         return const VerifyAadhaarOtpResponse(
           statusCode: '408',
           statusMessage: 'Aadhaar server error. Please try again.',
@@ -203,23 +197,17 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
           return VerifyAadhaarOtpResponse.fromJson(errData);
         }
       }
-      return VerifyAadhaarOtpResponse(
-        statusCode: e.response?.statusCode?.toString() ?? '0',
-        statusMessage: 'Aadhaar OTP verification failed.',
+      return const VerifyAadhaarOtpResponse(
+        statusCode: '500',
+        statusMessage: 'Aadhaar server error. Please try again.',
+        message: 'Aadhaar server error. Please try again.',
         isSuccess: false,
       );
     } catch (e) {
-      if (e is TimeoutException) {
-        return const VerifyAadhaarOtpResponse(
-          statusCode: '408',
-          statusMessage: 'Aadhaar server error. Please try again.',
-          message: 'Aadhaar server error. Please try again.',
-          isSuccess: false,
-        );
-      }
-      return VerifyAadhaarOtpResponse(
-        statusCode: '0',
-        statusMessage: 'Error verifying Aadhaar OTP: ${e.toString()}',
+      return const VerifyAadhaarOtpResponse(
+        statusCode: '500',
+        statusMessage: 'Aadhaar server error. Please try again.',
+        message: 'Aadhaar server error. Please try again.',
         isSuccess: false,
       );
     }
