@@ -15,7 +15,10 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
+import '../../core/utils/pan_input_formatter.dart';
+import '../../core/utils/document_permission_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum KycStep { view, upload, success }
 
@@ -54,6 +57,86 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String? _profileAadhaarError;
   Timer? _profileAadhaarResendTimer;
   int _profileAadhaarTimerCountdown = 60;
+  DateTime? _profileAadhaarOtpTargetTime;
+  StateSetter? _activeAadhaarModalState;
+
+  int get _profileAadhaarRemainingSeconds {
+    if (_profileAadhaarOtpTargetTime == null) return 0;
+    final diffMs = _profileAadhaarOtpTargetTime!.difference(DateTime.now()).inMilliseconds;
+    final remaining = (diffMs / 1000).ceil();
+    return remaining > 60 ? 60 : (remaining > 0 ? remaining : 0);
+  }
+
+  void _startProfileAadhaarTimer({int? seconds}) {
+    if (seconds != null) {
+      _profileAadhaarOtpTargetTime = DateTime.now().add(Duration(seconds: seconds));
+      _profileAadhaarTimerCountdown = seconds;
+    } else {
+      _profileAadhaarTimerCountdown = _profileAadhaarRemainingSeconds;
+    }
+
+    if (_profileAadhaarRemainingSeconds <= 0) {
+      _profileAadhaarTimerCountdown = 0;
+      _profileAadhaarOtpTargetTime = null;
+      _profileAadhaarResendTimer?.cancel();
+      _profileAadhaarResendTimer = null;
+      return;
+    }
+
+    if (_profileAadhaarResendTimer != null && _profileAadhaarResendTimer!.isActive) {
+      return;
+    }
+
+    _profileAadhaarResendTimer?.cancel();
+    _profileAadhaarResendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      final remaining = _profileAadhaarRemainingSeconds;
+      _profileAadhaarTimerCountdown = remaining;
+
+      if (_activeAadhaarModalState != null) {
+        try {
+          _activeAadhaarModalState!(() {});
+        } catch (_) {
+          _activeAadhaarModalState = null;
+        }
+      }
+
+      if (remaining <= 0) {
+        timer.cancel();
+        _profileAadhaarResendTimer = null;
+        _profileAadhaarOtpTargetTime = null;
+        _profileAadhaarTimerCountdown = 0;
+        if (_activeAadhaarModalState != null) {
+          try {
+            _activeAadhaarModalState!(() {});
+          } catch (_) {
+            _activeAadhaarModalState = null;
+          }
+        }
+        if (mounted) {
+          setState(() {});
+        }
+      }
+    });
+  }
+
+  void _safeSetModalState(void Function() fn) {
+    if (_activeAadhaarModalState != null) {
+      try {
+        _activeAadhaarModalState!(fn);
+        return;
+      } catch (_) {
+        _activeAadhaarModalState = null;
+      }
+    }
+    fn();
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   String? _profileAadhaarDocUrl;
   String? _profileAadhaarDocError;
@@ -72,6 +155,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool? _tempIsPanVerified;
   String? _tempPanNo;
   String? _tempPanClientName;
+  String? _tempPanClientId;
 
   bool _isSaving = false;
   bool _showSaveToast = false;
@@ -93,6 +177,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool? _tempIsAadharVerified;
   String? _tempAadharCardNo;
   String? _tempAadharName;
+  String? _cachedAadhaarVerifiedName;
 
   @override
   void initState() {
@@ -108,6 +193,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _talukaController = TextEditingController();
     _districtController = TextEditingController();
     _cityVillageController = TextEditingController();
+
+    final mobile = user?.mobileNumber ?? '';
+    SharedPreferences.getInstance().then((prefs) {
+      final name = (mobile.isNotEmpty ? prefs.getString('aadhaar_verified_name_$mobile') : null) ??
+          prefs.getString('aadhaar_verified_name_last');
+      if (name != null && name.isNotEmpty && mounted) {
+        setState(() {
+          _cachedAadhaarVerifiedName = name;
+        });
+      }
+    });
   }
 
   @override
@@ -125,6 +221,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _profileAadhaarOtpController.dispose();
     _profilePanController.dispose();
     _profileAadhaarResendTimer?.cancel();
+    _profileAadhaarResendTimer = null;
+    _activeAadhaarModalState = null;
+    _profileAadhaarOtpTargetTime = null;
     super.dispose();
   }
 
@@ -132,6 +231,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (_lastLoadedProfileId == profile.id) return;
     _lastLoadedProfileId = profile.id;
     _activeProfileData = profile;
+
+    final aadh = profile.aadharCardNo?.replaceAll(' ', '').trim() ?? '';
+    final mob = profile.mobileNo.trim();
+    SharedPreferences.getInstance().then((prefs) {
+      final name = (profile.aadharVerifiedName != null && profile.aadharVerifiedName!.isNotEmpty)
+          ? profile.aadharVerifiedName
+          : ((aadh.isNotEmpty ? prefs.getString('aadhaar_verified_name_$aadh') : null) ??
+              (mob.isNotEmpty ? prefs.getString('aadhaar_verified_name_$mob') : null) ??
+              prefs.getString('aadhaar_verified_name_last'));
+      if (name != null && name.isNotEmpty && mounted && _cachedAadhaarVerifiedName == null) {
+        setState(() {
+          _cachedAadhaarVerifiedName = name;
+        });
+      }
+    });
 
     _nameController.text = profile.name.isNotEmpty ? profile.name : _nameController.text;
     _mobileController.text = profile.mobileNo.isNotEmpty ? profile.mobileNo : _mobileController.text;
@@ -174,6 +288,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _cityVillageController.text = profile.cityName!;
     } else if (profile.villageName != null && profile.villageName!.isNotEmpty) {
       _cityVillageController.text = profile.villageName!;
+    } else if (profile.censusName != null && profile.censusName!.isNotEmpty) {
+      _cityVillageController.text = profile.censusName!;
     }
 
     // Resolve location names dynamically using District/Taluka/Census IDs
@@ -195,19 +311,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _handleProfileSendAadhaarOtp(StateSetter setModalState) async {
+    _activeAadhaarModalState = setModalState;
     final loc = AppLocalizations.of(context)!;
     final aadh = _profileAadhaarController.text.replaceAll(' ', '').trim();
     if (aadh.length != 12 || !RegExp(r'^\d{12}$').hasMatch(aadh)) {
-      setModalState(() => _profileAadhaarError = loc.enterValidAadhaarNumber);
+      _safeSetModalState(() => _profileAadhaarError = loc.enterValidAadhaarNumber);
       return;
     }
     
     if (aadh.startsWith('0') || aadh.startsWith('1')) {
-      setModalState(() => _profileAadhaarError = loc.aadhaarCannotStartWithZeroOrOne);
+      _safeSetModalState(() => _profileAadhaarError = loc.aadhaarCannotStartWithZeroOrOne);
       return;
     }
 
-    setModalState(() {
+    _safeSetModalState(() {
       _profileAadhaarError = null;
       _isProfileAadhaarChecking = true;
     });
@@ -217,17 +334,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final existRes = await repo.checkAadhaarExists(aadh, mobileNo: mobileNo);
     if (!mounted) return;
 
-    if (existRes.exists) {
-      setModalState(() {
+    if (existRes.statusCode == '408' ||
+        existRes.statusCode == '504' ||
+        existRes.statusMessage.contains('Aadhaar server error') ||
+        existRes.statusMessage.toLowerCase().contains('timeout')) {
+      _safeSetModalState(() {
         _isProfileAadhaarChecking = false;
-        _profileAadhaarError = existRes.statusMessage.isNotEmpty
-            ? existRes.statusMessage
-            : loc.aadhaarAlreadyRegistered;
+        _profileAadhaarError = loc.aadhaarServerError;
       });
       return;
     }
 
-    setModalState(() {
+    if (existRes.exists) {
+      _safeSetModalState(() {
+        _isProfileAadhaarChecking = false;
+        _profileAadhaarError =  loc.aadhaarAlreadyRegistered;
+      });
+      return;
+    }
+
+    _safeSetModalState(() {
       _isProfileAadhaarChecking = false;
       _isProfileAadhaarGenerating = true;
     });
@@ -235,28 +361,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final genRes = await repo.generateAadhaarOtp(aadh, createdBy: 0);
     if (!mounted) return;
 
-    setModalState(() {
+    _safeSetModalState(() {
       _isProfileAadhaarGenerating = false;
-      if (genRes.isSuccess && genRes.clientId != null) {
+      if (genRes.statusCode == '408' ||
+          genRes.statusCode == '504' ||
+          (genRes.message != null && (genRes.message!.contains('Aadhaar server error') || genRes.message!.toLowerCase().contains('timeout'))) ||
+          genRes.statusMessage.contains('Aadhaar server error') ||
+          genRes.statusMessage.toLowerCase().contains('timeout')) {
+        _profileAadhaarError = loc.aadhaarServerError;
+      } else if (genRes.isSuccess && genRes.clientId != null) {
         _isProfileAadhaarOtpSent = true;
         _profileAadhaarClientId = genRes.clientId;
         _profileAadhaarError = null;
         
-        _profileAadhaarTimerCountdown = 60;
-        _profileAadhaarResendTimer?.cancel();
-        _profileAadhaarResendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-          if (!mounted) {
-            timer.cancel();
-            return;
-          }
-          setModalState(() {
-            if (_profileAadhaarTimerCountdown > 0) {
-              _profileAadhaarTimerCountdown--;
-            } else {
-              timer.cancel();
-            }
-          });
-        });
+        _startProfileAadhaarTimer(seconds: 60);
       } else {
         String msg = genRes.message ?? loc.aadhaarSendOtpFailed;
         if (msg.trim().toLowerCase() == 'verification_failed') {
@@ -268,19 +386,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _handleProfileVerifyAadhaarOtp(StateSetter setModalState) async {
+    _activeAadhaarModalState = setModalState;
     final loc = AppLocalizations.of(context)!;
     final otp = _profileAadhaarOtpController.text.trim();
     if (otp.length != 6 || !RegExp(r'^\d{6}$').hasMatch(otp)) {
-      setModalState(() => _profileAadhaarError = loc.enterValidAadhaarOtp);
+      _safeSetModalState(() => _profileAadhaarError = loc.enterValidAadhaarOtp);
       return;
     }
 
     if (_profileAadhaarClientId == null) {
-      setModalState(() => _profileAadhaarError = loc.clientSessionExpired);
+      _safeSetModalState(() => _profileAadhaarError = loc.clientSessionExpired);
       return;
     }
 
-    setModalState(() {
+    _safeSetModalState(() {
       _profileAadhaarError = null;
       _isProfileAadhaarVerifying = true;
     });
@@ -294,14 +413,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
     if (!mounted) return;
 
-    setModalState(() {
+    _safeSetModalState(() {
       _isProfileAadhaarVerifying = false;
-      if (res.isSuccess) {
+      if (res.statusCode == '408' ||
+          res.statusCode == '504' ||
+          (res.message != null && (res.message!.contains('Aadhaar server error') || res.message!.toLowerCase().contains('timeout'))) ||
+          res.statusMessage.contains('Aadhaar server error') ||
+          res.statusMessage.toLowerCase().contains('timeout')) {
+        _profileAadhaarError = loc.aadhaarServerError;
+      } else if (res.isSuccess) {
+        _profileAadhaarResendTimer?.cancel();
+        _profileAadhaarResendTimer = null;
+        _profileAadhaarOtpTargetTime = null;
+        _profileAadhaarTimerCountdown = 60;
         if (_activeProfileData != null) {
-          final newName = (res.fullName != null && res.fullName!.trim().isNotEmpty) ? res.fullName! : _activeProfileData!.name;
+          final newName = (res.fullName != null && res.fullName!.trim().isNotEmpty)
+              ? res.fullName!
+              : (_activeProfileData!.aadharVerifiedName ?? _activeProfileData!.name);
           _tempIsAadharVerified = true;
           _tempAadharCardNo = _profileAadhaarController.text.replaceAll(' ', '').trim();
           _tempAadharName = newName;
+          _cachedAadhaarVerifiedName = newName;
+          try {
+            final mobile = _mobileController.text.trim();
+            final aadh = _profileAadhaarController.text.replaceAll(' ', '').trim();
+            SharedPreferences.getInstance().then((prefs) {
+              if (mobile.isNotEmpty) prefs.setString('aadhaar_verified_name_$mobile', newName);
+              if (aadh.isNotEmpty) prefs.setString('aadhaar_verified_name_$aadh', newName);
+              prefs.setString('aadhaar_verified_name_last', newName);
+            });
+          } catch (_) {}
         }
         setState(() {});
       } else {
@@ -319,7 +460,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
+      builder: (bottomSheetCtx) {
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -327,24 +468,42 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ListTile(
                 leading: const Icon(Icons.camera_alt),
                 title: Text(loc.cameraBtn),
-                onTap: () {
-                  Navigator.pop(context);
+                onTap: () async {
+                  Navigator.pop(bottomSheetCtx);
+                  final hasPerm = await DocumentPermissionHelper.requestUploadPermission(
+                    context: context,
+                    source: DocumentUploadSource.camera,
+                    documentType: 'Aadhaar Card',
+                  );
+                  if (!hasPerm) return;
                   _processProfilePickImage(ImageSource.camera, setModalState);
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library),
                 title: Text(loc.galleryBtn),
-                onTap: () {
-                  Navigator.pop(context);
+                onTap: () async {
+                  Navigator.pop(bottomSheetCtx);
+                  final hasPerm = await DocumentPermissionHelper.requestUploadPermission(
+                    context: context,
+                    source: DocumentUploadSource.gallery,
+                    documentType: 'Aadhaar Card',
+                  );
+                  if (!hasPerm) return;
                   _processProfilePickImage(ImageSource.gallery, setModalState);
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.insert_drive_file),
                 title: Text(loc.fileDocumentBtn),
-                onTap: () {
-                  Navigator.pop(context);
+                onTap: () async {
+                  Navigator.pop(bottomSheetCtx);
+                  final hasPerm = await DocumentPermissionHelper.requestUploadPermission(
+                    context: context,
+                    source: DocumentUploadSource.file,
+                    documentType: 'Aadhaar Card',
+                  );
+                  if (!hasPerm) return;
                   _processProfilePickFile(setModalState);
                 },
               ),
@@ -358,7 +517,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _processProfilePickImage(ImageSource source, StateSetter setModalState) async {
     final loc = AppLocalizations.of(context)!;
     try {
-
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(source: source);
       if (pickedFile == null) return;
@@ -366,6 +524,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final bytes = await pickedFile.readAsBytes();
       await _uploadProfileDocument(pickedFile.path, pickedFile.name, bytes, setModalState);
     } catch (e) {
+      if (DocumentPermissionHelper.isPermissionException(e)) {
+        setModalState(() {
+          _isProfileUploadingDoc = false;
+        });
+        if (mounted) {
+          await DocumentPermissionHelper.handlePermissionException(
+            context: context,
+            source: source == ImageSource.camera ? DocumentUploadSource.camera : DocumentUploadSource.gallery,
+            documentType: 'Aadhaar Card',
+            error: e,
+          );
+        }
+        return;
+      }
       if (e.toString().contains('access_denied')) {
         setModalState(() {
           _isProfileUploadingDoc = false;
@@ -382,7 +554,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _processProfilePickFile(StateSetter setModalState) async {
     final loc = AppLocalizations.of(context)!;
     try {
-
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
@@ -394,6 +565,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
       await _uploadProfileDocument(file.path!, file.name, file.bytes, setModalState);
     } catch (e) {
+      if (DocumentPermissionHelper.isPermissionException(e)) {
+        setModalState(() {
+          _isProfileUploadingDoc = false;
+        });
+        if (mounted) {
+          await DocumentPermissionHelper.handlePermissionException(
+            context: context,
+            source: DocumentUploadSource.file,
+            documentType: 'Aadhaar Card',
+            error: e,
+          );
+        }
+        return;
+      }
       if (e.toString().contains('access_denied')) {
         setModalState(() {
           _isProfileUploadingDoc = false;
@@ -475,18 +660,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _tempIsPanVerified = true;
         _tempPanNo = pan;
         _tempPanClientName = verifyRes.clientName;
+        _tempPanClientId = verifyRes.clientId;
         _profilePanError = null;
-        if (_activeProfileData != null) {
-          _activeProfileData = _activeProfileData!.copyWith(
-            isPanVerified: true,
-            panNo: pan,
-          );
-        }
-        setState(() {});
       } else {
-        _profilePanError = verifyRes.statusMessage.isNotEmpty
-            ? verifyRes.statusMessage
-            : loc.panVerificationFailed;
+        final rawMsg = verifyRes.statusMessage.trim();
+        final lower = rawMsg.toLowerCase();
+        final isGenericOk = lower.isEmpty || lower == 'ok.' || lower == 'ok' || lower == 'success' || lower == '200';
+
+        String displayMsg;
+        if (isGenericOk ||
+            lower.contains('invalid pan') ||
+            lower.contains('invalid') ||
+            lower.contains('not found') ||
+            lower.contains('record_not_found') ||
+            lower.contains('does not exist')) {
+          displayMsg = loc.invalidPanNumber;
+        } else {
+          displayMsg = rawMsg;
+        }
+        _profilePanError = displayMsg;
       }
     });
   }
@@ -496,7 +688,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
+      builder: (bottomSheetCtx) {
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -504,24 +696,42 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ListTile(
                 leading: const Icon(Icons.camera_alt),
                 title: Text(loc.cameraBtn),
-                onTap: () {
-                  Navigator.pop(context);
+                onTap: () async {
+                  Navigator.pop(bottomSheetCtx);
+                  final hasPerm = await DocumentPermissionHelper.requestUploadPermission(
+                    context: context,
+                    source: DocumentUploadSource.camera,
+                    documentType: 'PAN Card',
+                  );
+                  if (!hasPerm) return;
                   _processProfilePickPanImage(ImageSource.camera, setModalState);
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library),
                 title: Text(loc.galleryBtn),
-                onTap: () {
-                  Navigator.pop(context);
+                onTap: () async {
+                  Navigator.pop(bottomSheetCtx);
+                  final hasPerm = await DocumentPermissionHelper.requestUploadPermission(
+                    context: context,
+                    source: DocumentUploadSource.gallery,
+                    documentType: 'PAN Card',
+                  );
+                  if (!hasPerm) return;
                   _processProfilePickPanImage(ImageSource.gallery, setModalState);
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.insert_drive_file),
                 title: Text(loc.fileDocumentBtn),
-                onTap: () {
-                  Navigator.pop(context);
+                onTap: () async {
+                  Navigator.pop(bottomSheetCtx);
+                  final hasPerm = await DocumentPermissionHelper.requestUploadPermission(
+                    context: context,
+                    source: DocumentUploadSource.file,
+                    documentType: 'PAN Card',
+                  );
+                  if (!hasPerm) return;
                   _processProfilePickPanFile(setModalState);
                 },
               ),
@@ -550,6 +760,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         setState(() {});
       });
     } catch (e) {
+      if (DocumentPermissionHelper.isPermissionException(e)) {
+        setModalState(() {
+          _isProfileUploadingPanDoc = false;
+        });
+        if (mounted) {
+          await DocumentPermissionHelper.handlePermissionException(
+            context: context,
+            source: source == ImageSource.camera ? DocumentUploadSource.camera : DocumentUploadSource.gallery,
+            documentType: 'PAN Card',
+            error: e,
+          );
+        }
+        return;
+      }
       setModalState(() {
         _isProfileUploadingPanDoc = false;
         _profilePanDocError = '${loc.uploadFailedWithReason}${e.toString()}';
@@ -579,6 +803,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         setState(() {});
       });
     } catch (e) {
+      if (DocumentPermissionHelper.isPermissionException(e)) {
+        setModalState(() {
+          _isProfileUploadingPanDoc = false;
+        });
+        if (mounted) {
+          await DocumentPermissionHelper.handlePermissionException(
+            context: context,
+            source: DocumentUploadSource.file,
+            documentType: 'PAN Card',
+            error: e,
+          );
+        }
+        return;
+      }
       setModalState(() {
         _isProfileUploadingPanDoc = false;
         _profilePanDocError = '${loc.uploadFailedWithReason}${e.toString()}';
@@ -612,30 +850,51 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     final isOrg = (user?.isOrganization ?? false) || (_activeProfileData?.isOrganization ?? false);
 
-    if (_tempIsAadharVerified != null && _activeProfileData != null) {
-      _activeProfileData = _activeProfileData!.copyWith(
-        name: _tempAadharName ?? _activeProfileData!.name,
-        isAadharVerified: _tempIsAadharVerified,
-        aadharCardNo: _tempAadharCardNo ?? _activeProfileData!.aadharCardNo,
-      );
-      if (_tempAadharName != null) {
-        _nameController.text = _tempAadharName!;
-      }
-      _tempIsAadharVerified = null;
-      _tempAadharCardNo = null;
-      _tempAadharName = null;
-    }
+    // Retain previous verification status and profile state before any API calls
+    final previousProfileData = _activeProfileData;
+    final previousIsAadhaarVerified = _activeProfileData?.isAadharVerified ?? false;
+    final previousIsPanVerified = _activeProfileData?.isPanVerified ?? false;
+    final previousAadhaarCardNo = _activeProfileData?.aadharCardNo ?? '';
+    final previousPanNo = _activeProfileData?.panNo ?? '';
+    final previousAadhaarName = _activeProfileData?.aadharVerifiedName ?? '';
+    final previousPanClientName = _activeProfileData?.panClientName ?? '';
+    final previousAadhaarDoc = _activeProfileData?.aadharDoc ?? '';
+    final previousPanDoc = _activeProfileData?.panDoc ?? '';
 
-    if (_tempIsPanVerified != null && _activeProfileData != null) {
-      _activeProfileData = _activeProfileData!.copyWith(
-        isPanVerified: _tempIsPanVerified,
-        panNo: _tempPanNo ?? _activeProfileData!.panNo,
-      );
-      _tempIsPanVerified = null;
-      _tempPanNo = null;
-      _tempPanClientName = null;
-    }
+    // Determine target verification parameters to submit
+    final targetIsAadhaarVerified = _tempIsAadharVerified ?? previousIsAadhaarVerified;
+    // Consumer-Type-Based Verification:
+    // Individual Consumer: Allow updates only to Aadhaar verification details.
+    // Organisation Consumer: Allow updates to both Aadhaar and PAN verification details.
+    final targetIsPanVerified = isOrg ? (_tempIsPanVerified ?? previousIsPanVerified) : previousIsPanVerified;
 
+    final targetAadhaarNo = (_tempAadharCardNo != null && _tempAadharCardNo!.isNotEmpty)
+        ? _tempAadharCardNo!
+        : (_profileAadhaarController.text.replaceAll(' ', '').trim().isNotEmpty
+            ? _profileAadhaarController.text.replaceAll(' ', '').trim()
+            : previousAadhaarCardNo);
+
+    final targetPanNo = isOrg
+        ? ((_tempPanNo != null && _tempPanNo!.isNotEmpty)
+            ? _tempPanNo!
+            : (_profilePanController.text.replaceAll(' ', '').trim().toUpperCase().isNotEmpty
+                ? _profilePanController.text.replaceAll(' ', '').trim().toUpperCase()
+                : previousPanNo))
+        : previousPanNo;
+
+    final targetAadhaarName = (_tempAadharName != null && _tempAadharName!.trim().isNotEmpty)
+        ? _tempAadharName!.trim()
+        : ((_cachedAadhaarVerifiedName != null && _cachedAadhaarVerifiedName!.trim().isNotEmpty)
+            ? _cachedAadhaarVerifiedName!.trim()
+            : previousAadhaarName);
+
+    final targetPanClientName = isOrg
+        ? ((_tempPanClientName != null && _tempPanClientName!.trim().isNotEmpty)
+            ? _tempPanClientName!.trim()
+            : previousPanClientName)
+        : previousPanClientName;
+
+    // Upload documents if needed
     if (_localProfileAadhaarPath != null) {
       final repo = ref.read(aadhaarKycRepositoryProvider);
       final uploadRes = await repo.uploadAadhaarDocument(
@@ -645,9 +904,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       );
       if (uploadRes.isSuccess && uploadRes.responseData != null) {
         _profileAadhaarDocUrl = uploadRes.responseData;
-        if (_activeProfileData != null) {
-          _activeProfileData = _activeProfileData!.copyWith(aadharDoc: _profileAadhaarDocUrl);
-        }
       } else {
         if (!mounted) return false;
         setState(() => _isSaving = false);
@@ -670,9 +926,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       );
       if (uploadRes.isSuccess && uploadRes.responseData != null) {
         _profilePanDocUrl = uploadRes.responseData;
-        if (_activeProfileData != null) {
-          _activeProfileData = _activeProfileData!.copyWith(panDoc: _profilePanDocUrl);
-        }
       } else {
         if (!mounted) return false;
         setState(() => _isSaving = false);
@@ -686,47 +939,133 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
     }
 
-    final isAadhaarVerified = _activeProfileData?.isAadharVerified ?? false;
-    final isPanVerified = _activeProfileData?.isPanVerified ?? false;
+    final targetAadhaarDoc = _profileAadhaarDocUrl ?? previousAadhaarDoc;
+    final targetPanDoc = isOrg ? (_profilePanDocUrl ?? previousPanDoc) : previousPanDoc;
+
+    // Resolve consumerId: pass consumerId in id parameter
+    final activeId = _activeProfileData?.id ?? 0;
+    final userConsumerId = user?.consumerId ?? 0;
+    final int consumerId = activeId > 0
+        ? activeId
+        : (userConsumerId > 0 ? userConsumerId : (int.tryParse(user?.id ?? '0') ?? 0));
+
+    final targetPanClientId = isOrg
+        ? (_tempPanClientId ?? _activeProfileData?.panClientId ?? '')
+        : (_activeProfileData?.panClientId ?? '');
 
     final Map<String, dynamic> updatePayload = {
-      'id': user!.consumerId,
+      'id': consumerId,
+      'flag': 'u',
       'consumerType': isOrg ? CONSUMER_TYPE_ORGANISATION : CONSUMER_TYPE_INDIVIDUAL,
-      'name': _nameController.text.trim(),
-      'mobileNo': mobile,
-      'emailId': _emailController.text.trim(),
-      'isTown': _isTown,
-      'districtId': _selectedDistrictId ?? 0,
-      'talukaId': _selectedTalukaId ?? 0,
-      'censusId': _selectedCensusId ?? 0,
-      'address': _line1Controller.text.trim(),
-      'pinCode': '',
-      'aadharCardNo': _profileAadhaarController.text.replaceAll(' ', '').trim(),
-      'aadharDoc': _profileAadhaarDocUrl ?? '',
-      'isAadharVerified': isAadhaarVerified,
-      if (isOrg) ...{
-        'panNo': _profilePanController.text.replaceAll(' ', '').trim().toUpperCase(),
-        'panDoc': _profilePanDocUrl ?? '',
-        'isPanVerified': isPanVerified,
-        'contactPersonName': _nameController.text.trim(),
-      },
-      'pageName': 'ConsumerProfileUpdate',
+      'name': (!isOrg && targetAadhaarName.isNotEmpty)
+          ? targetAadhaarName
+          : (_nameController.text.trim().isNotEmpty
+              ? _nameController.text.trim()
+              : (_activeProfileData?.name ?? '')),
+      'mobileNo': mobile.isNotEmpty ? mobile : (_activeProfileData?.mobileNo ?? ''),
+      'emailId': _emailController.text.trim().isNotEmpty
+          ? _emailController.text.trim()
+          : (_activeProfileData?.emailId ?? ''),
+      'address': _line1Controller.text.trim().isNotEmpty
+          ? _line1Controller.text.trim()
+          : (_activeProfileData?.address ?? ''),
+      'stateId': _activeProfileData?.stateId ?? 1,
+      'districtId': (_selectedDistrictId != null && _selectedDistrictId != 0)
+          ? _selectedDistrictId!
+          : (_activeProfileData?.districtId ?? 0),
+      'talukaId': (_selectedTalukaId != null && _selectedTalukaId != 0)
+          ? _selectedTalukaId!
+          : (_activeProfileData?.talukaId ?? 0),
+      'isTown': _isTown ?? _activeProfileData?.isTown ?? false,
+      'censusId': (_selectedCensusId != null && _selectedCensusId != 0)
+          ? _selectedCensusId!
+          : (_activeProfileData?.censusId ?? 0),
+      'createdBy': _activeProfileData?.createdBy ?? consumerId,
+      'panNo': isOrg ? targetPanNo : (_activeProfileData?.panNo ?? ''),
+      'gstNo': _activeProfileData?.gstNo ?? '',
+      'rationCardId': _activeProfileData?.rationCardId ?? '',
+      'aadharCardNo': targetAadhaarNo.isNotEmpty
+          ? targetAadhaarNo
+          : (_activeProfileData?.aadharCardNo ?? ''),
+      'aadharDoc': targetAadhaarDoc.isNotEmpty
+          ? targetAadhaarDoc
+          : (_activeProfileData?.aadharDoc ?? ''),
+      'panDoc': isOrg
+          ? (targetPanDoc.isNotEmpty ? targetPanDoc : (_activeProfileData?.panDoc ?? ''))
+          : (_activeProfileData?.panDoc ?? ''),
+      'rcDoc': _activeProfileData?.rcDoc ?? '',
+      'pinCode': _activeProfileData?.pinCode ?? '',
+      'gstDoc': _activeProfileData?.gstDoc ?? '',
+      'isAadharVerified': targetIsAadhaarVerified,
+      'aadharVerifiedName': targetAadhaarName.isNotEmpty
+          ? targetAadhaarName
+          : (_activeProfileData?.aadharVerifiedName ?? ''),
+      'aadharClientId': _profileAadhaarClientId ?? _activeProfileData?.aadharClientId ?? '',
+      'panClientId': targetPanClientId,
+      'isPanVerified': isOrg ? targetIsPanVerified : (_activeProfileData?.isPanVerified ?? false),
+      'isCompulsoryVerification': _activeProfileData?.isCompulsoryVerification ?? false,
+      'otp': '',
+      'pageName': 'ConsumerReg',
+      'contactPersonName': isOrg
+          ? (targetAadhaarName.isNotEmpty
+              ? targetAadhaarName
+              : (_activeProfileData?.contactPersonName?.trim().isNotEmpty == true
+                  ? _activeProfileData!.contactPersonName!.trim()
+                  : (_nameController.text.trim().isNotEmpty
+                      ? _nameController.text.trim()
+                      : (_activeProfileData?.name ?? ''))))
+          : (_activeProfileData?.contactPersonName ?? ''),
+      'insertDocuments': <Map<String, dynamic>>[],
     };
 
     try {
-      final response = await ref.read(authRepositoryProvider).consumerProfileUpdate(updatePayload);
+      final response = await ref.read(authRepositoryProvider).saveUpdateConsumerDetails(updatePayload);
 
       if (!mounted) return false;
 
       setState(() => _isSaving = false);
 
       if (response.isSuccess) {
+        // Update the verification status ONLY after the API call succeeds
+        if (_activeProfileData != null) {
+          _activeProfileData = _activeProfileData!.copyWith(
+            name: (!isOrg && targetAadhaarName.isNotEmpty)
+                ? targetAadhaarName
+                : (_nameController.text.trim().isNotEmpty ? _nameController.text.trim() : _activeProfileData!.name),
+            isAadharVerified: targetIsAadhaarVerified,
+            aadharCardNo: targetAadhaarNo,
+            aadharVerifiedName: targetAadhaarName,
+            aadharDoc: targetAadhaarDoc,
+            aadharClientId: _profileAadhaarClientId ?? _activeProfileData!.aadharClientId,
+            isPanVerified: isOrg ? targetIsPanVerified : _activeProfileData!.isPanVerified,
+            panNo: isOrg ? targetPanNo : _activeProfileData!.panNo,
+            panDoc: isOrg ? targetPanDoc : _activeProfileData!.panDoc,
+            panClientName: isOrg ? targetPanClientName : _activeProfileData!.panClientName,
+            panClientId: isOrg ? targetPanClientId : _activeProfileData!.panClientId,
+            contactPersonName: isOrg
+                ? (targetAadhaarName.isNotEmpty ? targetAadhaarName : _activeProfileData!.contactPersonName)
+                : _activeProfileData!.contactPersonName,
+          );
+        }
+        if (!isOrg && targetAadhaarName.isNotEmpty) {
+          _nameController.text = targetAadhaarName;
+        }
+
+        _tempIsAadharVerified = null;
+        _tempAadharCardNo = null;
+        _tempAadharName = null;
+        _tempIsPanVerified = null;
+        _tempPanNo = null;
+        _tempPanClientName = null;
+        _tempPanClientId = null;
+
         _localProfileAadhaarPath = null;
         _localProfileAadhaarName = null;
         _localProfileAadhaarBytes = null;
         _localProfilePanPath = null;
         _localProfilePanName = null;
         _localProfilePanBytes = null;
+
         ref.invalidate(consumerProfileProvider(mobile));
         setState(() => _showSaveToast = true);
 
@@ -735,6 +1074,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         });
         return true;
       } else {
+        // If the API call fails, retain the previous verification status without making any changes
+        _activeProfileData = previousProfileData;
+        _tempIsAadharVerified = null;
+        _tempAadharCardNo = null;
+        _tempAadharName = null;
+        _tempIsPanVerified = null;
+        _tempPanNo = null;
+        _tempPanClientName = null;
+        _tempPanClientId = null;
+
+        setState(() {});
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(response.statusMessage.isNotEmpty
@@ -747,7 +1098,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
     } catch (e) {
       if (!mounted) return false;
-      setState(() => _isSaving = false);
+      setState(() {
+        _isSaving = false;
+        // Retain the previous verification status without making any changes
+        _activeProfileData = previousProfileData;
+        _tempIsAadharVerified = null;
+        _tempAadharCardNo = null;
+        _tempAadharName = null;
+        _tempIsPanVerified = null;
+        _tempPanNo = null;
+        _tempPanClientName = null;
+        _tempPanClientId = null;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('${l10n.errorUpdatingProfile}${e.toString()}'),
@@ -763,6 +1125,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final mobileNo = ref.read(sessionProvider).currentUser?.mobileNumber ?? '';
     final isServerVerified = ref.read(consumerProfileProvider(mobileNo)).value?.responseData?.isAadharVerified == true;
     setState(() => _kycStep = initialStep);
+
+    _profileAadhaarTimerCountdown = _profileAadhaarRemainingSeconds;
+    if (_profileAadhaarRemainingSeconds > 0 && (_profileAadhaarResendTimer == null || !_profileAadhaarResendTimer!.isActive)) {
+      _startProfileAadhaarTimer();
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -770,6 +1138,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       builder: (modalContext) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            _activeAadhaarModalState = setModalState;
             return Container(
               decoration: const BoxDecoration(
                 color: Colors.white,
@@ -878,6 +1247,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   if (!isServerVerified)
                                     GestureDetector(
                                       onTap: () {
+                                        _profileAadhaarResendTimer?.cancel();
+                                        _profileAadhaarResendTimer = null;
+                                        _profileAadhaarOtpTargetTime = null;
+                                        _profileAadhaarTimerCountdown = 60;
                                         setModalState(() {
                                           if (_activeProfileData != null) {
                                             _activeProfileData = _activeProfileData!.copyWith(isAadharVerified: false, aadharCardNo: '');
@@ -927,6 +1300,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   ? IconButton(
                                       icon: const Icon(Icons.edit, color: Color(0xFF15803D)),
                                       onPressed: () {
+                                        _profileAadhaarResendTimer?.cancel();
+                                        _profileAadhaarResendTimer = null;
+                                        _profileAadhaarOtpTargetTime = null;
+                                        _profileAadhaarTimerCountdown = 60;
                                         setModalState(() {
                                           _isProfileAadhaarOtpSent = false;
                                           _profileAadhaarOtpController.clear();
@@ -1238,7 +1615,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           },
         );
       },
-    );
+    ).whenComplete(() {
+      _activeAadhaarModalState = null;
+    }).then((_) {
+      if (mounted) {
+        setState(() {
+          _tempIsAadharVerified = null;
+          _tempAadharCardNo = null;
+          _tempAadharName = null;
+        });
+      }
+    });
   }
 
   void _openPanModal(KycStep initialStep) {
@@ -1384,12 +1771,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     GestureDetector(
                                       onTap: () {
                                         setModalState(() {
-                                          if (_activeProfileData != null) {
-                                            _activeProfileData = _activeProfileData!.copyWith(isPanVerified: false, panNo: '');
-                                          }
                                           _tempIsPanVerified = null;
                                           _tempPanNo = null;
                                           _tempPanClientName = null;
+                                          _tempPanClientId = null;
                                           _profilePanController.clear();
                                           _profilePanError = null;
                                           _profilePanDocUrl = null;
@@ -1421,11 +1806,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               AppTextField(
                                 label: loc.orgPanNumberRequired,
                                 controller: _profilePanController,
-                                keyboardType: TextInputType.text,
+                                keyboardType: TextInputType.visiblePassword,
                                 maxLength: 10,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
-                                  _UpperCaseTextFormatter(),
+                                inputFormatters: const [
+                                  PanInputFormatter(),
                                 ],
                                 hint: 'ABCDE1234F',
                                 suffixIcon: ElevatedButton(
@@ -1654,7 +2038,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           },
         );
       },
-    );
+    ).then((_) {
+      if (mounted) {
+        setState(() {
+          _tempIsPanVerified = null;
+          _tempPanNo = null;
+          _tempPanClientName = null;
+          _tempPanClientId = null;
+        });
+      }
+    });
   }
 
   @override
@@ -1719,12 +2112,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
           final profile = response.responseData;
           final isOrg = (profile?.isOrganization ?? false) || (user?.isOrganization ?? false) || (_activeProfileData?.isOrganization ?? false);
-          final isAadhaarVerified = _tempIsAadharVerified ?? _activeProfileData?.isAadharVerified ?? profile?.isAadharVerified ?? false;
-          final isPanVerified = _tempIsPanVerified ?? _activeProfileData?.isPanVerified ?? profile?.isPanVerified ?? false;
-          final displayAadhaarNo = _tempAadharCardNo ?? _activeProfileData?.aadharCardNo ?? profile?.aadharCardNo ?? '';
-          final displayAadhaarName = _tempAadharName ?? _activeProfileData?.name ?? profile?.name ?? '';
-          final displayPanNo = _tempPanNo ?? _activeProfileData?.panNo ?? profile?.panNo ?? '';
-          final displayPanName = _tempPanClientName ?? _orgNameController.text.trim();
+          final isAadhaarVerified = _activeProfileData?.isAadharVerified ?? profile?.isAadharVerified ?? false;
+          final isPanVerified = _activeProfileData?.isPanVerified ?? profile?.isPanVerified ?? false;
+          final displayAadhaarNo = _activeProfileData?.aadharCardNo ?? profile?.aadharCardNo ?? '';
+          final activeProfileAadhaarName = _activeProfileData?.aadharVerifiedName?.trim();
+          final directProfileAadhaarName = profile?.aadharVerifiedName?.trim();
+          final cachedAadhaarName = _cachedAadhaarVerifiedName?.trim();
+
+          String displayAadhaarName;
+          if (activeProfileAadhaarName != null && activeProfileAadhaarName.isNotEmpty) {
+            displayAadhaarName = activeProfileAadhaarName;
+          } else if (directProfileAadhaarName != null && directProfileAadhaarName.isNotEmpty) {
+            displayAadhaarName = directProfileAadhaarName;
+          } else if (cachedAadhaarName != null && cachedAadhaarName.isNotEmpty) {
+            displayAadhaarName = cachedAadhaarName;
+          } else if (isOrg) {
+            final contactName = _activeProfileData?.contactPersonName ?? profile?.contactPersonName ?? '';
+            displayAadhaarName = contactName.trim();
+          } else {
+            displayAadhaarName = (_activeProfileData?.name ?? profile?.name ?? '').trim();
+          }
+          final displayPanNo = _activeProfileData?.panNo ?? profile?.panNo ?? '';
+          final displayPanName = _activeProfileData?.panClientName ?? profile?.panClientName ?? _orgNameController.text.trim();
 
           return Stack(
             children: [
@@ -2009,7 +2418,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   icon: Icons.person_outline,
                   label: isOrg ? loc.contactPersonAadhaar : loc.aadhaarAuthenticationLabel,
                   subtitle: isAadhaarVerified
-                      ? '${displayAadhaarNo.isNotEmpty ? displayAadhaarNo : 'N/A'}\n${displayAadhaarName.isNotEmpty ? displayAadhaarName : 'N/A'}'
+                      ? (displayAadhaarName.isNotEmpty
+                          ? '${displayAadhaarNo.isNotEmpty ? displayAadhaarNo : 'N/A'}\n$displayAadhaarName'
+                          : (displayAadhaarNo.isNotEmpty ? displayAadhaarNo : 'N/A'))
                       : null,
                   isVerified: isAadhaarVerified,
                 ),
@@ -2332,16 +2743,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _UpperCaseTextFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    return TextEditingValue(
-      text: newValue.text.toUpperCase(),
-      selection: newValue.selection,
     );
   }
 }

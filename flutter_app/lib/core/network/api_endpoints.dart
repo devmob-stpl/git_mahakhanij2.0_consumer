@@ -4,7 +4,7 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   /// Environment selection switch (Default: Demo)
-  static ApiEnvironment activeEnvironment = ApiEnvironment.live;
+  static ApiEnvironment activeEnvironment = ApiEnvironment.demo;
 
   // ===========================================================================
   // BASE URL CONFIGURATION
@@ -98,8 +98,9 @@ class ApiEndpoints {
   static String get saveUpdateConsumerDetails =>
       '$mineralMappingBaseUrl/mineral-mapping/consumer-project/save-update-consumer-Details';
   static String get consumerSignUp => saveUpdateConsumerDetails;
-  static String get consumerProfileUpdate => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/update-consumer-profile';
-  static String get consumerProfile => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/get-Consumer-Profile';
+  static String get consumerProfileUpdate => saveUpdateConsumerDetails;
+  static String get consumerProfile =>
+      '$mineralMappingBaseUrl/mineral-mapping/consumer-project/get-consumer-details-by-mobileNo';
   static String getConsumerProfileUrl(String mobileNo) => '$consumerProfile?mobileNo=$mobileNo';
 
   static String get consumerDigiTpList => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/get-Consumer-digiTP-list';

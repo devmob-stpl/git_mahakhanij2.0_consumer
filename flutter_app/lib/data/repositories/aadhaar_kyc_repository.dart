@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import '../../core/network/release_json.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,6 +48,18 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
         id: 0,
       );
     } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.response?.statusCode == 408 ||
+          e.response?.statusCode == 504) {
+        return const AadhaarExistResponse(
+          statusCode: '408',
+          statusMessage: 'Aadhaar server error. Please try again.',
+          exists: false,
+          id: 0,
+        );
+      }
       if (e.response?.data != null) {
         final errData = asResponseMap(e.response!.data);
         if (errData != null) {
@@ -60,6 +73,14 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
         id: 0,
       );
     } catch (e) {
+      if (e is TimeoutException) {
+        return const AadhaarExistResponse(
+          statusCode: '408',
+          statusMessage: 'Aadhaar server error. Please try again.',
+          exists: false,
+          id: 0,
+        );
+      }
       return AadhaarExistResponse(
         statusCode: '500',
         statusMessage: 'Error checking Aadhaar existence: ${e.toString()}',
@@ -93,6 +114,18 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
         isSuccess: false,
       );
     } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.response?.statusCode == 408 ||
+          e.response?.statusCode == 504) {
+        return const GenerateAadhaarOtpResponse(
+          statusCode: '408',
+          statusMessage: 'Aadhaar server error. Please try again.',
+          message: 'Aadhaar server error. Please try again.',
+          isSuccess: false,
+        );
+      }
       if (e.response?.data != null) {
         final errData = asResponseMap(e.response!.data);
         if (errData != null) {
@@ -105,6 +138,14 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
         isSuccess: false,
       );
     } catch (e) {
+      if (e is TimeoutException) {
+        return const GenerateAadhaarOtpResponse(
+          statusCode: '408',
+          statusMessage: 'Aadhaar server error. Please try again.',
+          message: 'Aadhaar server error. Please try again.',
+          isSuccess: false,
+        );
+      }
       return GenerateAadhaarOtpResponse(
         statusCode: '500',
         statusMessage: 'Error generating Aadhaar OTP: ${e.toString()}',
@@ -144,6 +185,18 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
         isSuccess: false,
       );
     } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.response?.statusCode == 408 ||
+          e.response?.statusCode == 504) {
+        return const VerifyAadhaarOtpResponse(
+          statusCode: '408',
+          statusMessage: 'Aadhaar server error. Please try again.',
+          message: 'Aadhaar server error. Please try again.',
+          isSuccess: false,
+        );
+      }
       if (e.response?.data != null) {
         final errData = asResponseMap(e.response!.data);
         if (errData != null) {
@@ -156,6 +209,14 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
         isSuccess: false,
       );
     } catch (e) {
+      if (e is TimeoutException) {
+        return const VerifyAadhaarOtpResponse(
+          statusCode: '408',
+          statusMessage: 'Aadhaar server error. Please try again.',
+          message: 'Aadhaar server error. Please try again.',
+          isSuccess: false,
+        );
+      }
       return VerifyAadhaarOtpResponse(
         statusCode: '0',
         statusMessage: 'Error verifying Aadhaar OTP: ${e.toString()}',

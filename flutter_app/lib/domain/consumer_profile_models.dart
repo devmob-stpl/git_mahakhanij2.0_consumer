@@ -8,6 +8,8 @@ class ConsumerProfileData {
   final String mobileNo;
   final String? emailId;
   final bool isTown;
+  final int? stateId;
+  final String? state;
   final int? districtId;
   final int? talukaId;
   final int? censusId;
@@ -15,17 +17,33 @@ class ConsumerProfileData {
   final String? talukaName;
   final String? cityName;
   final String? villageName;
+  final String? censusName;
   final String? address;
   final String? pinCode;
   final String? aadharCardNo;
   final String? aadharDoc;
   final bool isAadharVerified;
+  final String? aadharVerifiedName;
+  final String? aadharClientId;
+  final String? contactPersonName;
   final String? panNo;
   final String? panDoc;
   final bool isPanVerified;
+  final String? panClientName;
+  final String? panClientId;
   final String? gstNo;
   final String? gstDoc;
   final bool? isGstVerified;
+  final String? rationCardId;
+  final String? rcDoc;
+  final int? createdBy;
+  final String? flag;
+  final bool? isCompulsoryVerification;
+  final bool? isKycRequired;
+  final bool? isPanKycRequired;
+  final bool? isAdharKycRequired;
+  final bool? isGSTKycRequired;
+  final bool? isKycCompleted;
 
   const ConsumerProfileData({
     required this.id,
@@ -34,6 +52,8 @@ class ConsumerProfileData {
     required this.mobileNo,
     this.emailId,
     required this.isTown,
+    this.stateId,
+    this.state,
     this.districtId,
     this.talukaId,
     this.censusId,
@@ -41,17 +61,33 @@ class ConsumerProfileData {
     this.talukaName,
     this.cityName,
     this.villageName,
+    this.censusName,
     this.address,
     this.pinCode,
     this.aadharCardNo,
     this.aadharDoc,
     this.isAadharVerified = false,
+    this.aadharVerifiedName,
+    this.aadharClientId,
+    this.contactPersonName,
     this.panNo,
     this.panDoc,
     this.isPanVerified = false,
+    this.panClientName,
+    this.panClientId,
     this.gstNo,
     this.gstDoc,
     this.isGstVerified,
+    this.rationCardId,
+    this.rcDoc,
+    this.createdBy,
+    this.flag,
+    this.isCompulsoryVerification,
+    this.isKycRequired,
+    this.isPanKycRequired,
+    this.isAdharKycRequired,
+    this.isGSTKycRequired,
+    this.isKycCompleted,
   });
 
   ConsumerProfileData copyWith({
@@ -59,12 +95,39 @@ class ConsumerProfileData {
     bool? isAadharVerified,
     String? aadharCardNo,
     String? aadharDoc,
+    String? aadharVerifiedName,
+    String? aadharClientId,
+    String? contactPersonName,
     String? panNo,
     String? panDoc,
     bool? isPanVerified,
+    String? panClientName,
+    String? panClientId,
     String? gstNo,
     String? gstDoc,
     bool? isGstVerified,
+    int? stateId,
+    String? state,
+    int? districtId,
+    int? talukaId,
+    int? censusId,
+    String? districtName,
+    String? talukaName,
+    String? cityName,
+    String? villageName,
+    String? censusName,
+    String? address,
+    String? pinCode,
+    String? rationCardId,
+    String? rcDoc,
+    int? createdBy,
+    String? flag,
+    bool? isCompulsoryVerification,
+    bool? isKycRequired,
+    bool? isPanKycRequired,
+    bool? isAdharKycRequired,
+    bool? isGSTKycRequired,
+    bool? isKycCompleted,
   }) {
     return ConsumerProfileData(
       id: id,
@@ -73,29 +136,60 @@ class ConsumerProfileData {
       mobileNo: mobileNo,
       emailId: emailId,
       isTown: isTown,
-      districtId: districtId,
-      talukaId: talukaId,
-      censusId: censusId,
-      districtName: districtName,
-      talukaName: talukaName,
-      cityName: cityName,
-      villageName: villageName,
-      address: address,
-      pinCode: pinCode,
+      stateId: stateId ?? this.stateId,
+      state: state ?? this.state,
+      districtId: districtId ?? this.districtId,
+      talukaId: talukaId ?? this.talukaId,
+      censusId: censusId ?? this.censusId,
+      districtName: districtName ?? this.districtName,
+      talukaName: talukaName ?? this.talukaName,
+      cityName: cityName ?? this.cityName,
+      villageName: villageName ?? this.villageName,
+      censusName: censusName ?? this.censusName,
+      address: address ?? this.address,
+      pinCode: pinCode ?? this.pinCode,
       aadharCardNo: aadharCardNo ?? this.aadharCardNo,
       aadharDoc: aadharDoc ?? this.aadharDoc,
       isAadharVerified: isAadharVerified ?? this.isAadharVerified,
+      aadharVerifiedName: aadharVerifiedName ?? this.aadharVerifiedName,
+      aadharClientId: aadharClientId ?? this.aadharClientId,
+      contactPersonName: contactPersonName ?? this.contactPersonName,
       panNo: panNo ?? this.panNo,
       panDoc: panDoc ?? this.panDoc,
       isPanVerified: isPanVerified ?? this.isPanVerified,
+      panClientName: panClientName ?? this.panClientName,
+      panClientId: panClientId ?? this.panClientId,
       gstNo: gstNo ?? this.gstNo,
       gstDoc: gstDoc ?? this.gstDoc,
       isGstVerified: isGstVerified ?? this.isGstVerified,
+      rationCardId: rationCardId ?? this.rationCardId,
+      rcDoc: rcDoc ?? this.rcDoc,
+      createdBy: createdBy ?? this.createdBy,
+      flag: flag ?? this.flag,
+      isCompulsoryVerification: isCompulsoryVerification ?? this.isCompulsoryVerification,
+      isKycRequired: isKycRequired ?? this.isKycRequired,
+      isPanKycRequired: isPanKycRequired ?? this.isPanKycRequired,
+      isAdharKycRequired: isAdharKycRequired ?? this.isAdharKycRequired,
+      isGSTKycRequired: isGSTKycRequired ?? this.isGSTKycRequired,
+      isKycCompleted: isKycCompleted ?? this.isKycCompleted,
     );
   }
 
   bool get isOrganization => consumerType == CONSUMER_TYPE_ORGANISATION;
-  bool get isIndividual => consumerType == CONSUMER_TYPE_INDIVIDUAL;
+  bool get isIndividual => !isOrganization;
+
+  String get verifiedAadhaarDisplayName {
+    if (aadharVerifiedName != null && aadharVerifiedName!.trim().isNotEmpty) {
+      return aadharVerifiedName!.trim();
+    }
+    if (isOrganization) {
+      if (contactPersonName != null && contactPersonName!.trim().isNotEmpty) {
+        return contactPersonName!.trim();
+      }
+      return '';
+    }
+    return name.trim();
+  }
 
   factory ConsumerProfileData.fromJson(Map<String, dynamic> json) {
     return ConsumerProfileData(
@@ -105,6 +199,10 @@ class ConsumerProfileData {
       mobileNo: json['mobileNo']?.toString() ?? json['mobileNumber']?.toString() ?? '',
       emailId: json['emailId']?.toString() ?? json['email']?.toString(),
       isTown: json['isTown'] == true || json['isTown']?.toString().toLowerCase() == 'true',
+      stateId: json['stateId'] is int
+          ? json['stateId'] as int
+          : int.tryParse(json['stateId']?.toString() ?? ''),
+      state: json['state']?.toString(),
       districtId: json['districtId'] is int
           ? json['districtId'] as int
           : (json['districtID'] is int ? json['districtID'] as int : int.tryParse(json['districtId']?.toString() ?? json['districtID']?.toString() ?? '')),
@@ -118,6 +216,7 @@ class ConsumerProfileData {
       talukaName: json['talukaName']?.toString() ?? json['taluka']?.toString(),
       cityName: json['cityName']?.toString() ?? json['city']?.toString() ?? json['urbanLocation']?.toString(),
       villageName: json['villageName']?.toString() ?? json['village']?.toString() ?? json['ruralLocation']?.toString(),
+      censusName: json['censusName']?.toString(),
       address: json['address']?.toString() ?? json['addressLine']?.toString(),
       pinCode: json['pinCode']?.toString() ?? json['pincode']?.toString(),
       aadharCardNo: json['aadharCardNo']?.toString() ?? json['aadharNo']?.toString() ?? json['aadharNumber']?.toString(),
@@ -126,15 +225,44 @@ class ConsumerProfileData {
           json['isAadharVerified']?.toString().toLowerCase() == 'true' ||
           json['isAadhaarVerified'] == true ||
           json['isAadhaarVerified']?.toString().toLowerCase() == 'true',
+      aadharVerifiedName: json['aadharVerifiedName']?.toString() ??
+          json['aadhaarVerifiedName']?.toString() ??
+          json['verifiedName']?.toString() ??
+          json['verifiedAadharName']?.toString() ??
+          json['verifiedAadhaarName']?.toString() ??
+          json['aadharName']?.toString() ??
+          json['aadhaarName']?.toString() ??
+          json['aadhar_verified_name']?.toString() ??
+          json['aadhaar_verified_name']?.toString(),
+      aadharClientId: json['aadharClientId']?.toString(),
+      contactPersonName: json['contactPersonName']?.toString() ??
+          json['contactPerson']?.toString() ??
+          json['contact_person_name']?.toString() ??
+          json['contactPersonFullName']?.toString(),
       panNo: json['panNo']?.toString() ?? json['panNumber']?.toString() ?? json['panCardNo']?.toString(),
       panDoc: json['panDoc']?.toString() ?? json['panDocument']?.toString(),
       isPanVerified: json['isPanVerified'] == true ||
           json['isPanVerified']?.toString().toLowerCase() == 'true' ||
           json['isPANVerified'] == true ||
           json['isPANVerified']?.toString().toLowerCase() == 'true',
+      panClientName: json['panClientName']?.toString() ??
+          json['panName']?.toString() ??
+          json['clientName']?.toString() ??
+          json['pan_client_name']?.toString(),
+      panClientId: json['panClientId']?.toString(),
       gstNo: json['gstNo']?.toString(),
       gstDoc: json['gstDoc']?.toString(),
       isGstVerified: json['isGSTVerified'] == true || json['isGSTVerified']?.toString().toLowerCase() == 'true',
+      rationCardId: json['rationCardId']?.toString(),
+      rcDoc: json['rcDoc']?.toString(),
+      createdBy: json['createdBy'] is int ? json['createdBy'] as int : int.tryParse(json['createdBy']?.toString() ?? ''),
+      flag: json['flag']?.toString(),
+      isCompulsoryVerification: json['isCompulsoryVerification'] == true || json['isCompulsoryVerification']?.toString().toLowerCase() == 'true',
+      isKycRequired: json['isKycRequired'] == true || json['isKycRequired']?.toString().toLowerCase() == 'true',
+      isPanKycRequired: json['isPanKycRequired'] == true || json['isPanKycRequired']?.toString().toLowerCase() == 'true',
+      isAdharKycRequired: json['isAdharKycRequired'] == true || json['isAdharKycRequired']?.toString().toLowerCase() == 'true',
+      isGSTKycRequired: json['isGSTKycRequired'] == true || json['isGSTKycRequired']?.toString().toLowerCase() == 'true',
+      isKycCompleted: json['isKycCompleted'] == true || json['isKycCompleted']?.toString().toLowerCase() == 'true',
     );
   }
 
@@ -145,6 +273,8 @@ class ConsumerProfileData {
     'mobileNo': mobileNo,
     'emailId': emailId,
     'isTown': isTown,
+    'stateId': stateId,
+    'state': state,
     'districtId': districtId,
     'talukaId': talukaId,
     'censusId': censusId,
@@ -152,17 +282,33 @@ class ConsumerProfileData {
     'talukaName': talukaName,
     'cityName': cityName,
     'villageName': villageName,
+    'censusName': censusName,
     'address': address,
     'pinCode': pinCode,
     'aadharCardNo': aadharCardNo,
     'aadharDoc': aadharDoc,
     'isAadharVerified': isAadharVerified,
+    'aadharVerifiedName': aadharVerifiedName,
+    'aadharClientId': aadharClientId,
+    'contactPersonName': contactPersonName,
     'panNo': panNo,
     'panDoc': panDoc,
     'isPanVerified': isPanVerified,
+    'panClientName': panClientName,
+    'panClientId': panClientId,
     'gstNo': gstNo,
     'gstDoc': gstDoc,
     'isGSTVerified': isGstVerified,
+    'rationCardId': rationCardId,
+    'rcDoc': rcDoc,
+    'createdBy': createdBy,
+    'flag': flag,
+    'isCompulsoryVerification': isCompulsoryVerification,
+    'isKycRequired': isKycRequired,
+    'isPanKycRequired': isPanKycRequired,
+    'isAdharKycRequired': isAdharKycRequired,
+    'isGSTKycRequired': isGSTKycRequired,
+    'isKycCompleted': isKycCompleted,
   };
 }
 

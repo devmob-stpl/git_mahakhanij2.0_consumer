@@ -18,6 +18,7 @@ abstract class AuthRepository {
   Future<VerifyCodeApiResponse> verifyMobileCode({required String mobileNumber, required String key});
   Future<ConsumerSignUpResponse> consumerSignUp(Map<String, dynamic> signUpData);
   Future<ConsumerSignUpResponse> consumerProfileUpdate(Map<String, dynamic> signUpData);
+  Future<ConsumerSignUpResponse> saveUpdateConsumerDetails(Map<String, dynamic> data);
   Future<bool> sendOtp(String mobileNumber);
   Future<User?> verifyOtp(String mobileNumber, String otp);
   Future<User?> getCurrentUser();
@@ -350,9 +351,9 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
   @override
-  Future<ConsumerSignUpResponse> consumerProfileUpdate(Map<String, dynamic> signUpData) async {
+  Future<ConsumerSignUpResponse> saveUpdateConsumerDetails(Map<String, dynamic> data) async {
     try {
-      final url = ApiEndpoints.consumerProfileUpdate;
+      final url = ApiEndpoints.saveUpdateConsumerDetails;
 
       // Pre-flight internet check
       try {
@@ -378,23 +379,19 @@ class AuthRepositoryImpl implements AuthRepository {
 
       final response = await _dio.post(
         url,
-        data: signUpData,
+        data: data,
       );
 
-      final data = asResponseMap(response.data);
+      final respData = asResponseMap(response.data);
 
-      if (data != null) {
-        final parsed = ConsumerSignUpResponse.fromJson(data);
-        if (parsed.isSuccess) {
-          // Do not save session or auto-login on signup.
-          // The user must explicitly login afterwards.
-        }
+      if (respData != null) {
+        final parsed = ConsumerSignUpResponse.fromJson(respData);
         return parsed;
       }
 
       return const ConsumerSignUpResponse(
         statusCode: '500',
-        statusMessage: 'Unexpected response from registration server.',
+        statusMessage: 'Unexpected response from server.',
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
@@ -405,14 +402,19 @@ class AuthRepositoryImpl implements AuthRepository {
       }
       return ConsumerSignUpResponse(
         statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: 'Registration failed: ${e.message}',
+        statusMessage: 'Operation failed: ${e.message}',
       );
     } catch (e) {
       return ConsumerSignUpResponse(
         statusCode: '500',
-        statusMessage: 'An error occurred during registration: ${e.toString()}',
+        statusMessage: 'An error occurred during operation: ${e.toString()}',
       );
     }
+  }
+
+  @override
+  Future<ConsumerSignUpResponse> consumerProfileUpdate(Map<String, dynamic> signUpData) async {
+    return saveUpdateConsumerDetails(signUpData);
   }
 
   @override

@@ -8,6 +8,7 @@ import '../../../rules/excavation_rules.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/location_dropdown_section.dart';
+import '../../../core/utils/pan_input_formatter.dart';
 
 
 /* ---------------------------------------------------------------------------
@@ -269,6 +270,11 @@ class ApplicantStepWidget extends StatelessWidget {
                 label: 'PAN Number',
                 isRequired: true,
                 controller: panController,
+                keyboardType: TextInputType.visiblePassword,
+                maxLength: 10,
+                inputFormatters: const [
+                  PanInputFormatter(),
+                ],
                 onChanged: (_) => onChanged(),
               ),
               if (errors.containsKey('panNumber'))

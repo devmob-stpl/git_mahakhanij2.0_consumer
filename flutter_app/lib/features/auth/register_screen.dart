@@ -13,8 +13,11 @@ import '../../domain/user.dart';
 import '../../domain/aadhaar_kyc_models.dart';
 import '../../data/repositories/aadhaar_kyc_repository.dart';
 import '../../providers/session_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/location_dropdown_section.dart';
+import '../../core/utils/pan_input_formatter.dart';
+import '../../core/utils/document_permission_helper.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -27,6 +30,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // Step 0: Choose Account Type, Step 1: Basic & Address details (1), Step 2: KYC Verification (2)
   int _step = 0;
   UserType _userType = UserType.normalConsumer;
+  int _locationResetKey = 0;
 
   // Step 1: Basic & Contact Details
   final _fullNameController = TextEditingController();
@@ -83,6 +87,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _isGeneratingAadhaarOtp = false;
   bool _isVerifyingAadhaarOtp = false;
   String? _aadhaarError;
+  String? _aadhaarOtpError;
   VerifyAadhaarOtpResponse? _aadhaarVerifiedData;
 
   // PAN Verification State
@@ -91,7 +96,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _isPanVerified = false;
   String? _panClientId;
   String? _panClientName;
-  String? _panClientStatus;
   String? _panError;
 
   // Form Errors
@@ -104,6 +108,82 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _declarationConfirmed = false;
 
 
+
+  void _onConsumerTypeChanged(UserType newType) {
+    if (_userType == newType) return;
+    setState(() {
+      _userType = newType;
+      _resetForm();
+    });
+  }
+
+  void _resetForm() {
+    _fullNameController.clear();
+    _mobileController.clear();
+    _emailController.clear();
+    _orgNameController.clear();
+    _contactPersonController.clear();
+    _cityController.clear();
+    _villageController.clear();
+    _addressController.clear();
+    _aadhaarController.clear();
+    _aadhaarOtpController.clear();
+    _panController.clear();
+
+    _areaClassification = 'URBAN';
+    _stateId = 1;
+    _district = null;
+    _taluka = null;
+    _districtId = null;
+    _talukaId = null;
+    _censusId = null;
+
+    _kycFileName = null;
+    _aadhaarDocUrl = null;
+    _panFileName = null;
+    _panDocUrl = null;
+    _aadhaarFileName = null;
+    _aadhaarSignatoryDocUrl = null;
+    _isUploadingAadhaarDoc = false;
+    _isUploadingPanDoc = false;
+
+    _localAadhaarPath = null;
+    _localAadhaarName = null;
+    _localAadhaarBytes = null;
+    _localPanPath = null;
+    _localPanName = null;
+    _localPanBytes = null;
+    _localSignatoryAadhaarPath = null;
+    _localSignatoryAadhaarName = null;
+    _localSignatoryAadhaarBytes = null;
+
+    _aadhaarClientId = null;
+    _isAadhaarOtpSent = false;
+    _isAadhaarVerified = false;
+    _isCheckingAadhaar = false;
+    _isGeneratingAadhaarOtp = false;
+    _isVerifyingAadhaarOtp = false;
+    _aadhaarError = null;
+    _aadhaarOtpError = null;
+    _aadhaarVerifiedData = null;
+
+    _isCheckingPan = false;
+    _isVerifyingPan = false;
+    _isPanVerified = false;
+    _panClientId = null;
+    _panClientName = null;
+    _panError = null;
+
+    _resendTimer?.cancel();
+    _resendTimer = null;
+    _timerCountdown = 0;
+
+    _declarationConfirmed = false;
+    _errors.clear();
+    _isSubmitting = false;
+
+    _locationResetKey++;
+  }
 
   @override
   void dispose() {
@@ -157,6 +237,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     setState(() {
       _aadhaarError = null;
+      _aadhaarOtpError = null;
       _isCheckingAadhaar = true;
     });
 
@@ -166,6 +247,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final mobileNo = _mobileController.text.trim();
     final existRes = await repo.checkAadhaarExists(aadh, mobileNo: mobileNo);
     if (!mounted) return;
+
+    if (existRes.statusCode == '408' ||
+        existRes.statusCode == '504' ||
+        existRes.statusMessage.contains('Aadhaar server error') ||
+        existRes.statusMessage.toLowerCase().contains('timeout')) {
+      setState(() {
+        _isCheckingAadhaar = false;
+        _aadhaarError = l10n.aadhaarServerError;
+      });
+      return;
+    }
 
     if (existRes.exists) {
       setState(() {
@@ -186,10 +278,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     setState(() {
       _isGeneratingAadhaarOtp = false;
-      if (genRes.isSuccess && genRes.clientId != null) {
+      if (genRes.statusCode == '408' ||
+          genRes.statusCode == '504' ||
+          (genRes.message != null && (genRes.message!.contains('Aadhaar server error') || genRes.message!.toLowerCase().contains('timeout'))) ||
+          genRes.statusMessage.contains('Aadhaar server error') ||
+          genRes.statusMessage.toLowerCase().contains('timeout')) {
+        _aadhaarError = l10n.aadhaarServerError;
+      } else if (genRes.isSuccess && genRes.clientId != null) {
         _isAadhaarOtpSent = true;
         _aadhaarClientId = genRes.clientId;
         _aadhaarError = null;
+        _aadhaarOtpError = null;
         _startResendTimer();
       } else {
         String msg = genRes.message ?? l10n.aadhaarSendOtpFailed;
@@ -205,17 +304,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final l10n = AppLocalizations.of(context)!;
     final otp = _aadhaarOtpController.text.trim();
     if (otp.length != 6 || !RegExp(r'^\d{6}$').hasMatch(otp)) {
-      setState(() => _aadhaarError = l10n.enterValidAadhaarOtp);
+      setState(() => _aadhaarOtpError = l10n.enterValidAadhaarOtp);
       return;
     }
 
     if (_aadhaarClientId == null) {
-      setState(() => _aadhaarError = l10n.aadhaarSendOtpError);
+      setState(() => _aadhaarOtpError = l10n.aadhaarSendOtpError);
       return;
     }
 
     setState(() {
-      _aadhaarError = null;
+      _aadhaarOtpError = null;
       _isVerifyingAadhaarOtp = true;
     });
 
@@ -231,26 +330,49 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     setState(() {
       _isVerifyingAadhaarOtp = false;
-      if (verifyRes.isSuccess) {
+      if (verifyRes.statusCode == '408' ||
+          verifyRes.statusCode == '504' ||
+          (verifyRes.message != null && (verifyRes.message!.contains('Aadhaar server error') || verifyRes.message!.toLowerCase().contains('timeout'))) ||
+          verifyRes.statusMessage.contains('Aadhaar server error') ||
+          verifyRes.statusMessage.toLowerCase().contains('timeout')) {
+        _aadhaarOtpError = l10n.aadhaarServerError;
+      } else if (verifyRes.isSuccess) {
         _isAadhaarVerified = true;
         _aadhaarVerifiedData = verifyRes;
+        _aadhaarOtpError = null;
         _aadhaarError = null;
+        if (_errors.containsKey('aadhaar')) _errors.remove('aadhaar');
+
+        final verifiedName = verifyRes.fullName;
+        if (verifiedName != null && verifiedName.trim().isNotEmpty) {
+          try {
+            final mobile = _mobileController.text.trim();
+            final aadh = _aadhaarController.text.replaceAll(' ', '').trim();
+            SharedPreferences.getInstance().then((prefs) {
+              if (mobile.isNotEmpty) prefs.setString('aadhaar_verified_name_$mobile', verifiedName.trim());
+              if (aadh.isNotEmpty) prefs.setString('aadhaar_verified_name_$aadh', verifiedName.trim());
+              prefs.setString('aadhaar_verified_name_last', verifiedName.trim());
+            });
+          } catch (_) {}
+        }
       } else {
         String msg = verifyRes.message ?? l10n.invalidAadhaarOtp;
         if (msg.toLowerCase() == 'verification_failed' || msg.toLowerCase().contains('invalid')) {
           msg = l10n.invalidOtpServer;
         }
-        _aadhaarError = msg;
+        _aadhaarOtpError = msg;
       }
     });
   }
 
   Future<void> _pickAndUploadDocument({bool isPan = false, bool isSignatoryAadhaar = false}) async {
     final l10n = AppLocalizations.of(context)!;
+    final docType = isPan ? 'PAN Card' : 'Aadhaar Card';
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
+      builder: (bottomSheetCtx) {
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -258,24 +380,42 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ListTile(
                 leading: const Icon(Icons.camera_alt),
                 title: Text(l10n.cameraBtn),
-                onTap: () {
-                  Navigator.pop(context);
+                onTap: () async {
+                  Navigator.pop(bottomSheetCtx);
+                  final hasPerm = await DocumentPermissionHelper.requestUploadPermission(
+                    context: context,
+                    source: DocumentUploadSource.camera,
+                    documentType: docType,
+                  );
+                  if (!hasPerm) return;
                   _processPickImage(ImageSource.camera, isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library),
                 title: Text(l10n.galleryBtn),
-                onTap: () {
-                  Navigator.pop(context);
+                onTap: () async {
+                  Navigator.pop(bottomSheetCtx);
+                  final hasPerm = await DocumentPermissionHelper.requestUploadPermission(
+                    context: context,
+                    source: DocumentUploadSource.gallery,
+                    documentType: docType,
+                  );
+                  if (!hasPerm) return;
                   _processPickImage(ImageSource.gallery, isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.insert_drive_file),
                 title: Text(l10n.fileDocumentBtn),
-                onTap: () {
-                  Navigator.pop(context);
+                onTap: () async {
+                  Navigator.pop(bottomSheetCtx);
+                  final hasPerm = await DocumentPermissionHelper.requestUploadPermission(
+                    context: context,
+                    source: DocumentUploadSource.file,
+                    documentType: docType,
+                  );
+                  if (!hasPerm) return;
                   _processPickFile(isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
                 },
               ),
@@ -288,13 +428,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _processPickImage(ImageSource source, {bool isPan = false, bool isSignatoryAadhaar = false}) async {
     try {
-
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(source: source);
       if (pickedFile == null) return;
       final bytes = await pickedFile.readAsBytes();
       await _setLocalDocumentFile(pickedFile.path, pickedFile.name, bytes, isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
     } catch (e) {
+      if (DocumentPermissionHelper.isPermissionException(e)) {
+        if (!mounted) return;
+        setState(() {
+          _isUploadingAadhaarDoc = false;
+          _isUploadingPanDoc = false;
+        });
+        await DocumentPermissionHelper.handlePermissionException(
+          context: context,
+          source: source == ImageSource.camera ? DocumentUploadSource.camera : DocumentUploadSource.gallery,
+          documentType: isPan ? 'PAN Card' : 'Aadhaar Card',
+          error: e,
+        );
+        return;
+      }
       if (e.toString().contains('access_denied')) {
         if (!mounted) return;
         setState(() {
@@ -332,6 +485,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       final file = result.files.first;
       await _setLocalDocumentFile(file.path ?? '', file.name, file.bytes, isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
     } catch (e) {
+      if (DocumentPermissionHelper.isPermissionException(e)) {
+        if (!mounted) return;
+        setState(() {
+          _isUploadingAadhaarDoc = false;
+          _isUploadingPanDoc = false;
+        });
+        await DocumentPermissionHelper.handlePermissionException(
+          context: context,
+          source: DocumentUploadSource.file,
+          documentType: isPan ? 'PAN Card' : 'Aadhaar Card',
+          error: e,
+        );
+        return;
+      }
       if (e.toString().contains('access_denied')) {
         if (!mounted) return;
         setState(() {
@@ -447,15 +614,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         _isPanVerified = true;
         _panClientId = verifyRes.clientId;
         _panClientName = verifyRes.clientName;
-        _panClientStatus = verifyRes.clientStatus;
         _panError = null;
+        if (_errors.containsKey('pan')) _errors.remove('pan');
       } else {
         _isPanVerified = false;
-        String msg = verifyRes.statusMessage.isNotEmpty ? verifyRes.statusMessage : l10n.panVerificationFailed;
-        if (msg.contains('Invalid PAN')) {
-          msg = l10n.invalidPanNumber;
+        final rawMsg = verifyRes.statusMessage.trim();
+        final lower = rawMsg.toLowerCase();
+        final isGenericOk = lower.isEmpty || lower == 'ok.' || lower == 'ok' || lower == 'success' || lower == '200';
+
+        String displayMsg;
+        if (isGenericOk ||
+            lower.contains('invalid pan') ||
+            lower.contains('invalid') ||
+            lower.contains('not found') ||
+            lower.contains('record_not_found') ||
+            lower.contains('does not exist')) {
+          displayMsg = l10n.invalidPanNumber;
+        } else {
+          displayMsg = rawMsg;
         }
-        _panError = msg;
+        _panError = displayMsg;
       }
     });
   }
@@ -490,6 +668,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (_step < 2) {
       setState(() {
         _errors.clear();
+        _aadhaarController.text = _aadhaarController.text.replaceAll(' ', '').trim();
         _step++;
       });
       return;
@@ -578,6 +757,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     setState(() => _isSubmitting = false);
 
     if (response.isSuccess) {
+      final verifiedName = _aadhaarVerifiedData?.fullName;
+      if (verifiedName != null && verifiedName.trim().isNotEmpty) {
+        try {
+          final aadh = _aadhaarController.text.replaceAll(' ', '').trim();
+          final prefs = await SharedPreferences.getInstance();
+          if (mobile.isNotEmpty) await prefs.setString('aadhaar_verified_name_$mobile', verifiedName.trim());
+          if (aadh.isNotEmpty) await prefs.setString('aadhaar_verified_name_$aadh', verifiedName.trim());
+          await prefs.setString('aadhaar_verified_name_last', verifiedName.trim());
+        } catch (_) {}
+      }
+
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context)!.registrationSuccess),
@@ -609,18 +801,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           found['fullName'] = l10n.fullNameRequired;
         }
         final mobile = _mobileController.text.trim();
-        if (mobile.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
+        if (mobile.isEmpty) {
+          found['mobile'] = l10n.mobileRequired;
+        } else if (mobile.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
           found['mobile'] = l10n.validMobileRequired;
         }
         if (_addressController.text.trim().isEmpty) {
           found['address'] = l10n.addressRequired;
+        } else if (RegExp(r'[\u0900-\u097F\uA8E0-\uA8FF]').hasMatch(_addressController.text)) {
+          found['address'] = l10n.marathiNotAcceptedInAddress;
         }
         if (_emailController.text.trim().isNotEmpty) {
           final email = _emailController.text.trim();
-          final emailValid = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email) &&
-                             !email.startsWith('.') &&
-                             !email.contains('..');
-          if (!emailValid) {
+          if (RegExp(r'[\u0900-\u097F\uA8E0-\uA8FF]').hasMatch(email)) {
+            found['email'] = l10n.marathiNotAcceptedInEmail;
+          } else if (email.startsWith('.') || email.contains('..')) {
+            found['email'] = l10n.emailConsecutiveDots;
+          } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
             found['email'] = l10n.validEmailRequired;
           }
         }
@@ -639,20 +836,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         // Organisation registration Step 1 validation
         if (_orgNameController.text.trim().isEmpty) {
           found['orgName'] = l10n.orgNameRequired;
+        } else if (RegExp(r'[0-9\u0966-\u096F]').hasMatch(_orgNameController.text)) {
+          found['orgName'] = l10n.orgNameCannotContainNumbers;
         }
         final email = _emailController.text.trim();
         if (email.isEmpty) {
           found['email'] = l10n.emailRequired;
-        } else {
-          final emailValid = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email) &&
-                             !email.startsWith('.') &&
-                             !email.contains('..');
-          if (!emailValid) {
-            found['email'] = l10n.validEmailRequired;
-          }
+        } else if (RegExp(r'[\u0900-\u097F\uA8E0-\uA8FF]').hasMatch(email)) {
+          found['email'] = l10n.marathiNotAcceptedInEmail;
+        } else if (email.startsWith('.') || email.contains('..')) {
+          found['email'] = l10n.emailConsecutiveDots;
+        } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+          found['email'] = l10n.validEmailRequired;
         }
         if (_addressController.text.trim().isEmpty) {
           found['address'] = l10n.addressRequired;
+        } else if (RegExp(r'[\u0900-\u097F\uA8E0-\uA8FF]').hasMatch(_addressController.text)) {
+          found['address'] = l10n.marathiNotAcceptedInAddress;
         }
         if (_districtId == null) {
           found['district'] = l10n.districtRequired;
@@ -669,15 +869,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           found['contactPersonName'] = l10n.contactPersonNameRequired;
         }
         final mobile = _mobileController.text.trim();
-        if (mobile.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
+        if (mobile.isEmpty) {
+          found['mobile'] = l10n.mobileRequired;
+        } else if (mobile.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
           found['mobile'] = l10n.validMobileRequired;
         }
         final aadh = _aadhaarController.text.replaceAll(' ', '').trim();
-        if (aadh.isNotEmpty && (aadh.length != 12 || !RegExp(r'^\d{12}$').hasMatch(aadh))) {
-          found['aadhaar'] = l10n.enterValidAadhaarNumber;
+        if (aadh.isNotEmpty) {
+          if (aadh.length != 12 || !RegExp(r'^\d{12}$').hasMatch(aadh)) {
+            found['aadhaar'] = l10n.enterValidAadhaarNumber;
+          } else if (aadh.startsWith('0') || aadh.startsWith('1')) {
+            found['aadhaar'] = l10n.aadhaarCannotStartWithZeroOrOne;
+          }
         }
       }
     } else if (_step == 2) {
+      if (!_declarationConfirmed) {
+        found['declaration'] = l10n.confirmDeclarationRequired;
+      }
+
       if (_userType == UserType.normalConsumer) {
         final aadh = _aadhaarController.text.replaceAll(' ', '').trim();
         final hasAadhaarDoc = _localAadhaarPath != null || _aadhaarDocUrl != null;
@@ -686,15 +896,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         if (hasAadhaarInput) {
           if (aadh.isEmpty || aadh.length != 12 || !RegExp(r'^\d{12}$').hasMatch(aadh)) {
             found['aadhaar'] = l10n.enterValidAadhaarNumber;
+          } else if (aadh.startsWith('0') || aadh.startsWith('1')) {
+            found['aadhaar'] = l10n.aadhaarCannotStartWithZeroOrOne;
           } else if (!_isAadhaarVerified) {
             found['aadhaar'] = l10n.aadhaarVerificationRequired;
           }
         }
       } else {
         // Organisation registration Step 2 validation
-        if (!_declarationConfirmed) {
-          found['declaration'] = l10n.confirmDeclarationRequired;
-        }
 
         final pan = _panController.text.trim().toUpperCase();
         final hasPanDoc = _localPanPath != null || _panDocUrl != null;
@@ -719,6 +928,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             found['aadhaar'] = l10n.enterValidAadhaarNumber;
           } else if (aadh.length != 12 || !RegExp(r'^\d{12}$').hasMatch(aadh)) {
             found['aadhaar'] = l10n.enterValidAadhaarNumber;
+          } else if (aadh.startsWith('0') || aadh.startsWith('1')) {
+            found['aadhaar'] = l10n.aadhaarCannotStartWithZeroOrOne;
           } else if (!_isAadhaarVerified) {
             found['aadhaar'] = l10n.aadhaarVerificationRequired;
           }
@@ -825,7 +1036,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
         // Individual Card
         InkWell(
-          onTap: () => setState(() => _userType = UserType.normalConsumer),
+          onTap: () => _onConsumerTypeChanged(UserType.normalConsumer),
           borderRadius: BorderRadius.circular(16),
           child: Container(
             padding: const EdgeInsets.all(16),
@@ -867,9 +1078,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         const SizedBox(height: 14),
         // Organization Card
         InkWell(
-          onTap: () => setState(() {
-            _userType = UserType.organization;
-          }),
+          onTap: () => _onConsumerTypeChanged(UserType.organization),
           borderRadius: BorderRadius.circular(16),
           child: Container(
             padding: const EdgeInsets.all(16),
@@ -1016,6 +1225,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           controller: _orgNameController,
           hint: l10n.enterOrgNameHint,
           error: _errors['orgName'],
+          inputFormatters: [
+            FilteringTextInputFormatter.deny(RegExp(r'[0-9\u0966-\u096F]')),
+          ],
           onChanged: (val) {
             if (val.isNotEmpty && _errors.containsKey('orgName')) {
               setState(() => _errors.remove('orgName'));
@@ -1031,6 +1243,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           hint: l10n.enterEmailHint,
           keyboardType: TextInputType.emailAddress,
           error: _errors['email'],
+          inputFormatters: [
+            FilteringTextInputFormatter.deny(RegExp(r'[\u0900-\u097F\uA8E0-\uA8FF\s]')),
+          ],
           onChanged: (val) {
             if (val.isNotEmpty && _errors.containsKey('email')) {
               setState(() => _errors.remove('email'));
@@ -1047,6 +1262,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           error: _errors['address'],
           minLines: 2,
           maxLines: 3,
+          inputFormatters: [
+            FilteringTextInputFormatter.deny(RegExp(r'[\u0900-\u097F\uA8E0-\uA8FF]')),
+          ],
           onChanged: (val) {
             if (val.isNotEmpty && _errors.containsKey('address')) {
               setState(() => _errors.remove('address'));
@@ -1060,6 +1278,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         const SizedBox(height: 14),
 
         LocationDropdownSection(
+          key: ValueKey('loc_section_${_userType}_$_locationResetKey'),
           initialCategory: _areaClassification,
           initialDistrict: _district,
           initialTaluka: _taluka,
@@ -1160,11 +1379,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         TextField(
           controller: _aadhaarController,
           keyboardType: TextInputType.number,
-          maxLength: 14,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            _AadhaarNumberFormatter(),
-          ],
+          maxLength: 12,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink),
           decoration: InputDecoration(
             counterText: '',
@@ -1172,7 +1388,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             fillColor: Colors.white,
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            hintText: l10n.enterTwelveDigitAadhaarHint,
+            hintText: l10n.twelveDigitAadhaarHint,
             hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -1334,15 +1550,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
         _buildFieldLabel(l10n.emailOptional),
         const SizedBox(height: 6),
-        _buildTextField(_emailController, hint: l10n.enterEmail, keyboardType: TextInputType.emailAddress, error: _errors['email'], onChanged: (val) {
-          if (val.isNotEmpty && _errors.containsKey('email')) {
-            setState(() => _errors.remove('email'));
-          }
-        }),
+        _buildTextField(
+          _emailController,
+          hint: l10n.enterEmail,
+          keyboardType: TextInputType.emailAddress,
+          error: _errors['email'],
+          inputFormatters: [
+            FilteringTextInputFormatter.deny(RegExp(r'[\u0900-\u097F\uA8E0-\uA8FF\s]')),
+          ],
+          onChanged: (val) {
+            if (val.isNotEmpty && _errors.containsKey('email')) {
+              setState(() => _errors.remove('email'));
+            }
+          },
+        ),
         const SizedBox(height: 20),
 
         // Dynamic Location Dropdowns
         LocationDropdownSection(
+          key: ValueKey('loc_section_${_userType}_$_locationResetKey'),
           initialCategory: _areaClassification,
           initialDistrict: _district,
           initialTaluka: _taluka,
@@ -1379,11 +1605,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         // Street Address
         _buildFieldLabel(l10n.addressLabel),
         const SizedBox(height: 6),
-        _buildTextField(_addressController, hint: l10n.addressHint, error: _errors['address'], keyboardType: TextInputType.streetAddress, onChanged: (val) {
-          if (val.isNotEmpty && _errors.containsKey('address')) {
-            setState(() => _errors.remove('address'));
-          }
-        }),
+        _buildTextField(
+          _addressController,
+          hint: l10n.addressHint,
+          error: _errors['address'],
+          keyboardType: TextInputType.streetAddress,
+          inputFormatters: [
+            FilteringTextInputFormatter.deny(RegExp(r'[\u0900-\u097F\uA8E0-\uA8FF]')),
+          ],
+          onChanged: (val) {
+            if (val.isNotEmpty && _errors.containsKey('address')) {
+              setState(() => _errors.remove('address'));
+            }
+          },
+        ),
         const SizedBox(height: 24),
       ],
     );
@@ -1419,8 +1654,35 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ),
         const SizedBox(height: 20),
 
-        // Card 1: Contact Person Aadhaar Verification
-        _buildOrgAadhaarVerificationCard(),
+        // Card 1: Contact Person Aadhaar Verification (Same functionality as Individual)
+        _buildAadhaarVerificationCard(isOrg: true),
+        const SizedBox(height: 16),
+
+        // Upload Contact Person Aadhaar Document (Optional Document)
+        _buildUploadCard(
+          title: l10n.uploadAadhaarDocOptional,
+          hint: l10n.chooseAadhaarCardPhotoPdf,
+          fileName: _localSignatoryAadhaarName ?? _localAadhaarName ?? _aadhaarFileName,
+          docUrl: _aadhaarSignatoryDocUrl ?? _aadhaarDocUrl,
+          localPath: _localSignatoryAadhaarPath ?? _localAadhaarPath,
+          isLoading: _isUploadingAadhaarDoc,
+          error: _errors['aadhaarFile'],
+          onPick: () => _pickAndUploadDocument(isPan: false, isSignatoryAadhaar: true),
+          onRemove: () {
+            setState(() {
+              _localSignatoryAadhaarPath = null;
+              _localSignatoryAadhaarName = null;
+              _localSignatoryAadhaarBytes = null;
+              _aadhaarFileName = null;
+              _aadhaarSignatoryDocUrl = null;
+              _localAadhaarPath = null;
+              _localAadhaarName = null;
+              _localAadhaarBytes = null;
+              _aadhaarDocUrl = null;
+              if (_errors.containsKey('aadhaarFile')) _errors.remove('aadhaarFile');
+            });
+          },
+        ),
         const SizedBox(height: 16),
 
         // Card 2: Organisation PAN Verification
@@ -1428,52 +1690,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         const SizedBox(height: 16),
 
         // Confirmation Checkbox (Declaration)
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: Checkbox(
-                value: _declarationConfirmed,
-                activeColor: const Color(0xFF2563EB),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                side: const BorderSide(color: Color(0xFF64748B), width: 1.5),
-                onChanged: (val) {
-                  setState(() {
-                    _declarationConfirmed = val ?? false;
-                    if (_declarationConfirmed) _errors.remove('declaration');
-                  });
-                },
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                l10n.orgDeclarationText,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF475569),
-                  height: 1.35,
-                ),
-              ),
-            ),
-          ],
-        ),
-        if (_errors.containsKey('declaration')) ...[
-          const SizedBox(height: 6),
-          Text(
-            _errors['declaration']!,
-            style: const TextStyle(fontSize: 12, color: AppColors.danger700),
-          ),
-        ],
+        _buildDeclarationCheckbox(),
         const SizedBox(height: 24),
       ],
     );
   }
 
   // -------------------------------------------------------------
-  // STEP 2: Individual KYC (Unchanged)
+  // STEP 2: Individual KYC
   // -------------------------------------------------------------
   Widget _buildIndividualStep2Kyc() {
     final l10n = AppLocalizations.of(context)!;
@@ -1539,7 +1763,67 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ],
           ),
         ),
+        const SizedBox(height: 16),
+
+        // Confirmation Checkbox (Declaration)
+        _buildDeclarationCheckbox(),
         const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildDeclarationCheckbox() {
+    final l10n = AppLocalizations.of(context)!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: Checkbox(
+                value: _declarationConfirmed,
+                activeColor: const Color(0xFF2563EB),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                side: const BorderSide(color: Color(0xFF64748B), width: 1.5),
+                onChanged: (val) {
+                  setState(() {
+                    _declarationConfirmed = val ?? false;
+                    if (_declarationConfirmed) _errors.remove('declaration');
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _declarationConfirmed = !_declarationConfirmed;
+                    if (_declarationConfirmed) _errors.remove('declaration');
+                  });
+                },
+                child: Text(
+                  l10n.orgDeclarationText,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF475569),
+                    height: 1.35,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (_errors.containsKey('declaration')) ...[
+          const SizedBox(height: 6),
+          Text(
+            _errors['declaration']!,
+            style: const TextStyle(fontSize: 12, color: AppColors.danger700),
+          ),
+        ],
       ],
     );
   }
@@ -1547,294 +1831,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // -------------------------------------------------------------
   // Organisation KYC Cards
   // -------------------------------------------------------------
-  Widget _buildOrgAadhaarVerificationCard() {
-    final l10n = AppLocalizations.of(context)!;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: _isAadhaarVerified ? const Color(0xFFBBF7D0) : const Color(0xFFE2E8F0),
-        ),
-        boxShadow: const [
-          BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Row
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(Icons.check_circle, color: Color(0xFF2563EB), size: 22),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  l10n.contactPersonAadhaarVerificationTitle,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E293B),
-                    height: 1.25,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _isAadhaarVerified ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  _isAadhaarVerified ? l10n.verifiedStatus : l10n.notVerifiedStatus,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: _isAadhaarVerified ? const Color(0xFF15803D) : const Color(0xFF64748B),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // Field: Contact Person Aadhaar No. (optional)
-          _buildOrgFieldLabel(l10n.contactPersonAadhaarOptionalLabel),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _aadhaarController,
-            keyboardType: TextInputType.number,
-            maxLength: 14,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              _AadhaarNumberFormatter(),
-            ],
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink),
-            decoration: InputDecoration(
-              counterText: '',
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              prefixIcon: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary700,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Icon(Icons.badge, color: Colors.white, size: 16),
-                ),
-              ),
-              hintText: l10n.enterTwelveDigitAadhaar,
-              hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: _aadhaarError != null || _errors.containsKey('aadhaar') ? AppColors.danger600 : AppColors.lineStrong,
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: _aadhaarError != null || _errors.containsKey('aadhaar') ? AppColors.danger600 : AppColors.lineStrong,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: _aadhaarError != null || _errors.containsKey('aadhaar') ? AppColors.danger600 : AppColors.primary700,
-                  width: 1.5,
-                ),
-              ),
-            ),
-            onChanged: (val) {
-              if (_aadhaarError != null) setState(() => _aadhaarError = null);
-              if (_errors.containsKey('aadhaar')) setState(() => _errors.remove('aadhaar'));
-              if (_isAadhaarVerified) {
-                setState(() {
-                  _isAadhaarVerified = false;
-                  _aadhaarVerifiedData = null;
-                });
-              }
-            },
-          ),
-          if (_aadhaarError != null || _errors.containsKey('aadhaar')) ...[
-            const SizedBox(height: 4),
-            Text(
-              _aadhaarError ?? _errors['aadhaar'] ?? '',
-              style: const TextStyle(fontSize: 12, color: AppColors.danger700),
-            ),
-          ],
-          const SizedBox(height: 14),
-
-          // Upload Aadhaar Document (with View, Change, Delete actions)
-          _buildUploadCard(
-            title: l10n.uploadAadhaarDocOptional,
-            hint: l10n.chooseAadhaarCardPhotoPdf,
-            fileName: _localSignatoryAadhaarName ?? _localAadhaarName ?? _aadhaarFileName,
-            docUrl: _aadhaarSignatoryDocUrl ?? _aadhaarDocUrl,
-            localPath: _localSignatoryAadhaarPath ?? _localAadhaarPath,
-            isLoading: _isUploadingAadhaarDoc,
-            error: _errors['aadhaarFile'],
-            onPick: () => _pickAndUploadDocument(isPan: false, isSignatoryAadhaar: true),
-            onRemove: () {
-              setState(() {
-                _localSignatoryAadhaarPath = null;
-                _localSignatoryAadhaarName = null;
-                _localSignatoryAadhaarBytes = null;
-                _aadhaarFileName = null;
-                _aadhaarSignatoryDocUrl = null;
-                _localAadhaarPath = null;
-                _localAadhaarName = null;
-                _localAadhaarBytes = null;
-                _aadhaarDocUrl = null;
-                if (_errors.containsKey('aadhaarFile')) _errors.remove('aadhaarFile');
-              });
-            },
-          ),
-          const SizedBox(height: 14),
-
-          // Info Box: OTP will be sent to your Aadhaar registered mobile number
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppColors.primary50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.primary100),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.info, color: AppColors.primary700, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    l10n.otpSentToAadhaarMobileNotice,
-                    style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary, height: 1.25),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // Action: Send OTP button
-          if (!_isAadhaarVerified) ...[
-            SizedBox(
-              width: double.infinity,
-              height: 44,
-              child: OutlinedButton(
-                onPressed: (_isCheckingAadhaar || _isGeneratingAadhaarOtp || (_isAadhaarOtpSent && _timerCountdown > 0))
-                    ? null
-                    : _handleSendAadhaarOtp,
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.primary700, width: 1.5),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: (_isCheckingAadhaar || _isGeneratingAadhaarOtp)
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary700))
-                    : Text(
-                        _isAadhaarOtpSent
-                            ? (_timerCountdown > 0 ? l10n.resendInSeconds(_timerCountdown.toString().padLeft(2, '0')) : l10n.resendOtpBtn)
-                            : l10n.sendOtpBtn,
-                        style: const TextStyle(color: AppColors.primary700, fontWeight: FontWeight.w700, fontSize: 14),
-                      ),
-              ),
-            ),
-
-            if (_isAadhaarOtpSent) ...[
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _aadhaarOtpController,
-                      keyboardType: TextInputType.number,
-                      maxLength: 6,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink),
-                      decoration: InputDecoration(
-                        hintText: l10n.enterSixDigitOtpHint,
-                        hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
-                        counterText: '',
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        border: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                          borderSide: BorderSide(color: AppColors.lineStrong),
-                        ),
-                        enabledBorder: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                          borderSide: BorderSide(color: AppColors.lineStrong),
-                        ),
-                        focusedBorder: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                          borderSide: BorderSide(color: AppColors.primary700, width: 1.5),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: _isVerifyingAadhaarOtp ? null : _handleVerifyAadhaarOtp,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF15803D),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                      ),
-                      child: _isVerifyingAadhaarOtp
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : Text(l10n.verifyOtpBtn, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ] else ...[
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0FDF4),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFBBF7D0)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.check_circle, size: 16, color: Color(0xFF15803D)),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      _aadhaarVerifiedData?.fullName ?? _contactPersonController.text.trim(),
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF15803D)),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.edit, size: 16, color: Color(0xFF15803D)),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    onPressed: () {
-                      setState(() {
-                        _isAadhaarVerified = false;
-                        _aadhaarVerifiedData = null;
-                        _isAadhaarOtpSent = false;
-                        _aadhaarOtpController.clear();
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
 
   Widget _buildOrgPanVerificationCard() {
     final l10n = AppLocalizations.of(context)!;
@@ -1893,8 +1890,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           const SizedBox(height: 6),
           TextField(
             controller: _panController,
+            keyboardType: TextInputType.visiblePassword,
             maxLength: 10,
             textCapitalization: TextCapitalization.characters,
+            inputFormatters: const [
+              PanInputFormatter(),
+            ],
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink),
             decoration: InputDecoration(
               counterText: '',
@@ -1917,19 +1918,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(
-                  color: _panError != null || _errors.containsKey('pan') ? AppColors.danger600 : AppColors.lineStrong,
+                  color: !_isPanVerified && (_panError != null || _errors.containsKey('pan')) ? AppColors.danger600 : AppColors.lineStrong,
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(
-                  color: _panError != null || _errors.containsKey('pan') ? AppColors.danger600 : AppColors.lineStrong,
+                  color: !_isPanVerified && (_panError != null || _errors.containsKey('pan')) ? AppColors.danger600 : AppColors.lineStrong,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(
-                  color: _panError != null || _errors.containsKey('pan') ? AppColors.danger600 : AppColors.primary700,
+                  color: !_isPanVerified && (_panError != null || _errors.containsKey('pan')) ? AppColors.danger600 : AppColors.primary700,
                   width: 1.5,
                 ),
               ),
@@ -1940,11 +1941,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               if (_isPanVerified) setState(() => _isPanVerified = false);
             },
           ),
-          if (_panError != null || _errors.containsKey('pan')) ...[
-            const SizedBox(height: 4),
-            Text(
-              _panError ?? _errors['pan'] ?? '',
-              style: const TextStyle(fontSize: 12, color: AppColors.danger700),
+          if (!_isPanVerified && (_panError != null || _errors.containsKey('pan'))) ...[
+            const SizedBox(height: 6),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.error_outline, size: 14, color: AppColors.danger700),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    _panError ?? _errors['pan'] ?? '',
+                    style: const TextStyle(fontSize: 12, color: AppColors.danger700, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
             ),
           ],
           const SizedBox(height: 14),
@@ -2011,10 +2021,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           _panClientName ?? _orgNameController.text.trim(),
                           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF15803D)),
                         ),
-                        if (_panClientStatus != null && _panClientStatus!.isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          Text('${l10n.panStatusPrefix}$_panClientStatus', style: const TextStyle(fontSize: 11, color: Color(0xFF166534))),
-                        ],
                       ],
                     ),
                   ),
@@ -2027,7 +2033,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         _isPanVerified = false;
                         _panClientId = null;
                         _panClientName = null;
-                        _panClientStatus = null;
+                        _panError = null;
+                        if (_errors.containsKey('pan')) _errors.remove('pan');
                       });
                     },
                   ),
@@ -2092,7 +2099,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           keyboardType: keyboardType,
           minLines: minLines,
           maxLines: maxLines,
-          inputFormatters: inputFormatters,
+          inputFormatters: [
+            FilteringTextInputFormatter.deny(
+              RegExp(r'(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]|[\u2700-\u27bf])'),
+            ),
+            ...?inputFormatters,
+          ],
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink),
           decoration: InputDecoration(
             hintText: hint,
@@ -2167,22 +2179,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   children: [
                     Text(
                       _isAadhaarVerified
-                          ? (isOrg ? 'Authorized Signatory Aadhaar Verified' : l10n.aadhaarIdentityVerified)
-                          : (isOrg ? 'Signatory Aadhaar Verification' : l10n.aadhaarCardOtpVerification),
+                          ? (isOrg ? l10n.contactPersonAadhaarVerified : l10n.aadhaarIdentityVerified)
+                          : (isOrg ? l10n.contactPersonAadhaarVerificationTitle : l10n.aadhaarCardOtpVerification),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: _isAadhaarVerified ? const Color(0xFF15803D) : AppColors.ink,
                       ),
                     ),
-                    Text(
-                      _isAadhaarVerified
-                          ? (isOrg ? 'Signatory identity verified with UIDAI' : l10n.aadhaarVerifiedNationalId)
-                          : (isOrg
-                              ? 'Enter 12-digit Aadhaar number of authorized signatory to receive OTP'
-                              : l10n.enterTwelveDigitAadhaarToReceiveOtp),
-                      style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary),
-                    ),
+                    if (!_isAadhaarVerified) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        isOrg
+                            ? 'Enter 12-digit Aadhaar number of authorized signatory to receive OTP'
+                            : l10n.enterTwelveDigitAadhaarToReceiveOtp,
+                        style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -2211,7 +2224,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
-                                _aadhaarVerifiedData?.fullName ?? (isOrg ? _contactPersonController.text.trim() : 'Suraj Akil Atar'),
+                                _aadhaarVerifiedData?.fullName ?? (isOrg ? _contactPersonController.text.trim() : _fullNameController.text.trim()),
                                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF15803D)),
                               ),
                             ),
@@ -2219,7 +2232,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Aadhaar: ${_aadhaarVerifiedData?.aadharNumber ?? "XXXX-XXXX-${_aadhaarController.text.length >= 4 ? _aadhaarController.text.substring(_aadhaarController.text.length - 4) : '2902'}"}',
+                          'Aadhaar: ${_aadhaarVerifiedData?.aadharNumber ?? "XXXX-XXXX-${_aadhaarController.text.replaceAll(' ', '').trim().length >= 4 ? _aadhaarController.text.replaceAll(' ', '').trim().substring(_aadhaarController.text.replaceAll(' ', '').trim().length - 4) : 'XXXX'}"}',
                           style: const TextStyle(fontSize: 12, color: Color(0xFF166534), fontFamily: 'monospace'),
                         ),
                         if (_aadhaarVerifiedData?.loc != null || _aadhaarVerifiedData?.dist != null) ...[
@@ -2242,6 +2255,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         _aadhaarOtpController.clear();
                         _aadhaarController.clear();
                         _aadhaarError = null;
+                        _aadhaarOtpError = null;
                         _aadhaarClientId = null;
                         _resendTimer?.cancel();
                         _timerCountdown = 60;
@@ -2254,7 +2268,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
             ),
           ] else ...[
-            _buildFieldLabel(isOrg ? 'Signatory Aadhaar Card Number' : l10n.aadhaarCardNumberLabel),
+            _buildFieldLabel(isOrg ? l10n.contactPersonAadhaarOptionalLabel : l10n.aadhaarCardNumberLabel),
             const SizedBox(height: 6),
             Row(
               children: [
@@ -2266,6 +2280,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     onChanged: (val) {
                       if (_aadhaarError != null) setState(() => _aadhaarError = null);
+                      if (_aadhaarOtpError != null) setState(() => _aadhaarOtpError = null);
                       if (_errors.containsKey('aadhaar')) setState(() => _errors.remove('aadhaar'));
                       if (_isAadhaarOtpSent) {
                         setState(() {
@@ -2280,8 +2295,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
                       counterText: '',
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.line)),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.line)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: _aadhaarError != null || _errors.containsKey('aadhaar') ? AppColors.danger600 : AppColors.line)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: _aadhaarError != null || _errors.containsKey('aadhaar') ? AppColors.danger600 : AppColors.line)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: _aadhaarError != null || _errors.containsKey('aadhaar') ? AppColors.danger600 : AppColors.primary700, width: 1.5)),
                     ),
                   ),
                 ),
@@ -2308,45 +2324,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ],
             ),
 
-            if (_isAadhaarOtpSent) ...[
-              const SizedBox(height: 14),
-              _buildFieldLabel(l10n.enterSixDigitAadhaarOtpLabel),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _aadhaarOtpController,
-                      keyboardType: TextInputType.number,
-                      maxLength: 6,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
-                      decoration: InputDecoration(
-                        hintText: l10n.sixDigitOtpHint,
-                        hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
-                        counterText: '',
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.line)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.line)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: _isVerifyingAadhaarOtp ? null : _handleVerifyAadhaarOtp,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF15803D),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                    ),
-                    child: _isVerifyingAadhaarOtp
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : Text(l10n.verifyOtpBtn, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                  ),
-                ],
-              ),
-            ],
-
             if (_aadhaarError != null || _errors.containsKey('aadhaar')) ...[
               const SizedBox(height: 8),
               Container(
@@ -2369,6 +2346,74 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ],
                 ),
               ),
+            ],
+
+            if (_isAadhaarOtpSent) ...[
+              const SizedBox(height: 14),
+              _buildFieldLabel(l10n.enterSixDigitAadhaarOtpLabel),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _aadhaarOtpController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      onChanged: (val) {
+                        if (_aadhaarOtpError != null) {
+                          setState(() => _aadhaarOtpError = null);
+                        }
+                      },
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
+                      decoration: InputDecoration(
+                        hintText: l10n.sixDigitOtpHint,
+                        hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted, fontWeight: FontWeight.normal),
+                        counterText: '',
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: _aadhaarOtpError != null ? AppColors.danger600 : AppColors.line)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: _aadhaarOtpError != null ? AppColors.danger600 : AppColors.line)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: _aadhaarOtpError != null ? AppColors.danger600 : AppColors.primary700, width: 1.5)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: _isVerifyingAadhaarOtp ? null : _handleVerifyAadhaarOtp,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF15803D),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                    ),
+                    child: _isVerifyingAadhaarOtp
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : Text(l10n.verifyOtpBtn, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  ),
+                ],
+              ),
+              if (_aadhaarOtpError != null) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFFCA5A5)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline, size: 16, color: AppColors.danger700),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _aadhaarOtpError!,
+                          style: const TextStyle(fontSize: 12, color: AppColors.danger700, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ],
         ],
@@ -2479,7 +2524,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   : onPick),
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
               color: hasFile ? const Color(0xFFF0FDF4) : Colors.white,
               borderRadius: BorderRadius.circular(12),
@@ -2509,7 +2554,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           size: 20,
                         ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2517,11 +2562,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       Text(
                         hasFile ? fileName : title,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: hasFile ? const Color(0xFF15803D) : AppColors.ink,
+                          height: 1.25,
                         ),
-                        overflow: TextOverflow.ellipsis,
+                        maxLines: hasFile ? 1 : null,
+                        softWrap: true,
+                        overflow: hasFile ? TextOverflow.ellipsis : TextOverflow.clip,
                       ),
                       if (isLoading || !hasFile) ...[
                         const SizedBox(height: 2),
@@ -2607,31 +2655,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ),
         ],
       ],
-    );
-  }
-}
-
-class _AadhaarNumberFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
-    if (digits.length > 12) {
-      return oldValue;
-    }
-    final buffer = StringBuffer();
-    for (int i = 0; i < digits.length; i++) {
-      if (i > 0 && i % 4 == 0) {
-        buffer.write(' ');
-      }
-      buffer.write(digits[i]);
-    }
-    final formatted = buffer.toString();
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

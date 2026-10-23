@@ -444,7 +444,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get signUpLink => 'साइन अप करा';
 
   @override
-  String get chooseAccountType => 'खाता प्रकार निवडा';
+  String get chooseAccountType => 'ग्राहक प्रकार निवडा';
 
   @override
   String get howWillYouUse => 'तुम्ही महाखनिज कसे वापराल?';
@@ -617,7 +617,7 @@ class AppLocalizationsMr extends AppLocalizations {
       'तुमचा आधार OTP सत्यापित करा किंवा दस्तऐवज फोटो अपलोड करा';
 
   @override
-  String get method1LiveOtp => 'पद्धत १: थेट OTP पडताळणी';
+  String get method1LiveOtp => 'पद्धत १:OTP पडताळणी';
 
   @override
   String get twelveDigitAadhaarNumber => '१२-अंकी आधार क्रमांक *';
@@ -884,8 +884,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get addressRequired => 'पत्ता आवश्यक आहे.';
 
   @override
-  String get validEmailRequired =>
-      'सलग डॉट्स किंवा सुरुवातीला डॉट्स नसलेला एक वैध ईमेल पत्ता प्रविष्ट करा.';
+  String get validEmailRequired => 'एक वैध ईमेल पत्ता प्रविष्ट करा.';
 
   @override
   String get districtRequired => 'जिल्हा आवश्यक आहे.';
@@ -1433,7 +1432,7 @@ class AppLocalizationsMr extends AppLocalizations {
       'संपर्क व्यक्ती आधार आणि संस्था पॅन आवश्यक';
 
   @override
-  String get requiresIndividualKycSubtitle => 'वैयक्तिक आधार पडताळणी आवश्यक';
+  String get requiresIndividualKycSubtitle => 'आधार आवश्यक';
 
   @override
   String get pendingBadge => 'प्रलंबित';
@@ -1493,7 +1492,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get pendingUpper => 'प्रलंबित';
 
   @override
-  String get method1LivePanVerification => 'पद्धत १: थेट पॅन पडताळणी';
+  String get method1LivePanVerification => 'पद्धत १: पॅन पडताळणी';
 
   @override
   String get orgPanNumberRequired => 'संस्था पॅन क्रमांक *';
@@ -1553,4 +1552,53 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get failedToUpdateProfile => 'ग्राहक प्रोफाइल अपडेट करण्यात अयशस्वी.';
+
+  @override
+  String get orgNameCannotContainNumbers => 'संस्थेच्या नावात अंक असू नयेत.';
+
+  @override
+  String get marathiNotAcceptedInAddress =>
+      'पत्त्यामध्ये मराठी अक्षरे असू नयेत.';
+
+  @override
+  String get marathiNotAcceptedInEmail => 'ईमेलमध्ये मराठी अक्षरे असू नयेत.';
+
+  @override
+  String get emailConsecutiveDots =>
+      'ईमेलच्या सुरुवातीला किंवा सलग डॉट्स असू नयेत.';
+
+  @override
+  String get mobileRequired => 'मोबाईल नंबर आवश्यक आहे.';
+
+  @override
+  String get aadhaarServerError =>
+      'आधार सर्व्हर त्रुटी. कृपया पुन्हा प्रयत्न करा.';
+
+  @override
+  String get openSettings => 'सेटिंग्ज उघडा';
+
+  @override
+  String get permissionRequiredTitle => 'परवानगी आवश्यक आहे';
+
+  @override
+  String get cameraPermissionRequired =>
+      'कागदपत्रे कॅप्चर करण्यासाठी कॅमेरा परवानगी आवश्यक आहे.';
+
+  @override
+  String get cameraPermissionDeniedTwice =>
+      'कॅमेरा परवानगी नाकारली गेली आहे. कागदपत्रे कॅप्चर आणि अपलोड करण्यासाठी कृपया ॲपच्या सेटिंग्जमध्ये कॅमेरा परवानगी सक्षम करा.';
+
+  @override
+  String get galleryPermissionDeniedTwice =>
+      'गॅलरी ॲक्सेस नाकारला गेला आहे. कागदपत्रे निवडण्यासाठी कृपया ॲपच्या सेटिंग्जमध्ये परवानगी सक्षम करा.';
+
+  @override
+  String get filePermissionDeniedTwice =>
+      'स्टोरेज ॲक्सेस नाकारला गेला आहे. कागदपत्रे निवडण्यासाठी कृपया ॲपच्या सेटिंग्जमध्ये परवानगी सक्षम करा.';
+
+  @override
+  String get allow => 'परवानगी द्या';
+
+  @override
+  String get dontAllow => 'परवानगी नाकारा';
 }

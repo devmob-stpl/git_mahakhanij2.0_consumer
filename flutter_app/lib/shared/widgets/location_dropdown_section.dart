@@ -294,6 +294,8 @@ class _LocationDropdownSectionState
     setState(() {
       _category = newCat;
       _selectedVillageCity = null;
+      _villageCities = [];
+      _selectedTaluka = null;
     });
 
     if (_isTown) {
@@ -303,8 +305,8 @@ class _LocationDropdownSectionState
         _notifyChange();
       }
     } else {
-      if (_selectedDistrict != null && _selectedTaluka != null) {
-        _loadVillageCities(_selectedDistrict!.id, _selectedTaluka!.id, _isTown);
+      if (_selectedDistrict != null) {
+        _loadTalukas(_selectedDistrict!.id);
       } else {
         _notifyChange();
       }
@@ -586,8 +588,18 @@ class _LocationDropdownSectionState
                     onChanged: (newDistrict) {
                       if (newDistrict == null ||
                           newDistrict == _selectedDistrict) { return; }
-                      setState(() => _selectedDistrict = newDistrict);
-                      _loadTalukas(newDistrict.id);
+                      setState(() {
+                        _selectedDistrict = newDistrict;
+                        _selectedTaluka = null;
+                        _selectedVillageCity = null;
+                        _talukas = [];
+                        _villageCities = [];
+                      });
+                      if (_isTown) {
+                        _loadVillageCities(newDistrict.id, 0, _isTown);
+                      } else {
+                        _loadTalukas(newDistrict.id);
+                      }
                     },
                   ),
           ],
@@ -595,180 +607,217 @@ class _LocationDropdownSectionState
         const SizedBox(height: 14),
 
         // Taluka & Village/City Dropdowns Row
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Taluka Dropdown
-            if (!_isTown) ...[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(l10n.talukaLabel,
-                      style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.ink)),
-                  const SizedBox(height: 6),
-                  _loadingTalukas
-                      ? Container(
-                          height: 48,
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppColors.line),
-                            color: AppColors.surface,
-                          ),
-                          child: Row(
-                            children: [
-                              const SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2)),
-                              const SizedBox(width: 6),
-                              Text(l10n.loading,
-                                  style: const TextStyle(
-                                      fontSize: 12, color: AppColors.inkMuted)),
-                            ],
-                          ),
-                        )
-                      : DropdownButtonFormField<TalukaModel>(
-                          initialValue: _selectedTaluka,
-                          isExpanded: true,
-                          hint: Text(l10n.talukaHint,
-                              style: const TextStyle(
-                                  fontSize: 12, color: AppColors.inkMuted),
-                              overflow: TextOverflow.ellipsis),
-                          decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 12),
-                            fillColor: Colors.white,
-                            filled: true,
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide:
-                                    const BorderSide(color: AppColors.line)),
-                            enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide:
-                                    const BorderSide(color: AppColors.line)),
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(
-                                    color: Color(0xFF2563EB), width: 1.5)),
-                            errorText: widget.talukaError,
-                            errorMaxLines: 3,
-                          ),
-                          items: _talukas.map((t) {
-                            return DropdownMenuItem<TalukaModel>(
-                              value: t,
-                              child: Text(t.taluka,
-                                  style: const TextStyle(
-                                      fontSize: 13,
-                                      color: AppColors.ink,
-                                      fontWeight: FontWeight.w600),
-                                  overflow: TextOverflow.ellipsis),
-                            );
-                          }).toList(),
-                          onChanged: (newTaluka) {
-                            if (newTaluka == null ||
-                                newTaluka == _selectedTaluka) { return; }
-                            setState(() => _selectedTaluka = newTaluka);
-                            if (_selectedDistrict != null) {
-                              _loadVillageCities(
-                                  _selectedDistrict!.id, newTaluka.id, _isTown);
-                            }
-                          },
-                        ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            ],
+        Builder(
+          builder: (context) {
+            final isTalukaDisabled = _selectedDistrict == null;
+            final isVillageCityDisabled = _isTown
+                ? (_selectedDistrict == null)
+                : (_selectedDistrict == null || _selectedTaluka == null);
 
-            // Village / City Dropdown
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(villageCityLabel,
-                      style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.ink)),
-                  const SizedBox(height: 6),
-                  _loadingVillageCities
-                      ? Container(
-                          height: 48,
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppColors.line),
-                            color: AppColors.surface,
-                          ),
-                          child: Row(
-                            children: [
-                              const SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2)),
-                              const SizedBox(width: 6),
-                              Text(l10n.loading,
-                                  style: const TextStyle(
-                                      fontSize: 12, color: AppColors.inkMuted)),
-                            ],
-                          ),
-                        )
-                      : DropdownButtonFormField<VillageCityModel>(
-                          initialValue: _selectedVillageCity,
-                          isExpanded: true,
-                          hint: Text(villageCityHint,
-                              style: const TextStyle(
-                                  fontSize: 12, color: AppColors.inkMuted),
-                              overflow: TextOverflow.ellipsis),
-                          decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 12),
-                            fillColor: Colors.white,
-                            filled: true,
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide:
-                                    const BorderSide(color: AppColors.line)),
-                            enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide:
-                                    const BorderSide(color: AppColors.line)),
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(
-                                    color: Color(0xFF2563EB), width: 1.5)),
-                            errorText: widget.villageCityError,
-                            errorMaxLines: 3,
-                          ),
-                          items: _villageCities.map((v) {
-                            return DropdownMenuItem<VillageCityModel>(
-                              value: v,
-                              child: Text(v.name,
-                                  style: const TextStyle(
-                                      fontSize: 13,
-                                      color: AppColors.ink,
-                                      fontWeight: FontWeight.w600),
-                                  overflow: TextOverflow.ellipsis),
-                            );
-                          }).toList(),
-                          onChanged: (newVc) {
-                            if (newVc == null) return;
-                            setState(() => _selectedVillageCity = newVc);
-                            _notifyChange();
-                          },
-                        ),
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Taluka Dropdown
+                if (!_isTown) ...[
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l10n.talukaLabel,
+                            style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.ink)),
+                        const SizedBox(height: 6),
+                        _loadingTalukas
+                            ? Container(
+                                height: 48,
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: AppColors.line),
+                                  color: AppColors.surface,
+                                ),
+                                child: Row(
+                                  children: [
+                                    const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2)),
+                                    const SizedBox(width: 6),
+                                    Text(l10n.loading,
+                                        style: const TextStyle(
+                                            fontSize: 12, color: AppColors.inkMuted)),
+                                  ],
+                                ),
+                              )
+                            : IgnorePointer(
+                                ignoring: isTalukaDisabled,
+                                child: DropdownButtonFormField<TalukaModel>(
+                                  key: ValueKey('taluka_${_category}_${_selectedDistrict?.id}_${_selectedTaluka?.id}'),
+                                  initialValue: isTalukaDisabled ? null : _selectedTaluka,
+                                  isExpanded: true,
+                                  hint: Text(l10n.talukaHint,
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: isTalukaDisabled ? AppColors.inkMuted.withValues(alpha: 0.5) : AppColors.inkMuted),
+                                      overflow: TextOverflow.ellipsis),
+                                  decoration: InputDecoration(
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 12),
+                                    fillColor: isTalukaDisabled ? const Color(0xFFF8FAFC) : Colors.white,
+                                    filled: true,
+                                    border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide(
+                                            color: isTalukaDisabled ? const Color(0xFFE2E8F0) : AppColors.line)),
+                                    enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide(
+                                            color: isTalukaDisabled ? const Color(0xFFE2E8F0) : AppColors.line)),
+                                    disabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                    focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: const BorderSide(
+                                            color: Color(0xFF2563EB), width: 1.5)),
+                                    errorText: widget.talukaError,
+                                    errorMaxLines: 3,
+                                  ),
+                                  items: isTalukaDisabled
+                                      ? null
+                                      : _talukas.map((t) {
+                                          return DropdownMenuItem<TalukaModel>(
+                                            value: t,
+                                            child: Text(t.taluka,
+                                                style: const TextStyle(
+                                                    fontSize: 13,
+                                                    color: AppColors.ink,
+                                                    fontWeight: FontWeight.w600),
+                                                overflow: TextOverflow.ellipsis),
+                                          );
+                                        }).toList(),
+                                  onChanged: isTalukaDisabled
+                                      ? null
+                                      : (newTaluka) {
+                                          if (newTaluka == null ||
+                                              newTaluka == _selectedTaluka) { return; }
+                                          setState(() {
+                                            _selectedTaluka = newTaluka;
+                                            _selectedVillageCity = null;
+                                            _villageCities = [];
+                                          });
+                                          if (_selectedDistrict != null) {
+                                            _loadVillageCities(
+                                                _selectedDistrict!.id, newTaluka.id, _isTown);
+                                          }
+                                        },
+                                ),
+                              ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                 ],
-              ),
-            ),
-          ],
+
+                // Village / City Dropdown
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(villageCityLabel,
+                          style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.ink)),
+                      const SizedBox(height: 6),
+                      _loadingVillageCities
+                          ? Container(
+                              height: 48,
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: AppColors.line),
+                                color: AppColors.surface,
+                              ),
+                              child: Row(
+                                children: [
+                                  const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2)),
+                                  const SizedBox(width: 6),
+                                  Text(l10n.loading,
+                                      style: const TextStyle(
+                                          fontSize: 12, color: AppColors.inkMuted)),
+                                ],
+                              ),
+                            )
+                          : IgnorePointer(
+                              ignoring: isVillageCityDisabled,
+                              child: DropdownButtonFormField<VillageCityModel>(
+                                key: ValueKey('village_city_${_category}_${_selectedDistrict?.id}_${_selectedTaluka?.id}_${_selectedVillageCity?.id}_$isVillageCityDisabled'),
+                                initialValue: isVillageCityDisabled ? null : _selectedVillageCity,
+                                isExpanded: true,
+                                hint: Text(villageCityHint,
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: isVillageCityDisabled ? AppColors.inkMuted.withValues(alpha: 0.5) : AppColors.inkMuted),
+                                    overflow: TextOverflow.ellipsis),
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 12),
+                                  fillColor: isVillageCityDisabled ? const Color(0xFFF8FAFC) : Colors.white,
+                                  filled: true,
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide(
+                                          color: isVillageCityDisabled ? const Color(0xFFE2E8F0) : AppColors.line)),
+                                  enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide(
+                                          color: isVillageCityDisabled ? const Color(0xFFE2E8F0) : AppColors.line)),
+                                  disabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                  focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: const BorderSide(
+                                          color: Color(0xFF2563EB), width: 1.5)),
+                                  errorText: widget.villageCityError,
+                                  errorMaxLines: 3,
+                                ),
+                                items: isVillageCityDisabled
+                                    ? null
+                                    : _villageCities.map((v) {
+                                        return DropdownMenuItem<VillageCityModel>(
+                                          value: v,
+                                          child: Text(v.name,
+                                              style: const TextStyle(
+                                                  fontSize: 13,
+                                                  color: AppColors.ink,
+                                                  fontWeight: FontWeight.w600),
+                                              overflow: TextOverflow.ellipsis),
+                                        );
+                                      }).toList(),
+                                onChanged: isVillageCityDisabled
+                                    ? null
+                                    : (newVc) {
+                                        if (newVc == null) return;
+                                        setState(() => _selectedVillageCity = newVc);
+                                        _notifyChange();
+                                      },
+                              ),
+                            ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ],
     );

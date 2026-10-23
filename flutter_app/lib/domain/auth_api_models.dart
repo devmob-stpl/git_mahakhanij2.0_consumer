@@ -546,11 +546,43 @@ class PanVerificationResponse {
         panMatches &&
         (clientName != null || clientId != null);
 
+    String? innerErrorMessage;
+    if (resData is Map<String, dynamic>) {
+      innerErrorMessage = resData['message']?.toString() ??
+          resData['errorMessage']?.toString() ??
+          resData['error']?.toString() ??
+          resData['status_message']?.toString() ??
+          resData['statusMessage']?.toString() ??
+          resData['message_code']?.toString() ??
+          (resData['data'] is Map ? (resData['data']['message']?.toString() ?? resData['data']['status']?.toString()) : null);
+    } else if (resData is String && resData.isNotEmpty) {
+      innerErrorMessage = resData;
+    }
+
+    bool isGenericOk(String? text) {
+      if (text == null) return true;
+      final t = text.trim().toLowerCase();
+      return t.isEmpty || t == 'ok.' || t == 'ok' || t == 'success' || t == '200' || t == 'true';
+    }
+
+    String finalStatusMessage;
+    if (verified) {
+      finalStatusMessage = !isGenericOk(msg)
+          ? msg
+          : (!isGenericOk(innerErrorMessage) ? innerErrorMessage! : 'PAN Verified Successfully');
+    } else {
+      if (!isGenericOk(innerErrorMessage)) {
+        finalStatusMessage = innerErrorMessage!;
+      } else if (!isGenericOk(msg)) {
+        finalStatusMessage = msg;
+      } else {
+        finalStatusMessage = 'Invalid PAN number entered. Please verify and try again.';
+      }
+    }
+
     return PanVerificationResponse(
       statusCode: code,
-      statusMessage: msg.isNotEmpty
-          ? msg
-          : (verified ? 'PAN Verified Successfully' : 'PAN Verification Failed'),
+      statusMessage: finalStatusMessage,
       isSuccess: verified,
       clientId: clientId,
       panNumber: panNumber,

@@ -448,7 +448,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signUpLink => 'Sign Up';
 
   @override
-  String get chooseAccountType => 'Choose Account Type';
+  String get chooseAccountType => 'Choose Consumer Type';
 
   @override
   String get howWillYouUse => 'How will you use Mahakhanij?';
@@ -621,7 +621,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Verify your Aadhaar OTP or upload document photo';
 
   @override
-  String get method1LiveOtp => 'Method 1: Live OTP Verification';
+  String get method1LiveOtp => 'Method 1: OTP Verification';
 
   @override
   String get twelveDigitAadhaarNumber => '12-Digit Aadhaar Number *';
@@ -887,8 +887,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addressRequired => 'Address is required.';
 
   @override
-  String get validEmailRequired =>
-      'Enter a valid email address without consecutive dots or dots at the start.';
+  String get validEmailRequired => 'Enter a valid email address.';
 
   @override
   String get districtRequired => 'District is required.';
@@ -1289,7 +1288,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter a valid 10-character PAN (e.g. ABCDE1234F).';
 
   @override
-  String get organisationDetailsHeader => 'ORGANISATION DETAILS';
+  String get organisationDetailsHeader => 'ORGANIZATION DETAILS';
 
   @override
   String get contactPersonDetailsHeader => 'CONTACT PERSON DETAILS';
@@ -1298,7 +1297,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locationDetailsHeader => 'LOCATION DETAILS';
 
   @override
-  String get orgNameRequiredLabel => 'Organisation Name *';
+  String get orgNameRequiredLabel => 'Organization Name *';
 
   @override
   String get emailIdRequiredLabel => 'Email ID *';
@@ -1317,7 +1316,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Contact Person Aadhaar No. (optional)';
 
   @override
-  String get enterOrgNameHint => 'Enter organisation / company / firm name';
+  String get enterOrgNameHint => 'Enter organization / company / firm name';
 
   @override
   String get enterEmailHint => 'Enter email address';
@@ -1362,7 +1361,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Contact Person Aadhaar Verification';
 
   @override
-  String get orgPanVerificationTitle => 'Organisation PAN Verification';
+  String get orgPanVerificationTitle => 'Organization PAN Verification';
 
   @override
   String get verifiedStatus => 'Verified';
@@ -1428,18 +1427,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'Please confirm the declaration to complete registration.';
 
   @override
-  String get organisationConsumer => 'Organisation Consumer';
+  String get organisationConsumer => 'Organization Consumer';
 
   @override
   String get individualConsumer => 'Individual Consumer';
 
   @override
   String get requiresOrgKycSubtitle =>
-      'Requires Contact Person Aadhaar & Organisation PAN';
+      'Requires Contact Person Aadhaar & Organization PAN';
 
   @override
-  String get requiresIndividualKycSubtitle =>
-      'Requires Individual Aadhaar Verification';
+  String get requiresIndividualKycSubtitle => 'Requires Aadhaar';
 
   @override
   String get pendingBadge => 'Pending';
@@ -1460,16 +1458,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactPersonAadhaar => 'Contact Person Aadhaar';
 
   @override
-  String get orgPanVerified => 'Organisation PAN Verified';
+  String get orgPanVerified => 'Organization PAN Verified';
 
   @override
-  String get orgPanPending => 'Organisation PAN Pending';
+  String get orgPanPending => 'Organization PAN Pending';
 
   @override
   String get incomeTaxDeptEntityPan => 'Income Tax Department (Entity PAN)';
 
   @override
-  String get orgPan => 'Organisation PAN';
+  String get orgPan => 'Organization PAN';
 
   @override
   String get verifyPanArrow => 'Verify PAN →';
@@ -1479,11 +1477,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'KYC verification details saved successfully';
 
   @override
-  String get orgPanInfoTitle => 'Organisation PAN Information';
+  String get orgPanInfoTitle => 'Organization PAN Information';
 
   @override
   String get verifyOrgPanDesc =>
-      'Verify organisation PAN number and upload PAN document copy';
+      'Verify organization PAN number and upload PAN document copy';
 
   @override
   String get panNumberLabel => 'PAN Number';
@@ -1498,10 +1496,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pendingUpper => 'PENDING';
 
   @override
-  String get method1LivePanVerification => 'Method 1: Live PAN Verification';
+  String get method1LivePanVerification => 'Method 1: PAN Verification';
 
   @override
-  String get orgPanNumberRequired => 'Organisation PAN Number *';
+  String get orgPanNumberRequired => 'Organization PAN Number *';
 
   @override
   String get method2UploadPanCard =>
@@ -1515,7 +1513,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get verifyOrgPanBeforeSaving =>
-      'Please verify your Organisation PAN before saving.';
+      'Please verify your Organization PAN before saving.';
 
   @override
   String get loadingConsumerProfile => 'Loading Consumer Profile...';
@@ -1556,4 +1554,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failedToUpdateProfile => 'Failed to update consumer profile.';
+
+  @override
+  String get orgNameCannotContainNumbers =>
+      'Organization Name cannot contain numbers.';
+
+  @override
+  String get marathiNotAcceptedInAddress =>
+      'Address cannot contain Marathi characters.';
+
+  @override
+  String get marathiNotAcceptedInEmail =>
+      'Email cannot contain Marathi characters.';
+
+  @override
+  String get emailConsecutiveDots =>
+      'Email cannot start with a dot or contain consecutive dots.';
+
+  @override
+  String get mobileRequired => 'Mobile number is required.';
+
+  @override
+  String get aadhaarServerError => 'Aadhaar server error. Please try again.';
+
+  @override
+  String get openSettings => 'Open Settings';
+
+  @override
+  String get permissionRequiredTitle => 'Permission Required';
+
+  @override
+  String get cameraPermissionRequired =>
+      'Camera permission is required to capture documents.';
+
+  @override
+  String get cameraPermissionDeniedTwice =>
+      'Camera permission has been denied. To capture and upload documents, please enable Camera permission in the app\'s Settings.';
+
+  @override
+  String get galleryPermissionDeniedTwice =>
+      'Gallery access has been denied. To select documents, please enable permission in the app\'s Settings.';
+
+  @override
+  String get filePermissionDeniedTwice =>
+      'Storage access has been denied. To select documents, please enable permission in the app\'s Settings.';
+
+  @override
+  String get allow => 'Allow';
+
+  @override
+  String get dontAllow => 'Don\'t Allow';
 }

@@ -949,7 +949,7 @@ abstract class AppLocalizations {
   /// No description provided for @chooseAccountType.
   ///
   /// In en, this message translates to:
-  /// **'Choose Account Type'**
+  /// **'Choose Consumer Type'**
   String get chooseAccountType;
 
   /// No description provided for @howWillYouUse.
@@ -1279,7 +1279,7 @@ abstract class AppLocalizations {
   /// No description provided for @method1LiveOtp.
   ///
   /// In en, this message translates to:
-  /// **'Method 1: Live OTP Verification'**
+  /// **'Method 1: OTP Verification'**
   String get method1LiveOtp;
 
   /// No description provided for @twelveDigitAadhaarNumber.
@@ -1783,7 +1783,7 @@ abstract class AppLocalizations {
   /// No description provided for @validEmailRequired.
   ///
   /// In en, this message translates to:
-  /// **'Enter a valid email address without consecutive dots or dots at the start.'**
+  /// **'Enter a valid email address.'**
   String get validEmailRequired;
 
   /// No description provided for @districtRequired.
@@ -2521,7 +2521,7 @@ abstract class AppLocalizations {
   /// No description provided for @organisationDetailsHeader.
   ///
   /// In en, this message translates to:
-  /// **'ORGANISATION DETAILS'**
+  /// **'ORGANIZATION DETAILS'**
   String get organisationDetailsHeader;
 
   /// No description provided for @contactPersonDetailsHeader.
@@ -2539,7 +2539,7 @@ abstract class AppLocalizations {
   /// No description provided for @orgNameRequiredLabel.
   ///
   /// In en, this message translates to:
-  /// **'Organisation Name *'**
+  /// **'Organization Name *'**
   String get orgNameRequiredLabel;
 
   /// No description provided for @emailIdRequiredLabel.
@@ -2575,7 +2575,7 @@ abstract class AppLocalizations {
   /// No description provided for @enterOrgNameHint.
   ///
   /// In en, this message translates to:
-  /// **'Enter organisation / company / firm name'**
+  /// **'Enter organization / company / firm name'**
   String get enterOrgNameHint;
 
   /// No description provided for @enterEmailHint.
@@ -2653,7 +2653,7 @@ abstract class AppLocalizations {
   /// No description provided for @orgPanVerificationTitle.
   ///
   /// In en, this message translates to:
-  /// **'Organisation PAN Verification'**
+  /// **'Organization PAN Verification'**
   String get orgPanVerificationTitle;
 
   /// No description provided for @verifiedStatus.
@@ -2773,7 +2773,7 @@ abstract class AppLocalizations {
   /// No description provided for @organisationConsumer.
   ///
   /// In en, this message translates to:
-  /// **'Organisation Consumer'**
+  /// **'Organization Consumer'**
   String get organisationConsumer;
 
   /// No description provided for @individualConsumer.
@@ -2785,13 +2785,13 @@ abstract class AppLocalizations {
   /// No description provided for @requiresOrgKycSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Requires Contact Person Aadhaar & Organisation PAN'**
+  /// **'Requires Contact Person Aadhaar & Organization PAN'**
   String get requiresOrgKycSubtitle;
 
   /// No description provided for @requiresIndividualKycSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Requires Individual Aadhaar Verification'**
+  /// **'Requires Aadhaar'**
   String get requiresIndividualKycSubtitle;
 
   /// No description provided for @pendingBadge.
@@ -2833,13 +2833,13 @@ abstract class AppLocalizations {
   /// No description provided for @orgPanVerified.
   ///
   /// In en, this message translates to:
-  /// **'Organisation PAN Verified'**
+  /// **'Organization PAN Verified'**
   String get orgPanVerified;
 
   /// No description provided for @orgPanPending.
   ///
   /// In en, this message translates to:
-  /// **'Organisation PAN Pending'**
+  /// **'Organization PAN Pending'**
   String get orgPanPending;
 
   /// No description provided for @incomeTaxDeptEntityPan.
@@ -2851,7 +2851,7 @@ abstract class AppLocalizations {
   /// No description provided for @orgPan.
   ///
   /// In en, this message translates to:
-  /// **'Organisation PAN'**
+  /// **'Organization PAN'**
   String get orgPan;
 
   /// No description provided for @verifyPanArrow.
@@ -2869,13 +2869,13 @@ abstract class AppLocalizations {
   /// No description provided for @orgPanInfoTitle.
   ///
   /// In en, this message translates to:
-  /// **'Organisation PAN Information'**
+  /// **'Organization PAN Information'**
   String get orgPanInfoTitle;
 
   /// No description provided for @verifyOrgPanDesc.
   ///
   /// In en, this message translates to:
-  /// **'Verify organisation PAN number and upload PAN document copy'**
+  /// **'Verify organization PAN number and upload PAN document copy'**
   String get verifyOrgPanDesc;
 
   /// No description provided for @panNumberLabel.
@@ -2905,13 +2905,13 @@ abstract class AppLocalizations {
   /// No description provided for @method1LivePanVerification.
   ///
   /// In en, this message translates to:
-  /// **'Method 1: Live PAN Verification'**
+  /// **'Method 1: PAN Verification'**
   String get method1LivePanVerification;
 
   /// No description provided for @orgPanNumberRequired.
   ///
   /// In en, this message translates to:
-  /// **'Organisation PAN Number *'**
+  /// **'Organization PAN Number *'**
   String get orgPanNumberRequired;
 
   /// No description provided for @method2UploadPanCard.
@@ -2935,7 +2935,7 @@ abstract class AppLocalizations {
   /// No description provided for @verifyOrgPanBeforeSaving.
   ///
   /// In en, this message translates to:
-  /// **'Please verify your Organisation PAN before saving.'**
+  /// **'Please verify your Organization PAN before saving.'**
   String get verifyOrgPanBeforeSaving;
 
   /// No description provided for @loadingConsumerProfile.
@@ -3003,6 +3003,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to update consumer profile.'**
   String get failedToUpdateProfile;
+
+  /// No description provided for @orgNameCannotContainNumbers.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization Name cannot contain numbers.'**
+  String get orgNameCannotContainNumbers;
+
+  /// No description provided for @marathiNotAcceptedInAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Address cannot contain Marathi characters.'**
+  String get marathiNotAcceptedInAddress;
+
+  /// No description provided for @marathiNotAcceptedInEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email cannot contain Marathi characters.'**
+  String get marathiNotAcceptedInEmail;
+
+  /// No description provided for @emailConsecutiveDots.
+  ///
+  /// In en, this message translates to:
+  /// **'Email cannot start with a dot or contain consecutive dots.'**
+  String get emailConsecutiveDots;
+
+  /// No description provided for @mobileRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile number is required.'**
+  String get mobileRequired;
+
+  /// No description provided for @aadhaarServerError.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar server error. Please try again.'**
+  String get aadhaarServerError;
+
+  /// No description provided for @openSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get openSettings;
+
+  /// No description provided for @permissionRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission Required'**
+  String get permissionRequiredTitle;
+
+  /// No description provided for @cameraPermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera permission is required to capture documents.'**
+  String get cameraPermissionRequired;
+
+  /// No description provided for @cameraPermissionDeniedTwice.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera permission has been denied. To capture and upload documents, please enable Camera permission in the app\'s Settings.'**
+  String get cameraPermissionDeniedTwice;
+
+  /// No description provided for @galleryPermissionDeniedTwice.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery access has been denied. To select documents, please enable permission in the app\'s Settings.'**
+  String get galleryPermissionDeniedTwice;
+
+  /// No description provided for @filePermissionDeniedTwice.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage access has been denied. To select documents, please enable permission in the app\'s Settings.'**
+  String get filePermissionDeniedTwice;
+
+  /// No description provided for @allow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get allow;
+
+  /// No description provided for @dontAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t Allow'**
+  String get dontAllow;
 }
 
 class _AppLocalizationsDelegate
