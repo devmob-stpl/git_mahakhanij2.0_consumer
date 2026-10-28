@@ -8,6 +8,7 @@ import '../../providers/consumer_digitp_provider.dart';
 import '../../providers/consumer_report_provider.dart';
 import '../../providers/consumer_profile_provider.dart';
 import '../../providers/consumer_projects_provider.dart';
+import '../../providers/session_provider.dart';
 
 class MainShellScreen extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
@@ -17,12 +18,23 @@ class MainShellScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final loc = AppLocalizations.of(context)!;
-    final tabConfigs = [
-      _TabConfig(label: loc.home, icon: Icons.home_outlined, activeIcon: Icons.home, branchIndex: 0),
-      _TabConfig(label: loc.activityTab, icon: Icons.show_chart, activeIcon: Icons.show_chart, branchIndex: 2),
-      _TabConfig(label: loc.reports, icon: Icons.insert_chart_outlined, activeIcon: Icons.insert_chart, branchIndex: 3),
-      _TabConfig(label: loc.kycVerification, icon: Icons.person_outline, activeIcon: Icons.person, branchIndex: 4),
-    ];
+    final user = ref.watch(sessionProvider).currentUser;
+    final isOrg = user?.isOrganization == true;
+
+    final tabConfigs = isOrg
+        ? [
+            _TabConfig(label: loc.home, icon: Icons.home_outlined, activeIcon: Icons.home, branchIndex: 0),
+            _TabConfig(label: loc.projectsTab, icon: Icons.domain_outlined, activeIcon: Icons.domain, branchIndex: 1),
+            _TabConfig(label: loc.activityTab, icon: Icons.show_chart, activeIcon: Icons.show_chart, branchIndex: 2),
+            _TabConfig(label: loc.reports, icon: Icons.insert_chart_outlined, activeIcon: Icons.insert_chart, branchIndex: 3),
+            _TabConfig(label: loc.kycVerification, icon: Icons.person_outline, activeIcon: Icons.person, branchIndex: 4),
+          ]
+        : [
+            _TabConfig(label: loc.home, icon: Icons.home_outlined, activeIcon: Icons.home, branchIndex: 0),
+            _TabConfig(label: loc.activityTab, icon: Icons.show_chart, activeIcon: Icons.show_chart, branchIndex: 2),
+            _TabConfig(label: loc.reports, icon: Icons.insert_chart_outlined, activeIcon: Icons.insert_chart, branchIndex: 3),
+            _TabConfig(label: loc.kycVerification, icon: Icons.person_outline, activeIcon: Icons.person, branchIndex: 4),
+          ];
 
     return PopScope(
       canPop: false,

@@ -174,14 +174,15 @@ class OrganizationDashboard extends ConsumerWidget {
                     ),
                     child: Column(
                       children: [
+                        // Row 1: Core Projects & Permits
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildQuickServiceItem(
                               icon: Icons.create_new_folder_outlined,
-                              title: 'Register\nProject',
-                              onTap: () => context.push('/organization/projects/create'),
+                              title: 'Projects &\nPackages',
+                              onTap: () => context.go('/organization/projects'),
                             ),
                             _buildQuickServiceItem(
                               icon: Icons.description_outlined,
@@ -190,12 +191,13 @@ class OrganizationDashboard extends ConsumerWidget {
                             ),
                             _buildQuickServiceItem(
                               icon: Icons.person_add_alt_1_outlined,
-                              title: 'Register\nSupervisor',
+                              title: 'Manage\nSupervisors',
                               onTap: () => context.push('/organization/supervisors'),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
+                        // Row 2: Operations & Transit
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,19 +205,64 @@ class OrganizationDashboard extends ConsumerWidget {
                             _buildQuickServiceItem(
                               icon: Icons.local_shipping_outlined,
                               title: 'Track\nVehicle',
-                              onTap: () => context.push('/deliveries/del-001/live-tracking'),
+                              onTap: () => context.push('/deliveries/in-transit'),
                             ),
                             _buildQuickServiceItem(
                               icon: Icons.qr_code_2,
-                              title: 'Scan QR to\nReceive',
-                              onTap: () => context.push('/receiving'),
+                              title: 'Receive\nMaterial',
+                              onTap: () => context.push('/receive'),
                             ),
                             _buildQuickServiceItem(
-                              icon: Icons.schedule_outlined,
-                              title: 'Demand\nNotes',
-                              onTap: () => context.push('/excavation'),
+                              icon: Icons.chat_bubble_outline,
+                              title: 'Mineral\nEnquiries',
+                              onTap: () => context.push('/enquiries'),
                             ),
-                            const SizedBox(width: 70), // Spacer for balanced 4th column
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // Row 3: Minerals & Procurement
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildQuickServiceItem(
+                              icon: Icons.travel_explore_outlined,
+                              title: 'Stock Points\n& Depots',
+                              onTap: () => context.push('/minerals/stock-points'),
+                            ),
+                            _buildQuickServiceItem(
+                              icon: Icons.category_outlined,
+                              title: 'Mineral\nCatalog',
+                              onTap: () => context.push('/minerals'),
+                            ),
+                            _buildQuickServiceItem(
+                              icon: Icons.receipt_long_outlined,
+                              title: 'Purchase\nOrders',
+                              onTap: () => context.push('/orders'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // Row 4: Site Inventory & Transfers
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildQuickServiceItem(
+                              icon: Icons.inventory_2_outlined,
+                              title: 'Site\nInventory',
+                              onTap: () => context.push('/inventory'),
+                            ),
+                            _buildQuickServiceItem(
+                              icon: Icons.swap_horiz_outlined,
+                              title: 'Material\nTransfers',
+                              onTap: () => context.push('/transfers'),
+                            ),
+                            _buildQuickServiceItem(
+                              icon: Icons.domain_add_outlined,
+                              title: 'Register\nProject Site',
+                              onTap: () => context.push('/consumer/projects/register'),
+                            ),
                           ],
                         ),
                       ],

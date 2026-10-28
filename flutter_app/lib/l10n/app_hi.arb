@@ -507,5 +507,18 @@
   "galleryPermissionDeniedTwice": "गैलरी एक्सेस अस्वीकार कर दिया गया है। दस्तावेज़ चुनने के लिए कृपया ऐप सेटिंग्स में अनुमति सक्षम करें।",
   "filePermissionDeniedTwice": "स्टोरेज एक्सेस अस्वीकार कर दिया गया है। दस्तावेज़ चुनने के लिए कृपया ऐप सेटिंग्स में अनुमति सक्षम करें।",
   "allow": "अनुमति दें",
-  "dontAllow": "अनुमति न दें"
+  "dontAllow": "अनुमति न दें",
+  "citizenServices": "नागरिक सेवाएं",
+  "registerProject": "प्रोजेक्ट पंजीकरण",
+  "findMineralPlaces": "खनिज स्थल खोजें",
+  "organizationServices": "संगठन सेवाएं",
+  "unauthorizedAccess": "यह अनुभाग केवल संगठन खातों के लिए प्रतिबंधित है।",
+  "projectsTab": "प्रोजेक्ट्स",
+  "temporaryExcavation": "अस्थायी उत्खनन",
+  "mineralEnquiries": "खनिज पूछताछ",
+  "mineralsCatalog": "खनिज सूची",
+  "siteInventory": "साइट इन्वेंटरी",
+  "materialTransfers": "सामग्री हस्तांतरण",
+  "purchaseOrders": "खरीद आदेश",
+  "supervisors": "पर्यवेक्षक"
 }

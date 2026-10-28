@@ -53,11 +53,6 @@ class SessionNotifier extends StateNotifier<SessionState> {
     }
   }
 
-  Future<void> switchPersona(User user) async {
-    state = state.copyWith(currentUser: user);
-    await _authRepository.saveSession(user);
-  }
-
   Future<VerifyCodeApiResponse> loginWithVerificationCode(String mobile, String code) async {
     state = state.copyWith(isLoading: true);
     try {
@@ -92,7 +87,7 @@ class SessionNotifier extends StateNotifier<SessionState> {
 
     state = state.copyWith(isLoading: true);
     try {
-      final response = await _authRepository.logoutUser(userId);
+      await _authRepository.logoutUser(userId);
       // Always clear local session even if API fails
       await _authRepository.clearSession();
       state = const SessionState(currentUser: null, isLoading: false);

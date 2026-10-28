@@ -8,12 +8,19 @@ import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_badge.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../providers/operating_context_provider.dart';
+import '../../providers/session_provider.dart';
+import '../shell/unauthorized_screen.dart';
 
 class ProjectsScreen extends ConsumerWidget {
   const ProjectsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(sessionProvider).currentUser;
+    if (user != null && !user.isOrganization) {
+      return const UnauthorizedScreen();
+    }
+
     final opState = ref.watch(operatingContextProvider);
     final projects = opState.projects;
 

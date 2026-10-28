@@ -12,6 +12,7 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/digitp_modal.dart';
 import '../../l10n/app_localizations.dart';
+import '../../providers/session_provider.dart';
 
 enum ActivityChip { all, notReceived, live, delivered, enquiries }
 
@@ -60,6 +61,8 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final user = ref.watch(sessionProvider).currentUser;
+    final isOrg = user?.isOrganization == true;
     final enquiries = ref.watch(enquiriesProvider);
     final allAsync = ref.watch(consumerDigiTpListProvider(0));
     final notReceivedAsync = ref.watch(consumerDigiTpListProvider(1));
@@ -137,6 +140,16 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
                       count: deliveredCount,
                       isLoading: deliveredAsync.isLoading,
                     ),
+                    if (isOrg) ...[
+                      const SizedBox(width: 8),
+                      _buildChip(
+                        chip: ActivityChip.enquiries,
+                        icon: Icons.chat_bubble_outline,
+                        label: loc.enquiries,
+                        count: enquiries.length,
+                        isLoading: false,
+                      ),
+                    ],
                   ],
                 ),
               ),

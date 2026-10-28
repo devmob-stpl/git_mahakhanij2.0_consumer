@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/config/app_config.dart';
 import '../../domain/delivery.dart';
 import '../../domain/enquiry.dart';
 import '../../domain/mineral.dart';
@@ -15,7 +14,8 @@ import '../../features/auth/welcome_screen.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/auth/register_screen.dart';
 import '../../features/auth/otp_screen.dart';
-import '../../features/auth/persona_switch_screen.dart';
+import '../../core/config/globals.dart';
+import '../../data/repositories/auth_repository.dart';
 
 import '../../features/shell/main_shell_screen.dart';
 import '../../features/home/home_screen.dart';
@@ -63,6 +63,7 @@ import '../../features/minerals/stock_point_details_screen.dart';
 import '../../features/reports/consumer_reports_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/profile/profile_screen.dart';
+import '../../features/shell/unauthorized_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final GlobalKey<NavigatorState> _shellNavigatorHomeKey = GlobalKey<NavigatorState>(debugLabel: 'shellHome');
@@ -71,11 +72,45 @@ final GlobalKey<NavigatorState> _shellNavigatorActivityKey = GlobalKey<Navigator
 final GlobalKey<NavigatorState> _shellNavigatorReportsKey = GlobalKey<NavigatorState>(debugLabel: 'shellReports');
 final GlobalKey<NavigatorState> _shellNavigatorMoreKey = GlobalKey<NavigatorState>(debugLabel: 'shellMore');
 
-LocalKey _pageKey(GoRouterState state) => ValueKey('${state.pageKey.value}_${identityHashCode(state)}');
+LocalKey _pageKey(GoRouterState state) => state.pageKey;
 
 final appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/',
+  redirect: (BuildContext context, GoRouterState state) {
+    final path = state.uri.path;
+
+    // Organization-restricted routes: blocked for Normal Consumers
+    // Exclude /organization/projects because it is a StatefulShellRoute branch,
+    // which is guarded directly in ProjectsScreen and hidden from the bottom bar
+    final isOrgOnlyRoute = ((path.startsWith('/organization') && path != '/organization/projects') ||
+        path.startsWith('/excavation') ||
+        path.startsWith('/temporary-excavation') ||
+        path.startsWith('/supervisors') ||
+        path.startsWith('/inventory') ||
+        path.startsWith('/transfers') ||
+        path.startsWith('/orders') ||
+        path.startsWith('/enquiries') ||
+        path == '/minerals');
+
+    if (isOrgOnlyRoute) {
+      final user = AuthRepositoryImpl.cachedUser;
+      if (user == null || user.isConsumer) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          scaffoldMessengerKey.currentState?.showSnackBar(
+            const SnackBar(
+              content: Text('Access restricted to Organization accounts.'),
+              backgroundColor: Color(0xFFDC2626),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        });
+        return '/unauthorized';
+      }
+    }
+
+    return null;
+  },
   routes: [
     // Entry Point: Splash Screen
     GoRoute(
@@ -144,14 +179,6 @@ final appRouter = GoRouter(
           ),
         );
       },
-    ),
-    GoRoute(
-      path: '/persona-switch',
-      name: 'persona-switch',
-      pageBuilder: (context, state) => MaterialPage(
-        key: _pageKey(state),
-        child: const PersonaSwitchScreen(),
-      ),
     ),
 
     // Bottom Navigation Shell (5 persistent branches mapped role-wise)
@@ -586,15 +613,23 @@ final appRouter = GoRouter(
         child: const SettingsScreen(),
       ),
     ),
+    GoRoute(
+      path: '/unauthorized',
+      name: 'unauthorized',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => MaterialPage(
+        key: _pageKey(state),
+        child: const UnauthorizedScreen(),
+      ),
+    ),
 
-    // Compatibility Route Aliases matching React Prototype URLs
-    GoRoute(path: '/projects', redirect: (_, __) => AppConfig.enableOrganizationFlow ? '/organization/projects' : '/consumer/projects'),
-    GoRoute(path: '/projects/new', redirect: (_, __) => AppConfig.enableOrganizationFlow ? '/organization/projects/create' : '/consumer/projects/register'),
+    // Compatibility Route Aliases
+    GoRoute(path: '/projects', redirect: (_, __) => (AuthRepositoryImpl.cachedUser?.isOrganization == true) ? '/organization/projects' : '/consumer/projects'),
+    GoRoute(path: '/projects/new', redirect: (_, __) => (AuthRepositoryImpl.cachedUser?.isOrganization == true) ? '/organization/projects/create' : '/consumer/projects/register'),
     GoRoute(path: '/temporary-excavation', redirect: (_, __) => '/excavation'),
     GoRoute(path: '/temporary-excavation/new', redirect: (_, __) => '/excavation/new'),
     GoRoute(path: '/stock-points', redirect: (_, __) => '/minerals/stock-points'),
     GoRoute(path: '/verify', redirect: (_, __) => '/otp'),
-    GoRoute(path: '/supervisors', redirect: (_, __) => AppConfig.enableOrganizationFlow ? '/organization/supervisors' : '/home'),
-    GoRoute(path: '/prototype/persona', redirect: (_, __) => '/persona-switch'),
+    GoRoute(path: '/supervisors', redirect: (_, __) => (AuthRepositoryImpl.cachedUser?.isOrganization == true) ? '/organization/supervisors' : '/home'),
   ],
 );

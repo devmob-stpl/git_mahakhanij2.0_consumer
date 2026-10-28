@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/config/app_config.dart';
-import '../../domain/user.dart';
+
 import '../../providers/session_provider.dart';
 import 'widgets/organization_dashboard.dart';
 import 'widgets/consumer_dashboard.dart';
@@ -15,16 +14,18 @@ class HomeScreen extends ConsumerWidget {
     final sessionState = ref.watch(sessionProvider);
     final user = sessionState.currentUser;
 
-    if (!AppConfig.enableOrganizationFlow || user == null) {
+    if (user == null || user.isConsumer) {
       return const ConsumerDashboard();
     }
 
-    switch (user.userType) {
-      case UserType.organization:
-      case UserType.normalConsumer:
-        return const ConsumerDashboard();
-      case UserType.supervisor:
-        return const SupervisorDashboard();
+    if (user.isOrganization) {
+      return const OrganizationDashboard();
     }
+
+    if (user.isSupervisor) {
+      return const SupervisorDashboard();
+    }
+
+    return const ConsumerDashboard();
   }
 }

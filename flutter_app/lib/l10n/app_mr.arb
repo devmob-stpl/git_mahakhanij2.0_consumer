@@ -507,5 +507,18 @@
   "galleryPermissionDeniedTwice": "गॅलरी ॲक्सेस नाकारला गेला आहे. कागदपत्रे निवडण्यासाठी कृपया ॲपच्या सेटिंग्जमध्ये परवानगी सक्षम करा.",
   "filePermissionDeniedTwice": "स्टोरेज ॲक्सेस नाकारला गेला आहे. कागदपत्रे निवडण्यासाठी कृपया ॲपच्या सेटिंग्जमध्ये परवानगी सक्षम करा.",
   "allow": "परवानगी द्या",
-  "dontAllow": "परवानगी नाकारा"
+  "dontAllow": "परवानगी नाकारा",
+  "citizenServices": "नागरीक सेवा",
+  "registerProject": "प्रकल्प नोंदणी",
+  "findMineralPlaces": "खनिज ठिकाणे शोधा",
+  "organizationServices": "संस्था सेवा",
+  "unauthorizedAccess": "हा विभाग केवळ संस्था खात्यांसाठी मर्यादित आहे.",
+  "projectsTab": "प्रकल्प",
+  "temporaryExcavation": "तात्पुरते उत्खनन",
+  "mineralEnquiries": "खनिज चौकशी",
+  "mineralsCatalog": "खनिज सूची",
+  "siteInventory": "साइट इन्व्हेंटरी",
+  "materialTransfers": "साठा हस्तांतरण",
+  "purchaseOrders": "खरेदी आदेश",
+  "supervisors": "पर्यवेक्षक"
 }

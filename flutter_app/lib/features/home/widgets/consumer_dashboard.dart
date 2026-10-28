@@ -309,6 +309,54 @@ class _ConsumerDashboardState extends ConsumerState<ConsumerDashboard> with Widg
                       ],
                     ),
                   ),
+                  const SizedBox(height: 20),
+
+                  // Citizen Services Header (Normal Consumer Allowed Services)
+                  Text(
+                    l10n.citizenServices,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                      color: Color(0xFF737373),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Citizen Services Box
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x05000000),
+                          blurRadius: 4,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildQuickServiceItem(
+                          icon: Icons.domain_add_outlined,
+                          title: l10n.registerProject,
+                          width: 100,
+                          onTap: () => context.push('/consumer/projects'),
+                        ),
+                        _buildQuickServiceItem(
+                          icon: Icons.travel_explore_outlined,
+                          title: l10n.findMineralPlaces,
+                          width: 110,
+                          onTap: () => context.push('/minerals/stock-points'),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 24),
 
                   // 3. Recent DigiTP Deliveries Header
@@ -446,12 +494,13 @@ class _ConsumerDashboardState extends ConsumerState<ConsumerDashboard> with Widg
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    double width = 76,
   }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
-        width: 76,
+        width: width,
         child: Column(
           children: [
             Container(

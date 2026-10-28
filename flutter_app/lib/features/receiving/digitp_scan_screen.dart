@@ -112,9 +112,13 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.ink),
+          onPressed: () => context.pop(),
+        ),
         title: Text(loc.scanDigiTp),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
       ),
       backgroundColor: Colors.black,
       body: Stack(
@@ -238,5 +242,6 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
         ],
       ),
     );
+
   }
 }

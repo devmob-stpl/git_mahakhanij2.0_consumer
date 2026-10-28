@@ -570,5 +570,18 @@
   "galleryPermissionDeniedTwice": "Gallery access has been denied. To select documents, please enable permission in the app's Settings.",
   "filePermissionDeniedTwice": "Storage access has been denied. To select documents, please enable permission in the app's Settings.",
   "allow": "Allow",
-  "dontAllow": "Don't Allow"
+  "dontAllow": "Don't Allow",
+  "citizenServices": "Citizen Services",
+  "registerProject": "Register Project",
+  "findMineralPlaces": "Find Mineral Places",
+  "organizationServices": "Organization Services",
+  "unauthorizedAccess": "Access restricted to Organization accounts.",
+  "projectsTab": "Projects",
+  "temporaryExcavation": "Temporary Excavation",
+  "mineralEnquiries": "Mineral Enquiries",
+  "mineralsCatalog": "Mineral Catalog",
+  "siteInventory": "Site Inventory",
+  "materialTransfers": "Transfers",
+  "purchaseOrders": "Orders",
+  "supervisors": "Supervisors"
 }

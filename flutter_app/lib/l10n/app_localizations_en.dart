@@ -1604,4 +1604,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dontAllow => 'Don\'t Allow';
+
+  @override
+  String get citizenServices => 'Citizen Services';
+
+  @override
+  String get registerProject => 'Register Project';
+
+  @override
+  String get findMineralPlaces => 'Find Mineral Places';
+
+  @override
+  String get organizationServices => 'Organization Services';
+
+  @override
+  String get unauthorizedAccess =>
+      'Access restricted to Organization accounts.';
+
+  @override
+  String get projectsTab => 'Projects';
+
+  @override
+  String get temporaryExcavation => 'Temporary Excavation';
+
+  @override
+  String get mineralEnquiries => 'Mineral Enquiries';
+
+  @override
+  String get mineralsCatalog => 'Mineral Catalog';
+
+  @override
+  String get siteInventory => 'Site Inventory';
+
+  @override
+  String get materialTransfers => 'Transfers';
+
+  @override
+  String get purchaseOrders => 'Orders';
+
+  @override
+  String get supervisors => 'Supervisors';
 }

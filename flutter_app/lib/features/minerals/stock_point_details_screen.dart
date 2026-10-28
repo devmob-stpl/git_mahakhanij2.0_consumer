@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../domain/mineral.dart';
+import '../../providers/session_provider.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_badge.dart';
@@ -23,29 +24,38 @@ class StockPointDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(sessionProvider).currentUser;
+    final isOrg = user?.isOrganization == true;
+
     return AppScaffold(
       title: stockPoint.name,
       showBackButton: true,
-      bottomActionButton: Row(
-        children: [
-          Expanded(
-            child: AppButton(
-              label: 'Raise Mineral Enquiry',
-              onPressed: () => context.push('/enquiries/create'),
+      bottomActionButton: isOrg
+          ? Row(
+              children: [
+                Expanded(
+                  child: AppButton(
+                    label: 'Raise Mineral Enquiry',
+                    onPressed: () => context.push('/enquiries/create'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(48, 48),
+                    side: const BorderSide(color: AppColors.primary700),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: () => _callOperator(stockPoint.contactPhone),
+                  child: const Icon(Icons.phone, color: AppColors.primary700, size: 20),
+                ),
+              ],
+            )
+          : AppButton(
+              label: 'Call Quarry Operator',
+              icon: const Icon(Icons.phone, size: 18),
+              onPressed: () => _callOperator(stockPoint.contactPhone),
             ),
-          ),
-          const SizedBox(width: 12),
-          OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(48, 48),
-              side: const BorderSide(color: AppColors.primary700),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () => _callOperator(stockPoint.contactPhone),
-            child: const Icon(Icons.phone, color: AppColors.primary700, size: 20),
-          ),
-        ],
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -98,23 +108,35 @@ class StockPointDetailsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.access_time, size: 14, color: AppColors.inkMuted),
+                      const Padding(
+                        padding: EdgeInsets.only(top: 2),
+                        child: Icon(Icons.access_time, size: 14, color: AppColors.inkMuted),
+                      ),
                       const SizedBox(width: 6),
-                      Text(
-                        'Operating Hours: ${stockPoint.operatingHours}',
-                        style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary),
+                      Expanded(
+                        child: Text(
+                          'Operating Hours: ${stockPoint.operatingHours}',
+                          style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary),
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.phone_outlined, size: 14, color: AppColors.inkMuted),
+                      const Padding(
+                        padding: EdgeInsets.only(top: 2),
+                        child: Icon(Icons.phone_outlined, size: 14, color: AppColors.inkMuted),
+                      ),
                       const SizedBox(width: 6),
-                      Text(
-                        '${stockPoint.operatorName} · ${stockPoint.contactPhone}',
-                        style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary),
+                      Expanded(
+                        child: Text(
+                          '${stockPoint.operatorName} · ${stockPoint.contactPhone}',
+                          style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary),
+                        ),
                       ),
                     ],
                   ),

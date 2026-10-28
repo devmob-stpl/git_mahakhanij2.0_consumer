@@ -8,6 +8,7 @@ import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_badge.dart';
 import '../../shared/widgets/app_button.dart';
 import 'mineral_catalog_screen.dart';
+import '../../providers/session_provider.dart';
 
 class StockPointMapScreen extends ConsumerStatefulWidget {
   const StockPointMapScreen({super.key});
@@ -197,18 +198,20 @@ class _StockPointMapScreenState extends ConsumerState<StockPointMapScreen> {
                                         child: const Text('View Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColors.primary700,
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    if (ref.watch(sessionProvider).currentUser?.isOrganization == true) ...[
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppColors.primary700,
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                          ),
+                                          onPressed: () => context.push('/enquiries/create'),
+                                          child: const Text('Send enquiry', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                                         ),
-                                        onPressed: () => context.push('/enquiries/create'),
-                                        child: const Text('Send enquiry', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                                       ),
-                                    ),
+                                    ],
                                   ],
                                 ),
                               ],

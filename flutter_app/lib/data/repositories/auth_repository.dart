@@ -22,7 +22,6 @@ abstract class AuthRepository {
   Future<bool> sendOtp(String mobileNumber);
   Future<User?> verifyOtp(String mobileNumber, String otp);
   Future<User?> getCurrentUser();
-  Future<List<User>> getAllUsersForPersonaSwitch();
   Future<void> saveSession(User user, [String? token]);
   Future<void> clearSession();
   Future<LogoutApiResponse> logoutUser(String userId);
@@ -53,7 +52,10 @@ class AuthRepositoryImpl implements AuthRepository {
     ),
   );
 
-  User? _currentUser;
+  static User? cachedUser;
+
+  User? get _currentUser => cachedUser;
+  set _currentUser(User? user) => cachedUser = user;
 
   static const String _userStorageKey = 'auth_user';
   static const String _tokenStorageKey = 'auth_token';
@@ -470,11 +472,6 @@ class AuthRepositoryImpl implements AuthRepository {
     }
 
     return null;
-  }
-
-  @override
-  Future<List<User>> getAllUsersForPersonaSwitch() async {
-    return _db.users;
   }
 
   @override

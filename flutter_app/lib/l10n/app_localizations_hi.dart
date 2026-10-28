@@ -1609,4 +1609,44 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get dontAllow => 'अनुमति न दें';
+
+  @override
+  String get citizenServices => 'नागरिक सेवाएं';
+
+  @override
+  String get registerProject => 'प्रोजेक्ट पंजीकरण';
+
+  @override
+  String get findMineralPlaces => 'खनिज स्थल खोजें';
+
+  @override
+  String get organizationServices => 'संगठन सेवाएं';
+
+  @override
+  String get unauthorizedAccess =>
+      'यह अनुभाग केवल संगठन खातों के लिए प्रतिबंधित है।';
+
+  @override
+  String get projectsTab => 'प्रोजेक्ट्स';
+
+  @override
+  String get temporaryExcavation => 'अस्थायी उत्खनन';
+
+  @override
+  String get mineralEnquiries => 'खनिज पूछताछ';
+
+  @override
+  String get mineralsCatalog => 'खनिज सूची';
+
+  @override
+  String get siteInventory => 'साइट इन्वेंटरी';
+
+  @override
+  String get materialTransfers => 'सामग्री हस्तांतरण';
+
+  @override
+  String get purchaseOrders => 'खरीद आदेश';
+
+  @override
+  String get supervisors => 'पर्यवेक्षक';
 }

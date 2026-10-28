@@ -121,7 +121,6 @@ class ApiEndpoints {
   static String getLogoutUserUrl({required dynamic userId, int appId = 1}) =>
       '$logoutUser?UserId=$userId&AppId=$appId';
 
-
   static String get sendOtp => '$baseUrl/auth/otp/send';
 
   static String get verifyOtp => '$baseUrl/auth/otp/verify';
