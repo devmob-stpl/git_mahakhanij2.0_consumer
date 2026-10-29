@@ -121,6 +121,10 @@ class ApiEndpoints {
   static String getLogoutUserUrl({required dynamic userId, int appId = 1}) =>
       '$logoutUser?UserId=$userId&AppId=$appId';
 
+  static String get getUserAppDetails => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/get-user-app-details';
+  static String getUserAppDetailsUrl({required dynamic userId, int appId = 1}) =>
+      '$getUserAppDetails?userId=$userId&AppId=$appId';
+
 
   static String get sendOtp => '$baseUrl/auth/otp/send';
 

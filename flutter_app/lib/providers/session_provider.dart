@@ -53,6 +53,23 @@ class SessionNotifier extends StateNotifier<SessionState> {
     }
   }
 
+  Future<bool> validateSession() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final isValid = await _authRepository.validateUserSession();
+      if (!isValid) {
+        state = const SessionState(currentUser: null, isLoading: false);
+        return false;
+      }
+      final user = await _authRepository.getCurrentUser();
+      state = SessionState(currentUser: user, isLoading: false);
+      return true;
+    } catch (e) {
+      state = SessionState(currentUser: null, isLoading: false, error: e.toString());
+      return false;
+    }
+  }
+
   Future<void> switchPersona(User user) async {
     state = state.copyWith(currentUser: user);
     await _authRepository.saveSession(user);

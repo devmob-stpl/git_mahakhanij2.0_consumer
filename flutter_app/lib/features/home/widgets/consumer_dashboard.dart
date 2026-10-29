@@ -54,7 +54,7 @@ class _ConsumerDashboardState extends ConsumerState<ConsumerDashboard> with Widg
     final appId = user.appId ?? 0;
 
     try {
-      final url = '${ApiEndpoints.mineralProjectBaseUrl}/mineral-project/sand-policy-Login/get-user-app-details?userId=${user.id}&AppId=$appId';
+      final url = ApiEndpoints.getUserAppDetailsUrl(userId: user.id, appId: appId);
       final dio = DioClient().dio;
       final response = await dio.get(url);
       if (response.statusCode == 200) {

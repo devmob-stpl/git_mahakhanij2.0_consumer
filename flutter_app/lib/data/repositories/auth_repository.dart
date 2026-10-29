@@ -22,6 +22,8 @@ abstract class AuthRepository {
   Future<bool> sendOtp(String mobileNumber);
   Future<User?> verifyOtp(String mobileNumber, String otp);
   Future<User?> getCurrentUser();
+  Future<String?> getAuthToken();
+  Future<bool> validateUserSession();
   Future<List<User>> getAllUsersForPersonaSwitch();
   Future<void> saveSession(User user, [String? token]);
   Future<void> clearSession();
@@ -44,19 +46,45 @@ abstract class AuthRepository {
 
 
 class AuthRepositoryImpl implements AuthRepository {
-  final MockDb _db = MockDb();
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
-  final Dio _dio = Dio(
-    BaseOptions(
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 15),
-    ),
-  );
+  static User? cachedUser;
+
+  final MockDb _db;
+  final FlutterSecureStorage _secureStorage;
+  final Dio _dio;
+
+  AuthRepositoryImpl({
+    MockDb? db,
+    FlutterSecureStorage? secureStorage,
+    Dio? dio,
+  })  : _db = db ?? MockDb(),
+        _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+        _dio = dio ??
+            Dio(
+              BaseOptions(
+                connectTimeout: const Duration(seconds: 15),
+                receiveTimeout: const Duration(seconds: 15),
+              ),
+            );
 
   User? _currentUser;
 
   static const String _userStorageKey = 'auth_user';
   static const String _tokenStorageKey = 'auth_token';
+  static const String _hasRunBeforeKey = 'has_run_before';
+
+  /// Ensures that on a fresh install or reinstall on iOS, any stale Keychain data
+  /// persisting from a previously uninstalled installation is purged.
+  Future<void> _ensureFreshInstallSanitized() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final hasRunBefore = prefs.getBool(_hasRunBeforeKey) ?? false;
+      if (!hasRunBefore) {
+        await _secureStorage.deleteAll();
+        await prefs.setBool(_hasRunBeforeKey, true);
+        _currentUser = null;
+      }
+    } catch (_) {}
+  }
 
   @override
   Future<void> saveSession(User user, [String? token]) async {
@@ -69,6 +97,7 @@ class AuthRepositoryImpl implements AuthRepository {
       if (token != null && token.isNotEmpty) {
         await prefs.setString(_tokenStorageKey, token);
       }
+      await prefs.setBool(_hasRunBeforeKey, true);
     } catch (_) {}
 
     try {
@@ -446,6 +475,13 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<User?> getCurrentUser() async {
+    if (cachedUser != null) {
+      _currentUser = cachedUser;
+      return _currentUser;
+    }
+
+    await _ensureFreshInstallSanitized();
+
     if (_currentUser != null) return _currentUser;
 
     String? userJsonStr;
@@ -458,6 +494,10 @@ class AuthRepositoryImpl implements AuthRepository {
     if (userJsonStr == null || userJsonStr.isEmpty) {
       try {
         userJsonStr = await _secureStorage.read(key: _userStorageKey);
+        if (userJsonStr != null && userJsonStr.isNotEmpty) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_userStorageKey, userJsonStr);
+        }
       } catch (_) {}
     }
 
@@ -470,6 +510,102 @@ class AuthRepositoryImpl implements AuthRepository {
     }
 
     return null;
+  }
+
+  @override
+  Future<String?> getAuthToken() async {
+    await _ensureFreshInstallSanitized();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(_tokenStorageKey);
+      if (token != null && token.isNotEmpty) return token;
+    } catch (_) {}
+
+    try {
+      final secureToken = await _secureStorage.read(key: _tokenStorageKey);
+      if (secureToken != null && secureToken.isNotEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_tokenStorageKey, secureToken);
+        return secureToken;
+      }
+    } catch (_) {}
+
+    return null;
+  }
+
+  @override
+  Future<bool> validateUserSession() async {
+    if (cachedUser != null) {
+      _currentUser = cachedUser;
+      return true;
+    }
+
+    // 1. Sanitize storage on fresh install / reinstall on iOS
+    await _ensureFreshInstallSanitized();
+
+    // 2. Retrieve local session
+    final user = await getCurrentUser();
+    final token = await getAuthToken();
+
+    if (user == null || token == null || token.trim().isEmpty) {
+      await clearSession();
+      return false;
+    }
+
+    if (user.id.isEmpty || user.id == '0') {
+      await clearSession();
+      return false;
+    }
+
+    // 3. Validate user status with backend
+    try {
+      final appId = user.appId ?? 1;
+      final url = ApiEndpoints.getUserAppDetailsUrl(userId: user.id, appId: appId);
+      final response = await _dio.get(
+        url,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = asResponseMap(response.data);
+        if (data != null) {
+          final statusCode = data['statusCode']?.toString();
+          if (statusCode == '401' || statusCode == '403') {
+            await clearSession();
+            return false;
+          }
+
+          final respData = data['responseData'];
+          if (respData is Map<String, dynamic>) {
+            final isBlock = respData['isBlock'] == true;
+            if (isBlock) {
+              await clearSession();
+              return false;
+            }
+          }
+        }
+        return true;
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        await clearSession();
+        return false;
+      }
+
+      return true;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
+        await clearSession();
+        return false;
+      }
+      // If network is offline / connection timeout, allow existing valid session to proceed
+      return true;
+    } catch (_) {
+      return true;
+    }
   }
 
   @override

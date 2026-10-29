@@ -357,8 +357,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           existStatusMsg.contains('timed out') ||
           existStatusMsg.contains('server error') ||
           existStatusMsg.contains('unexpected') ||
-          existStatusMsg.contains('network error') ||
-          existStatusMsg.contains('failed')) {
+          existStatusMsg.contains('network error')) {
         _safeSetModalState(() {
           _isProfileAadhaarChecking = false;
           _profileAadhaarError = loc.aadhaarServerError;
@@ -393,7 +392,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         final genStatusMsg = genRes.statusMessage.trim();
         final genCombined = '${genRawMsg.toLowerCase()} ${genStatusMsg.toLowerCase()}';
 
-        final isServerErrorOrTimeout = genStatusCode != '200' && genStatusCode != '200.0' ||
+        final isServerErrorOrTimeout =
             genStatusCode == '408' ||
             genStatusCode == '504' ||
             genStatusCode == '500' ||
@@ -408,10 +407,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             genCombined.contains('internal') ||
             genCombined.contains('gateway') ||
             genCombined.contains('service unavailable') ||
-            genCombined.contains('verification_failed') ||
-            genCombined.contains('verification failed') ||
-            genCombined.contains('unexpected') ||
-            genCombined.contains('failed');
+            genCombined.contains('unexpected');
 
         if (genRes.isSuccess && genRes.clientId != null) {
           _isProfileAadhaarOtpSent = true;
@@ -424,7 +420,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _profileAadhaarError = loc.aadhaarAlreadyRegistered;
         } else if (isServerErrorOrTimeout) {
           _profileAadhaarError = loc.aadhaarServerError;
-        } else if (genRawMsg.toLowerCase().contains('invalid')) {
+        } else if (genRawMsg.toLowerCase().contains('verification_failed')) {
           _profileAadhaarError = loc.invalidAadhaarNumber;
         } else {
           _profileAadhaarError = loc.aadhaarServerError;
@@ -501,7 +497,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         final statusMsg = res.statusMessage.trim();
         final combined = '${rawMsg.toLowerCase()} ${statusMsg.toLowerCase()}';
 
-        final isServerErrorOrTimeout = statusCode != '200' && statusCode != '200.0' ||
+        final isServerErrorOrTimeout =
             statusCode == '408' ||
             statusCode == '504' ||
             statusCode == '500' ||
@@ -516,10 +512,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             combined.contains('internal') ||
             combined.contains('gateway') ||
             combined.contains('service unavailable') ||
-            combined.contains('verification_failed') ||
-            combined.contains('verification failed') ||
-            combined.contains('unexpected') ||
-            combined.contains('failed');
+            combined.contains('unexpected');
 
         final isExplicitInvalidOtp = !isServerErrorOrTimeout &&
             (combined.contains('invalid otp') ||

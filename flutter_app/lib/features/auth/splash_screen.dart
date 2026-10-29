@@ -26,16 +26,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
     if (!mounted) return;
 
-    // Check whether a valid local login session exists
-    final user = await ref.read(authRepositoryProvider).getCurrentUser();
+    // Validate the user's login status on every app launch
+    final isAuthenticated = await ref.read(sessionProvider.notifier).validateSession();
 
     if (!mounted) return;
 
-    if (user != null) {
+    if (isAuthenticated) {
       // Valid session exists -> navigate directly to Dashboard
       context.go('/home');
     } else {
-      // No session -> Check if it's the first time launch
+      // No authenticated session -> Check if it's the first time launch
       final prefs = await SharedPreferences.getInstance();
       final hasSelectedLanguage = prefs.getBool('has_selected_language') ?? false;
       
