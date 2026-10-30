@@ -5,8 +5,6 @@ import '../../core/constants/app_colors.dart';
 import '../../domain/mineral.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/app_card.dart';
-import '../../shared/widgets/app_badge.dart';
-import '../../shared/widgets/app_button.dart';
 import 'mineral_catalog_screen.dart';
 import '../../providers/session_provider.dart';
 
@@ -20,8 +18,6 @@ class StockPointMapScreen extends ConsumerStatefulWidget {
 class _StockPointMapScreenState extends ConsumerState<StockPointMapScreen> {
   final _searchController = TextEditingController();
   bool _isMapView = false;
-  String _selectedMineral = 'ALL';
-  String _maxDistance = '';
 
   @override
   void dispose() {

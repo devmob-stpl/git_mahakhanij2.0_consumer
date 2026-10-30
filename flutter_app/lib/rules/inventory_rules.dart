@@ -1,5 +1,4 @@
 import '../domain/inventory.dart';
-import '../domain/common.dart';
 
 class ConsumptionCheck {
   final bool isAllowed;

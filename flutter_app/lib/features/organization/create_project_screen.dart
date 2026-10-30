@@ -110,22 +110,6 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     super.dispose();
   }
 
-  void _handleQuickFill() {
-    setState(() {
-      _nameController.text = 'Maha-Metro Line 3 Interchange Site';
-      _projectType = 'GOVERNMENT';
-      _department = 'Maha-Metro / Railways';
-      _officeNameController.text = 'Pune Metro Rail Project Division (Shivajinagar)';
-      _workOrderNoController.text = 'MMRCL/PUN/LINE3/2024-884';
-      _line1Controller.text = 'Plot No. 12, Civil Court Metro Interchange, Shivajinagar';
-      _district = 'Pune';
-      _category = 'URBAN';
-      _taluka = 'Haveli';
-      _city = 'Pune City (PMC)';
-      _pincodeController.text = '411005';
-    });
-  }
-
   void _handleSubmit() async {
     if (_nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(

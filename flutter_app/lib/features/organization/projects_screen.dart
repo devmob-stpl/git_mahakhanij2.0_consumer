@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
-import '../../domain/project.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_badge.dart';
