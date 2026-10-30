@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/utils/api_error_localizer.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../providers/session_provider.dart';
 import '../../providers/locale_provider.dart';
@@ -47,9 +48,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response.statusMessage.isNotEmpty
-                ? response.statusMessage
-                : AppLocalizations.of(context)!.logoutFailedMsg),
+            content: Text(
+              response.statusMessage.isNotEmpty
+                  ? ApiErrorLocalizer.localize(context, response.statusMessage, defaultMessage: AppLocalizations.of(context)!.logoutFailedMsg)
+                  : AppLocalizations.of(context)!.logoutFailedMsg,
+            ),
             backgroundColor: AppColors.danger600,
             behavior: SnackBarBehavior.floating,
           ),
@@ -62,7 +65,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${AppLocalizations.of(context)!.logoutErrorMsg} ${e.toString()}'),
+          content: Text(
+            ApiErrorLocalizer.localize(
+              context,
+              e.toString(),
+              defaultMessage: AppLocalizations.of(context)!.logoutFailedMsg,
+            ),
+          ),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
         ),

@@ -7,6 +7,7 @@ import '../../domain/consumer_digitp_models.dart';
 import '../../providers/consumer_digitp_provider.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_scaffold.dart';
+import '../../core/utils/unit_localizer.dart';
 
 class InTransitVehicleListScreen extends ConsumerWidget {
   const InTransitVehicleListScreen({super.key});
@@ -41,7 +42,7 @@ class InTransitVehicleListScreen extends ConsumerWidget {
                 child: Row(
                   children: [
                     const Icon(Icons.near_me_outlined, size: 22, color: Color(0xFF7E22CE)),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,7 +193,7 @@ class InTransitVehicleListScreen extends ConsumerWidget {
   Widget _buildVehicleCard(BuildContext context, AppLocalizations l10n, ConsumerDigiTpItem item) {
     final vehicleNoStr = item.vehicleNo ?? l10n.vehicleNA;
     final digiTpNoStr = item.invoiceNo;
-    final qtyStr = '${item.quantity ?? 0} ${item.mineralUnit ?? 'Brass'}';
+    final qtyStr = '${item.quantity ?? 0} ${UnitLocalizer.localize(item.mineralUnit ?? 'Brass', l10n.localeName)}';
     final mineralStr = item.materialType ?? l10n.mineral;
     final destStr = item.destination ?? l10n.destinationNA;
     final distanceStr = item.distance != null ? '${item.distance} km' : l10n.gpsActive;

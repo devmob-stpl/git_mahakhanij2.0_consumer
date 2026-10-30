@@ -17,6 +17,7 @@ import '../../l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import '../../core/utils/pan_input_formatter.dart';
 import '../../core/utils/document_permission_helper.dart';
+import '../../core/utils/api_error_localizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -389,8 +390,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
         final genStatusCode = genRes.statusCode.trim();
         final genRawMsg = genRes.message?.trim() ?? '';
-        final genStatusMsg = genRes.statusMessage.trim();
-        final genCombined = '${genRawMsg.toLowerCase()} ${genStatusMsg.toLowerCase()}';
 
         final isServerErrorOrTimeout =
             genStatusCode == '408' ||
@@ -399,15 +398,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             genStatusCode == '502' ||
             genStatusCode == '503' ||
             genStatusCode == '0' ||
-            genRawMsg.isEmpty ||
-            genCombined.contains('aadhaar server error') ||
-            genCombined.contains('timeout') ||
-            genCombined.contains('timed out') ||
-            genCombined.contains('server error') ||
-            genCombined.contains('internal') ||
-            genCombined.contains('gateway') ||
-            genCombined.contains('service unavailable') ||
-            genCombined.contains('unexpected');
+            genRawMsg.isEmpty;
 
         if (genRes.isSuccess && genRes.clientId != null) {
           _isProfileAadhaarOtpSent = true;
@@ -416,14 +407,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
           // Start OTP countdown timer only after the API call succeeds!
           _startProfileAadhaarTimer(seconds: 60);
-        } else if (genCombined.contains('already exists') || genCombined.contains('already registered')) {
-          _profileAadhaarError = loc.aadhaarAlreadyRegistered;
-        } else if (isServerErrorOrTimeout) {
+        } else if (isServerErrorOrTimeout || genStatusCode == '429') {
           _profileAadhaarError = loc.aadhaarServerError;
-        } else if (genRawMsg.toLowerCase().contains('verification_failed')) {
+        } else if (genStatusCode == '422') {
           _profileAadhaarError = loc.invalidAadhaarNumber;
-        } else {
-          _profileAadhaarError = loc.aadhaarServerError;
         }
       });
     } catch (_) {
@@ -494,8 +481,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       } else {
         final statusCode = res.statusCode.trim();
         final rawMsg = res.message?.trim() ?? '';
-        final statusMsg = res.statusMessage.trim();
-        final combined = '${rawMsg.toLowerCase()} ${statusMsg.toLowerCase()}';
 
         final isServerErrorOrTimeout =
             statusCode == '408' ||
@@ -504,23 +489,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             statusCode == '502' ||
             statusCode == '503' ||
             statusCode == '0' ||
-            rawMsg.isEmpty ||
-            combined.contains('aadhaar server error') ||
-            combined.contains('timeout') ||
-            combined.contains('timed out') ||
-            combined.contains('server error') ||
-            combined.contains('internal') ||
-            combined.contains('gateway') ||
-            combined.contains('service unavailable') ||
-            combined.contains('unexpected');
+            rawMsg.isEmpty;
 
-        final isExplicitInvalidOtp = !isServerErrorOrTimeout &&
-            (combined.contains('invalid otp') ||
-             combined.contains('incorrect otp') ||
-             combined.contains('otp does not match') ||
-             combined.contains('wrong otp') ||
-             combined.contains('otp mismatch') ||
-             combined.contains('invalid_otp'));
+        final isExplicitInvalidOtp = !isServerErrorOrTimeout && (statusCode == '422');
 
         if (isExplicitInvalidOtp) {
           _profileAadhaarError = loc.invalidOtpServer;
@@ -639,6 +610,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final file = result.files.first;
       if (file.path == null) return;
 
+      final ext = file.name.contains('.') ? file.name.split('.').last.toLowerCase() : '';
+      if (!['pdf', 'jpg', 'jpeg', 'png'].contains(ext)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(loc.unsupportedFileFormat),
+            backgroundColor: AppColors.danger700,
+          ),
+        );
+        return;
+      }
+
       await _uploadProfileDocument(file.path!, file.name, file.bytes, setModalState);
     } catch (e) {
       if (DocumentPermissionHelper.isPermissionException(e)) {
@@ -718,9 +701,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (checkRes.exists) {
       setModalState(() {
         _isProfilePanVerifying = false;
-        _profilePanError = checkRes.statusMessage.isNotEmpty
-            ? checkRes.statusMessage
-            : loc.panAlreadyRegistered;
+        _profilePanError = ApiErrorLocalizer.localize(
+          context,
+          checkRes.statusMessage,
+          defaultMessage: loc.panAlreadyRegistered,
+        );
       });
       return;
     }
@@ -740,21 +725,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _profilePanError = null;
       } else {
         final rawMsg = verifyRes.statusMessage.trim();
-        final lower = rawMsg.toLowerCase();
-        final isGenericOk = lower.isEmpty || lower == 'ok.' || lower == 'ok' || lower == 'success' || lower == '200';
-
-        String displayMsg;
-        if (isGenericOk ||
-            lower.contains('invalid pan') ||
-            lower.contains('invalid') ||
-            lower.contains('not found') ||
-            lower.contains('record_not_found') ||
-            lower.contains('does not exist')) {
-          displayMsg = loc.invalidPanNumber;
-        } else {
-          displayMsg = rawMsg;
-        }
-        _profilePanError = displayMsg;
+        _profilePanError = ApiErrorLocalizer.localize(
+          context,
+          rawMsg,
+          defaultMessage: loc.invalidPanNumber,
+        );
       }
     });
   }
@@ -868,6 +843,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (result == null || result.files.isEmpty) return;
       final file = result.files.first;
       if (file.path == null) return;
+
+      final ext = file.name.contains('.') ? file.name.split('.').last.toLowerCase() : '';
+      if (!['pdf', 'jpg', 'jpeg', 'png'].contains(ext)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(loc.unsupportedFileFormat),
+            backgroundColor: AppColors.danger700,
+          ),
+        );
+        return;
+      }
 
       setModalState(() {
         _localProfilePanPath = file.path!;
@@ -983,9 +970,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       } else {
         if (!mounted) return false;
         setState(() => _isSaving = false);
+        final isUnsupported = uploadRes.statusCode == '413' ||
+            uploadRes.statusCode == '415' ||
+            uploadRes.statusMessage.toLowerCase().contains('unsupported file format') ||
+            uploadRes.statusMessage.toLowerCase().contains('valid pdf or image');
+        final errorMsg = isUnsupported
+            ? l10n.unsupportedFileFormat
+            : (uploadRes.statusMessage.isNotEmpty
+                ? ApiErrorLocalizer.localize(context, uploadRes.statusMessage, defaultMessage: l10n.docUploadFailed)
+                : l10n.docUploadFailed);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(uploadRes.statusMessage.isNotEmpty ? uploadRes.statusMessage : l10n.docUploadFailed),
+            content: Text(errorMsg),
             backgroundColor: AppColors.danger700,
           ),
         );
@@ -1005,9 +1001,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       } else {
         if (!mounted) return false;
         setState(() => _isSaving = false);
+        final isUnsupported = uploadRes.statusCode == '413' ||
+            uploadRes.statusCode == '415' ||
+            uploadRes.statusMessage.toLowerCase().contains('unsupported file format') ||
+            uploadRes.statusMessage.toLowerCase().contains('valid pdf or image');
+        final errorMsg = isUnsupported
+            ? l10n.unsupportedFileFormat
+            : (uploadRes.statusMessage.isNotEmpty
+                ? ApiErrorLocalizer.localize(context, uploadRes.statusMessage, defaultMessage: l10n.panDocUploadFailed)
+                : l10n.panDocUploadFailed);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(uploadRes.statusMessage.isNotEmpty ? uploadRes.statusMessage : l10n.panDocUploadFailed),
+            content: Text(errorMsg),
             backgroundColor: AppColors.danger700,
           ),
         );
@@ -1164,9 +1169,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response.statusMessage.isNotEmpty
-                ? response.statusMessage
-                : l10n.failedToUpdateProfile),
+            content: Text(ApiErrorLocalizer.localize(
+              context,
+              response.statusMessage,
+              defaultMessage: l10n.failedToUpdateProfile,
+            )),
             backgroundColor: Colors.red,
           ),
         );
@@ -1188,7 +1195,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${l10n.errorUpdatingProfile}${e.toString()}'),
+          content: Text(ApiErrorLocalizer.localize(
+            context,
+            e.toString(),
+            defaultMessage: l10n.failedToUpdateProfile,
+          )),
           backgroundColor: Colors.red,
         ),
       );
@@ -2669,10 +2680,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ],
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      loc.incomeTaxDeptEntityPan,
-                      style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary),
-                    ),
                   ],
                 ),
               ),

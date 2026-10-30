@@ -1,14 +1,14 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../core/config/globals.dart';
 import '../../domain/user.dart';
 import '../../domain/auth_api_models.dart';
 import '../../l10n/app_localizations.dart';
+import '../../core/utils/api_error_localizer.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../core/network/dio_client.dart';
+import '../../core/network/network_checker.dart';
 import '../../core/network/release_json.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../mock_db.dart';
@@ -59,12 +59,14 @@ class AuthRepositoryImpl implements AuthRepository {
   })  : _db = db ?? MockDb(),
         _secureStorage = secureStorage ?? const FlutterSecureStorage(),
         _dio = dio ??
-            Dio(
-              BaseOptions(
+            DioClient.createDio(
+              options: BaseOptions(
                 connectTimeout: const Duration(seconds: 15),
                 receiveTimeout: const Duration(seconds: 15),
               ),
             );
+
+  AppLocalizations get _l10n => ApiErrorLocalizer.currentLocalizations;
 
   User? _currentUser;
 
@@ -110,6 +112,13 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<LogoutApiResponse> logoutUser(String userId) async {
+    if (!await NetworkChecker.checkOrNotify()) {
+      return LogoutApiResponse(
+        statusCode: 'NoInternet',
+        statusMessage: _l10n.noInternetConnection,
+      );
+    }
+
     try {
       final appId = _currentUser?.appId ?? 1;
       final url = ApiEndpoints.getLogoutUserUrl(userId: userId, appId: appId);
@@ -122,12 +131,16 @@ class AuthRepositoryImpl implements AuthRepository {
         if (parsed.isSuccess) {
           await clearSession();
         }
-        return parsed;
+        return LogoutApiResponse(
+          statusCode: parsed.statusCode,
+          statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: parsed.statusMessage),
+          responseData: parsed.responseData,
+        );
       }
 
-      return const LogoutApiResponse(
+      return LogoutApiResponse(
         statusCode: '500',
-        statusMessage: 'Unexpected response from logout server.',
+        statusMessage: _l10n.invalidResponseFromServer,
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
@@ -137,17 +150,21 @@ class AuthRepositoryImpl implements AuthRepository {
           if (parsed.isSuccess) {
             await clearSession();
           }
-          return parsed;
+          return LogoutApiResponse(
+            statusCode: parsed.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.logoutFailedMsg),
+            responseData: parsed.responseData,
+          );
         }
       }
       return LogoutApiResponse(
         statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: 'Unable to complete logout. Please check network connection.',
+        statusMessage: _l10n.noInternetConnection,
       );
     } catch (e) {
       return LogoutApiResponse(
         statusCode: '500',
-        statusMessage: 'Logout failed: ${e.toString()}',
+        statusMessage: _l10n.logoutFailedMsg,
       );
     }
   }
@@ -170,58 +187,54 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<UserKeyApiResponse> sendVerificationCode(String mobileNumber) async {
+    if (!await NetworkChecker.checkOrNotify()) {
+      return UserKeyApiResponse(
+        statusCode: 'NoInternet',
+        statusMessage: _l10n.noInternetConnection,
+      );
+    }
+
     try {
       final url = ApiEndpoints.getUserKeyUrl(mobileNumber);
-
-      // Pre-flight internet check
-      try {
-        final result = await InternetAddress.lookup(Uri.parse(url).host);
-        if (result.isEmpty || result[0].rawAddress.isEmpty) {
-          throw const SocketException('No Internet');
-        }
-      } on SocketException catch (_) {
-        final ctx = scaffoldMessengerKey.currentContext;
-        final msg = ctx != null ? AppLocalizations.of(ctx)?.noInternetConnection ?? 'No Internet Connection' : 'No Internet Connection';
-        scaffoldMessengerKey.currentState?.showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return UserKeyApiResponse(
-          statusCode: 'NoInternet',
-          statusMessage: msg,
-        );
-      }
-
       final response = await _dio.get(url);
 
       final data = asResponseMap(response.data);
 
       if (data != null) {
-        return UserKeyApiResponse.fromJson(data);
+        final parsed = UserKeyApiResponse.fromJson(data);
+        return UserKeyApiResponse(
+          statusCode: parsed.statusCode,
+          statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.serverErrorTryAgain),
+          responseData: parsed.responseData,
+          responseData1: parsed.responseData1,
+        );
       }
 
-      return const UserKeyApiResponse(
+      return UserKeyApiResponse(
         statusCode: '500',
-        statusMessage: 'Unexpected format returned from server.',
+        statusMessage: _l10n.invalidResponseFromServer,
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
         final errData = asResponseMap(e.response!.data);
         if (errData != null) {
-          return UserKeyApiResponse.fromJson(errData);
+          final parsed = UserKeyApiResponse.fromJson(errData);
+          return UserKeyApiResponse(
+            statusCode: parsed.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.serverErrorTryAgain),
+            responseData: parsed.responseData,
+            responseData1: parsed.responseData1,
+          );
         }
       }
       return UserKeyApiResponse(
         statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: 'Unable to login. Please check internet connection.',
+        statusMessage: _l10n.noInternetConnection,
       );
     } catch (e) {
       return UserKeyApiResponse(
         statusCode: '500',
-        statusMessage: 'An error occurred: ${e.toString()}',
+        statusMessage: _l10n.serverErrorTryAgain,
       );
     }
   }
@@ -231,32 +244,17 @@ class AuthRepositoryImpl implements AuthRepository {
     required String mobileNumber,
     required String key,
   }) async {
+    if (!await NetworkChecker.checkOrNotify()) {
+      return VerifyCodeApiResponse(
+        statusCode: 'NoInternet',
+        statusMessage: _l10n.noInternetConnection,
+      );
+    }
+
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       final url = ApiEndpoints.getLoginMobileUrl(
           mobileNo: mobileNumber, key: key, version: packageInfo.version);
-          
-      // Pre-flight internet check
-      try {
-        final result = await InternetAddress.lookup(Uri.parse(url).host);
-        if (result.isEmpty || result[0].rawAddress.isEmpty) {
-          throw const SocketException('No Internet');
-        }
-      } on SocketException catch (_) {
-        final ctx = scaffoldMessengerKey.currentContext;
-        final msg = ctx != null ? AppLocalizations.of(ctx)?.noInternetConnection ?? 'No Internet Connection' : 'No Internet Connection';
-        scaffoldMessengerKey.currentState?.showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return VerifyCodeApiResponse(
-          statusCode: 'NoInternet',
-          statusMessage: msg,
-        );
-      }
 
       final response = await _dio.get(url);
 
@@ -289,57 +287,57 @@ class AuthRepositoryImpl implements AuthRepository {
           );
           await saveSession(_currentUser!, key);
         }
-        return parsed;
+        return VerifyCodeApiResponse(
+          statusCode: parsed.statusCode,
+          statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.loginFailedMsg),
+          responseData: parsed.responseData,
+          responseData1: parsed.responseData1,
+          responseData6: parsed.responseData6,
+          responseData7: parsed.responseData7,
+        );
       }
 
       return VerifyCodeApiResponse(
         statusCode: '409',
-        statusMessage: 'Login Failed with MobileNo: $mobileNumber',
+        statusMessage: _l10n.loginFailedMsg,
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
         final errData = asResponseMap(e.response!.data);
         if (errData != null) {
-          return VerifyCodeApiResponse.fromJson(errData);
+          final parsed = VerifyCodeApiResponse.fromJson(errData);
+          return VerifyCodeApiResponse(
+            statusCode: parsed.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.loginFailedMsg),
+            responseData: parsed.responseData,
+            responseData1: parsed.responseData1,
+            responseData6: parsed.responseData6,
+            responseData7: parsed.responseData7,
+          );
         }
       }
       return VerifyCodeApiResponse(
         statusCode: e.response?.statusCode?.toString() ?? '409',
-        statusMessage: 'Login Failed with MobileNo: $mobileNumber',
+        statusMessage: _l10n.noInternetConnection,
       );
     } catch (e) {
       return VerifyCodeApiResponse(
         statusCode: '409',
-        statusMessage: 'Login Failed with MobileNo: $mobileNumber',
+        statusMessage: _l10n.loginFailedMsg,
       );
     }
   }
   @override
   Future<ConsumerSignUpResponse> consumerSignUp(Map<String, dynamic> signUpData) async {
+    if (!await NetworkChecker.checkOrNotify()) {
+      return ConsumerSignUpResponse(
+        statusCode: 'NoInternet',
+        statusMessage: _l10n.noInternetConnection,
+      );
+    }
+
     try {
       final url = ApiEndpoints.consumerSignUp;
-
-      // Pre-flight internet check
-      try {
-        final result = await InternetAddress.lookup(Uri.parse(url).host);
-        if (result.isEmpty || result[0].rawAddress.isEmpty) {
-          throw const SocketException('No Internet');
-        }
-      } on SocketException catch (_) {
-        final ctx = scaffoldMessengerKey.currentContext;
-        final msg = ctx != null ? AppLocalizations.of(ctx)?.noInternetConnection ?? 'No Internet Connection' : 'No Internet Connection';
-        scaffoldMessengerKey.currentState?.showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return ConsumerSignUpResponse(
-          statusCode: 'NoInternet',
-          statusMessage: msg,
-        );
-      }
 
       final response = await _dio.post(
         url,
@@ -350,61 +348,51 @@ class AuthRepositoryImpl implements AuthRepository {
 
       if (data != null) {
         final parsed = ConsumerSignUpResponse.fromJson(data);
-        if (parsed.isSuccess) {
-          // Do not save session or auto-login on signup. 
-          // The user must explicitly login afterwards.
-        }
-        return parsed;
+        return ConsumerSignUpResponse(
+          statusCode: parsed.statusCode,
+          statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.registrationFailed),
+          responseData: parsed.responseData,
+        );
       }
 
-      return const ConsumerSignUpResponse(
+      return ConsumerSignUpResponse(
         statusCode: '500',
-        statusMessage: 'Unexpected response from registration server.',
+        statusMessage: _l10n.invalidResponseFromServer,
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
         final errData = asResponseMap(e.response!.data);
         if (errData != null) {
-          return ConsumerSignUpResponse.fromJson(errData);
+          final parsed = ConsumerSignUpResponse.fromJson(errData);
+          return ConsumerSignUpResponse(
+            statusCode: parsed.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.registrationFailed),
+            responseData: parsed.responseData,
+          );
         }
       }
       return ConsumerSignUpResponse(
         statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: 'Registration failed: ${e.message}',
+        statusMessage: ApiErrorLocalizer.localizeCurrent(e.message, defaultMessage: _l10n.registrationFailed),
       );
     } catch (e) {
       return ConsumerSignUpResponse(
         statusCode: '500',
-        statusMessage: 'An error occurred during registration: ${e.toString()}',
+        statusMessage: _l10n.registrationFailed,
       );
     }
   }
   @override
   Future<ConsumerSignUpResponse> saveUpdateConsumerDetails(Map<String, dynamic> data) async {
+    if (!await NetworkChecker.checkOrNotify()) {
+      return ConsumerSignUpResponse(
+        statusCode: 'NoInternet',
+        statusMessage: _l10n.noInternetConnection,
+      );
+    }
+
     try {
       final url = ApiEndpoints.saveUpdateConsumerDetails;
-
-      // Pre-flight internet check
-      try {
-        final result = await InternetAddress.lookup(Uri.parse(url).host);
-        if (result.isEmpty || result[0].rawAddress.isEmpty) {
-          throw const SocketException('No Internet');
-        }
-      } on SocketException catch (_) {
-        final ctx = scaffoldMessengerKey.currentContext;
-        final msg = ctx != null ? AppLocalizations.of(ctx)?.noInternetConnection ?? 'No Internet Connection' : 'No Internet Connection';
-        scaffoldMessengerKey.currentState?.showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return ConsumerSignUpResponse(
-          statusCode: 'NoInternet',
-          statusMessage: msg,
-        );
-      }
 
       final response = await _dio.post(
         url,
@@ -415,28 +403,37 @@ class AuthRepositoryImpl implements AuthRepository {
 
       if (respData != null) {
         final parsed = ConsumerSignUpResponse.fromJson(respData);
-        return parsed;
+        return ConsumerSignUpResponse(
+          statusCode: parsed.statusCode,
+          statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.somethingWentWrong),
+          responseData: parsed.responseData,
+        );
       }
 
-      return const ConsumerSignUpResponse(
+      return ConsumerSignUpResponse(
         statusCode: '500',
-        statusMessage: 'Unexpected response from server.',
+        statusMessage: _l10n.invalidResponseFromServer,
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
         final errData = asResponseMap(e.response!.data);
         if (errData != null) {
-          return ConsumerSignUpResponse.fromJson(errData);
+          final parsed = ConsumerSignUpResponse.fromJson(errData);
+          return ConsumerSignUpResponse(
+            statusCode: parsed.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.somethingWentWrong),
+            responseData: parsed.responseData,
+          );
         }
       }
       return ConsumerSignUpResponse(
         statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: 'Operation failed: ${e.message}',
+        statusMessage: ApiErrorLocalizer.localizeCurrent(e.message, defaultMessage: _l10n.somethingWentWrong),
       );
     } catch (e) {
       return ConsumerSignUpResponse(
         statusCode: '500',
-        statusMessage: 'An error occurred during operation: ${e.toString()}',
+        statusMessage: _l10n.somethingWentWrong,
       );
     }
   }
@@ -560,6 +557,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
     // 3. Validate user status with backend
     try {
+      if (!await NetworkChecker.isConnected()) {
+        return true; // Gracefully keep existing session offline
+      }
       final appId = user.appId ?? 1;
       final url = ApiEndpoints.getUserAppDetailsUrl(userId: user.id, appId: appId);
       final response = await _dio.get(
@@ -620,6 +620,14 @@ class AuthRepositoryImpl implements AuthRepository {
     int id = 0,
     int userCategory = 2,
   }) async {
+    if (!await NetworkChecker.checkOrNotify()) {
+      return ExistenceCheckResult(
+        statusCode: 'NoInternet',
+        statusMessage: _l10n.noInternetConnection,
+        exists: false,
+      );
+    }
+
     try {
       final url = ApiEndpoints.getCheckGstExistsUrl(
         gstNo: gstNo,
@@ -630,29 +638,39 @@ class AuthRepositoryImpl implements AuthRepository {
       final response = await _dio.get(url);
       final data = asResponseMap(response.data);
       if (data != null) {
-        return ExistenceCheckResult.fromJson(data);
+        final parsed = ExistenceCheckResult.fromJson(data);
+        return ExistenceCheckResult(
+          statusCode: parsed.statusCode,
+          statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.gstVerificationFailed),
+          exists: parsed.exists,
+        );
       }
-      return const ExistenceCheckResult(
+      return ExistenceCheckResult(
         statusCode: '500',
-        statusMessage: 'Invalid response from GST verification service.',
+        statusMessage: _l10n.invalidResponseFromServer,
         exists: false,
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
         final errData = asResponseMap(e.response!.data);
         if (errData != null) {
-          return ExistenceCheckResult.fromJson(errData);
+          final parsed = ExistenceCheckResult.fromJson(errData);
+          return ExistenceCheckResult(
+            statusCode: parsed.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.gstVerificationFailed),
+            exists: parsed.exists,
+          );
         }
       }
       return ExistenceCheckResult(
         statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: 'Network error checking GST existence.',
+        statusMessage: _l10n.noInternetConnection,
         exists: false,
       );
     } catch (e) {
       return ExistenceCheckResult(
         statusCode: '500',
-        statusMessage: 'Failed to check GST existence: ${e.toString()}',
+        statusMessage: _l10n.gstVerificationFailed,
         exists: false,
       );
     }
@@ -660,6 +678,14 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<GstVerificationResponse> verifyGstin({required String gstNo}) async {
+    if (!await NetworkChecker.checkOrNotify()) {
+      return GstVerificationResponse(
+        statusCode: 'NoInternet',
+        statusMessage: _l10n.noInternetConnection,
+        isSuccess: false,
+      );
+    }
+
     try {
       final url = ApiEndpoints.verifyGstin;
       final response = await _dio.post(
@@ -670,29 +696,51 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       final data = asResponseMap(response.data);
       if (data != null) {
-        return GstVerificationResponse.fromJson(data, expectedGstin: gstNo);
+        final parsed = GstVerificationResponse.fromJson(data, expectedGstin: gstNo);
+        return GstVerificationResponse(
+          statusCode: parsed.statusCode,
+          statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.gstVerificationFailed),
+          isSuccess: parsed.isSuccess,
+          clientId: parsed.clientId,
+          gstin: parsed.gstin,
+          legalName: parsed.legalName,
+          tradeName: parsed.tradeName,
+          currentStatus: parsed.currentStatus,
+          rawData: parsed.rawData,
+        );
       }
-      return const GstVerificationResponse(
+      return GstVerificationResponse(
         statusCode: '500',
-        statusMessage: 'Invalid response from GST verification service.',
+        statusMessage: _l10n.invalidResponseFromServer,
         isSuccess: false,
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
         final errData = asResponseMap(e.response!.data);
         if (errData != null) {
-          return GstVerificationResponse.fromJson(errData, expectedGstin: gstNo);
+          final parsed = GstVerificationResponse.fromJson(errData, expectedGstin: gstNo);
+          return GstVerificationResponse(
+            statusCode: parsed.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.gstVerificationFailed),
+            isSuccess: parsed.isSuccess,
+            clientId: parsed.clientId,
+            gstin: parsed.gstin,
+            legalName: parsed.legalName,
+            tradeName: parsed.tradeName,
+            currentStatus: parsed.currentStatus,
+            rawData: parsed.rawData,
+          );
         }
       }
       return GstVerificationResponse(
         statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: 'Network error verifying GSTIN.',
+        statusMessage: _l10n.noInternetConnection,
         isSuccess: false,
       );
     } catch (e) {
       return GstVerificationResponse(
         statusCode: '500',
-        statusMessage: 'GST verification failed: ${e.toString()}',
+        statusMessage: _l10n.gstVerificationFailed,
         isSuccess: false,
       );
     }
@@ -705,6 +753,14 @@ class AuthRepositoryImpl implements AuthRepository {
     int id = 0,
     int userCategory = 2,
   }) async {
+    if (!await NetworkChecker.checkOrNotify()) {
+      return ExistenceCheckResult(
+        statusCode: 'NoInternet',
+        statusMessage: _l10n.noInternetConnection,
+        exists: false,
+      );
+    }
+
     try {
       final url = ApiEndpoints.getCheckPanExistsUrl(
         panNo: panNo,
@@ -715,29 +771,39 @@ class AuthRepositoryImpl implements AuthRepository {
       final response = await _dio.get(url);
       final data = asResponseMap(response.data);
       if (data != null) {
-        return ExistenceCheckResult.fromJson(data);
+        final parsed = ExistenceCheckResult.fromJson(data);
+        return ExistenceCheckResult(
+          statusCode: parsed.statusCode,
+          statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.panVerificationFailed),
+          exists: parsed.exists,
+        );
       }
-      return const ExistenceCheckResult(
+      return ExistenceCheckResult(
         statusCode: '500',
-        statusMessage: 'Invalid response from PAN verification service.',
+        statusMessage: _l10n.invalidResponseFromServer,
         exists: false,
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
         final errData = asResponseMap(e.response!.data);
         if (errData != null) {
-          return ExistenceCheckResult.fromJson(errData);
+          final parsed = ExistenceCheckResult.fromJson(errData);
+          return ExistenceCheckResult(
+            statusCode: parsed.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.panVerificationFailed),
+            exists: parsed.exists,
+          );
         }
       }
       return ExistenceCheckResult(
         statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: 'Network error checking PAN existence.',
+        statusMessage: _l10n.noInternetConnection,
         exists: false,
       );
     } catch (e) {
       return ExistenceCheckResult(
         statusCode: '500',
-        statusMessage: 'Failed to check PAN existence: ${e.toString()}',
+        statusMessage: _l10n.panVerificationFailed,
         exists: false,
       );
     }
@@ -745,6 +811,14 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<PanVerificationResponse> verifyPan({required String panNo, int userId = 0}) async {
+    if (!await NetworkChecker.checkOrNotify()) {
+      return PanVerificationResponse(
+        statusCode: 'NoInternet',
+        statusMessage: _l10n.noInternetConnection,
+        isSuccess: false,
+      );
+    }
+
     try {
       final url = ApiEndpoints.verifyPan;
       final response = await _dio.post(
@@ -756,29 +830,49 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       final data = asResponseMap(response.data);
       if (data != null) {
-        return PanVerificationResponse.fromJson(data, expectedPan: panNo);
+        final parsed = PanVerificationResponse.fromJson(data, expectedPan: panNo);
+        return PanVerificationResponse(
+          statusCode: parsed.statusCode,
+          statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.panVerificationFailed),
+          isSuccess: parsed.isSuccess,
+          clientId: parsed.clientId,
+          panNumber: parsed.panNumber,
+          clientName: parsed.clientName,
+          clientStatus: parsed.clientStatus,
+          rawData: parsed.rawData,
+        );
       }
-      return const PanVerificationResponse(
+      return PanVerificationResponse(
         statusCode: '500',
-        statusMessage: 'Invalid response from PAN verification service.',
+        statusMessage: _l10n.invalidResponseFromServer,
         isSuccess: false,
       );
     } on DioException catch (e) {
       if (e.response?.data != null) {
         final errData = asResponseMap(e.response!.data);
         if (errData != null) {
-          return PanVerificationResponse.fromJson(errData, expectedPan: panNo);
+          final parsed = PanVerificationResponse.fromJson(errData, expectedPan: panNo);
+          return PanVerificationResponse(
+            statusCode: parsed.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.panVerificationFailed),
+            isSuccess: parsed.isSuccess,
+            clientId: parsed.clientId,
+            panNumber: parsed.panNumber,
+            clientName: parsed.clientName,
+            clientStatus: parsed.clientStatus,
+            rawData: parsed.rawData,
+          );
         }
       }
       return PanVerificationResponse(
         statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: 'Network error verifying PAN.',
+        statusMessage: _l10n.noInternetConnection,
         isSuccess: false,
       );
     } catch (e) {
       return PanVerificationResponse(
         statusCode: '500',
-        statusMessage: 'PAN verification failed: ${e.toString()}',
+        statusMessage: _l10n.panVerificationFailed,
         isSuccess: false,
       );
     }

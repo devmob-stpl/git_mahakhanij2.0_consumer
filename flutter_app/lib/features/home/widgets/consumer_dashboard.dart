@@ -264,7 +264,7 @@ class _ConsumerDashboardState extends ConsumerState<ConsumerDashboard> with Widg
                   Text(
                     l10n.coreServices,
 
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.8,
@@ -408,6 +408,7 @@ class _ConsumerDashboardState extends ConsumerState<ConsumerDashboard> with Widg
     required Color textColor,
   }) {
     return Container(
+      constraints: const BoxConstraints(minHeight: 76),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: bgColor,

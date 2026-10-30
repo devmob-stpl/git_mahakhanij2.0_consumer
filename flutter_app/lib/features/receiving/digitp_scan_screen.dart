@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/constants/app_colors.dart';
 import '../../domain/scan_result.dart';
@@ -207,7 +206,6 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: InputDecoration(
                         labelText: loc.enterInvoiceManually,
-                        hintText: 'e.g. 491',
                         isDense: true,
                       ),
                     ),

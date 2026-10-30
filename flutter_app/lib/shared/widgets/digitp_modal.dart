@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/utils/date_formatter.dart';
+import '../../core/utils/unit_localizer.dart';
 import '../../domain/consumer_digitp_models.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -18,6 +19,7 @@ void showDigiTpPassModal(
       String? createdAt,
       String? validity,
     }) {
+  final loc = AppLocalizations.of(context)!;
   final invoiceNoStr = item?.invoiceNo ?? digiTpNumber ?? 'N/A';
   final vehicleNoStr = item?.vehicleNo ?? vehicleNumber ?? 'N/A';
   final driverNameStr = item?.driverName ?? driverName ?? 'N/A';
@@ -30,11 +32,10 @@ void showDigiTpPassModal(
   final createdAtStr = AppDateFormatter.formatDateTime(item?.timeStamp ?? item?.validityFrom ?? createdAt);
   final validityStr = AppDateFormatter.formatDateTime(item?.validityUpto ?? validity);
   final materialStr = item?.materialType;
-  final qtyStr = item?.quantity != null ? '${item!.quantity} ${item.mineralUnit ?? "Brass"}' : null;
+  final qtyStr = item?.quantity != null ? '${item!.quantity} ${UnitLocalizer.localize(item.mineralUnit ?? "Brass", loc.localeName)}' : null;
   final statusStr = item?.invoiceStatus ?? (item?.invoiceStatusId == 2 ? 'Delivered' : (item?.invoiceStatusId == 1 ? 'In Transit' : null));
   final receiveDateRaw = item?.receiveApprovedDate;
   final receiveDateStr = receiveDateRaw != null && receiveDateRaw.isNotEmpty ? AppDateFormatter.formatDateTime(receiveDateRaw) : null;
-  final loc = AppLocalizations.of(context)!;
 
   String? localizedStatus;
   if (statusStr != null) {

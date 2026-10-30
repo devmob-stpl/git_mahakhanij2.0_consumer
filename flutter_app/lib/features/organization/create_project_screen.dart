@@ -13,6 +13,7 @@ import '../../providers/session_provider.dart';
 import '../../data/repositories/consumer_project_repository.dart';
 import '../../providers/consumer_projects_provider.dart';
 import '../../shared/widgets/map_location_picker_modal.dart';
+import '../../core/utils/api_error_localizer.dart';
 import 'package:mahakhanij_consumer/l10n/app_localizations.dart';
 
 
@@ -188,60 +189,85 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
 
 
 
-    final response = await consumerProjectRepo.saveUpdateProject(payload);
+    try {
+      final response = await consumerProjectRepo.saveUpdateProject(payload);
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (response.isSuccess) {
-      final effectiveDept = _projectType == 'GOVERNMENT'
-          ? (_department == 'OTHER' ? _customDepartmentController.text.trim() : _department)
-          : null;
+      final l10n = AppLocalizations.of(context);
+      if (response.isSuccess) {
+        final effectiveDept = _projectType == 'GOVERNMENT'
+            ? (_department == 'OTHER' ? _customDepartmentController.text.trim() : _department)
+            : null;
 
-      final newProj = Project(
-        id: 'proj-${DateTime.now().millisecondsSinceEpoch}',
-        organizationId: user?.organizationId ?? 'org-001',
-        name: _nameController.text.trim(),
-        code: _workOrderNoController.text.trim(),
-        description: _projectType == 'GOVERNMENT' ? 'Govt Project ($effectiveDept) · WO: ${_workOrderNoController.text.trim()}' : 'Private Infrastructure Project',
-        projectType: _projectType,
-        department: effectiveDept,
-        officeName: _projectType == 'GOVERNMENT' ? _officeNameController.text.trim() : null,
-        workOrderNumber: _workOrderNoController.text.trim(),
-        category: _category,
-        city: _category == 'URBAN' ? _city : null,
-        village: _category == 'RURAL' ? _village : null,
-        status: 'ACTIVE',
-        startDate: DateTime.now().toIso8601String().split('T')[0],
-        location: Address(
-          line1: _line1Controller.text.trim(),
-          village: _category == 'RURAL' ? _village : _city,
-          taluka: _taluka,
-          district: _district,
-          state: 'Maharashtra',
-          pincode: _pincodeController.text.trim(),
-        ),
-        geo: (_latitude != null && _longitude != null)
-            ? GeoPoint(latitude: _latitude!, longitude: _longitude!)
-            : const GeoPoint(latitude: 18.5204, longitude: 73.8567),
-      );
+        final newProj = Project(
+          id: 'proj-${DateTime.now().millisecondsSinceEpoch}',
+          organizationId: user?.organizationId ?? 'org-001',
+          name: _nameController.text.trim(),
+          code: _workOrderNoController.text.trim(),
+          description: _projectType == 'GOVERNMENT' ? 'Govt Project ($effectiveDept) · WO: ${_workOrderNoController.text.trim()}' : 'Private Infrastructure Project',
+          projectType: _projectType,
+          department: effectiveDept,
+          officeName: _projectType == 'GOVERNMENT' ? _officeNameController.text.trim() : null,
+          workOrderNumber: _workOrderNoController.text.trim(),
+          category: _category,
+          city: _category == 'URBAN' ? _city : null,
+          village: _category == 'RURAL' ? _village : null,
+          status: 'ACTIVE',
+          startDate: DateTime.now().toIso8601String().split('T')[0],
+          location: Address(
+            line1: _line1Controller.text.trim(),
+            village: _category == 'RURAL' ? _village : _city,
+            taluka: _taluka,
+            district: _district,
+            state: 'Maharashtra',
+            pincode: _pincodeController.text.trim(),
+          ),
+          geo: (_latitude != null && _longitude != null)
+              ? GeoPoint(latitude: _latitude!, longitude: _longitude!)
+              : const GeoPoint(latitude: 18.5204, longitude: 73.8567),
+        );
 
-      await orgRepo.createProject(newProj);
-      opNotifier.selectProject(newProj);
-      ref.read(consumerProjectsProvider.notifier).refresh();
+        await orgRepo.createProject(newProj);
+        if (!mounted) return;
+        opNotifier.selectProject(newProj);
+        ref.read(consumerProjectsProvider.notifier).refresh();
 
+        setState(() => _submitting = false);
+        final defaultSuccess = l10n?.projectRegisteredSuccess ?? 'Project registered successfully!';
+        final successMsg = response.statusMessage.isNotEmpty
+            ? ApiErrorLocalizer.localize(context, response.statusMessage, defaultMessage: defaultSuccess)
+            : defaultSuccess;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(successMsg),
+            backgroundColor: Colors.green,
+          ),
+        );
+        context.pop();
+      } else {
+        setState(() => _submitting = false);
+        final defaultFail = l10n?.projectRegisterFailed ?? 'Failed to register project.';
+        final errorMsg = response.statusMessage.isNotEmpty
+            ? ApiErrorLocalizer.localize(context, response.statusMessage, defaultMessage: defaultFail)
+            : defaultFail;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
       setState(() => _submitting = false);
+      final l10n = AppLocalizations.of(context);
+      final defaultFail = l10n?.projectRegisterFailed ?? 'Failed to register project.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response.statusMessage.isNotEmpty ? response.statusMessage : 'Project registered successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      context.pop();
-    } else {
-      setState(() => _submitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response.statusMessage.isNotEmpty ? response.statusMessage : 'Failed to register project.'),
+          content: Text(
+            ApiErrorLocalizer.localize(context, e.toString(), defaultMessage: defaultFail),
+          ),
           backgroundColor: Colors.red,
         ),
       );

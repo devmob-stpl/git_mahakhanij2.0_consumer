@@ -1,6 +1,9 @@
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../core/network/dio_client.dart';
+import '../../core/network/network_checker.dart';
 import '../../core/network/release_json.dart';
+import '../../core/utils/api_error_localizer.dart';
 import '../../domain/consumer_dashboard_count_models.dart';
 
 abstract class ConsumerDashboardCountRepository {
@@ -8,32 +11,71 @@ abstract class ConsumerDashboardCountRepository {
 }
 
 class ConsumerDashboardCountRepositoryImpl implements ConsumerDashboardCountRepository {
-  final http.Client _client;
+  final Dio _dio;
 
-  ConsumerDashboardCountRepositoryImpl({http.Client? client})
-      : _client = client ?? http.Client();
+  ConsumerDashboardCountRepositoryImpl({Dio? dio})
+      : _dio = dio ?? DioClient.createDio();
 
   @override
   Future<ConsumerDashboardCountApiResponse> getConsumerDashboardCount(int consumerId) async {
+    // Pre-flight internet connectivity check
+    if (!await NetworkChecker.checkOrNotify()) {
+      return ConsumerDashboardCountApiResponse(
+        statusCode: 'NoInternet',
+        statusMessage: ApiErrorLocalizer.currentLocalizations.noInternetConnection,
+      );
+    }
+
     final url = ApiEndpoints.getConsumerDashboardCountUrl(consumerId);
     try {
-      final response = await _client.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final json = asResponseMap(response.body);
-        if (json == null) {
-          throw const FormatException('Invalid dashboard count response');
-        }
-        return ConsumerDashboardCountApiResponse.fromJson(json);
-      } else {
+      final response = await _dio.get(url);
+      final json = asResponseMap(response.data);
+      if (json == null) {
         return ConsumerDashboardCountApiResponse(
-          statusCode: response.statusCode.toString(),
-          statusMessage: 'Failed to fetch dashboard counts (HTTP ${response.statusCode})',
+          statusCode: '500',
+          statusMessage: ApiErrorLocalizer.currentLocalizations.invalidResponseFromServer,
         );
       }
-    } catch (e) {
+      final parsed = ConsumerDashboardCountApiResponse.fromJson(json);
+      return ConsumerDashboardCountApiResponse(
+        statusCode: parsed.statusCode,
+        statusMessage: ApiErrorLocalizer.localizeCurrent(
+          parsed.statusMessage,
+          defaultMessage: parsed.statusMessage,
+        ),
+        responseData: parsed.responseData,
+      );
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout) {
+        NetworkChecker.showOfflineMessage();
+        return ConsumerDashboardCountApiResponse(
+          statusCode: 'NoInternet',
+          statusMessage: ApiErrorLocalizer.currentLocalizations.noInternetConnection,
+        );
+      }
+      if (e.response?.data != null) {
+        final errJson = asResponseMap(e.response!.data);
+        if (errJson != null) {
+          final parsed = ConsumerDashboardCountApiResponse.fromJson(errJson);
+          return ConsumerDashboardCountApiResponse(
+            statusCode: parsed.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(
+              parsed.statusMessage,
+              defaultMessage: parsed.statusMessage,
+            ),
+            responseData: parsed.responseData,
+          );
+        }
+      }
+      return ConsumerDashboardCountApiResponse(
+        statusCode: e.response?.statusCode?.toString() ?? '500',
+        statusMessage: ApiErrorLocalizer.currentLocalizations.failedToFetchDashboardCounts,
+      );
+    } catch (_) {
       return ConsumerDashboardCountApiResponse(
         statusCode: '500',
-        statusMessage: 'Error fetching consumer dashboard count: $e',
+        statusMessage: ApiErrorLocalizer.currentLocalizations.failedToFetchDashboardCounts,
       );
     }
   }

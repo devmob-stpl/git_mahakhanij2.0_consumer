@@ -27,10 +27,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get welcome => 'स्वागत है';
 
   @override
-  String get digitpDeliveries => 'डिजीटीपी\nजारी किए गए';
+  String get digitpDeliveries => 'जारी किए गए डिजीटीपी';
 
   @override
-  String get receivedMaterial => 'डिजीटीपी\nप्राप्त हुए';
+  String get receivedMaterial => 'प्राप्त हुए डिजीटीपी';
 
   @override
   String get inTransitVehicles => 'मार्ग में\nवाहन';
@@ -42,7 +42,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get digitpPasses => 'डिजीटीपी\nपास';
 
   @override
-  String get receiveMaterialAction => 'सामग्री\nप्राप्त करें';
+  String get receiveMaterialAction => 'गौण खनिज\nप्राप्त करें';
 
   @override
   String get trackVehicle => 'वाहन\nट्रैक करें';
@@ -54,20 +54,20 @@ class AppLocalizationsHi extends AppLocalizations {
   String get viewAll => 'सभी देखें';
 
   @override
-  String get noRecentDeliveries => 'कोई हालिया डिजीटीपी वितरण नहीं मिला।';
+  String get noRecentDeliveries => 'फिलहाल कोई डिजीटीपी वितरण नहीं मिला।';
 
   @override
-  String get receiveMaterial => 'सामग्री प्राप्त करें';
+  String get receiveMaterial => 'गौण खनिज प्राप्त करें';
 
   @override
-  String get receiveMaterialError => 'सामग्री प्राप्त करने में त्रुटि';
+  String get receiveMaterialError => 'गौण खनिज प्राप्त करने में त्रुटि';
 
   @override
   String get scanDigiTp => 'डिजीटीपी क्यूआर / बारकोड स्कैन करें';
 
   @override
   String get pointCameraDescription =>
-      'परमिट विवरण निकालने और सामग्री रसीद की पुष्टि करने के लिए कैमरे को ड्राइवर के क्यूआर कोड या बारकोड पर इंगित करें।';
+      'परमिट विवरण निकालने और गौण खनिज रसीद की पुष्टि करने के लिए कैमरे को ड्राइवर के क्यूआर कोड या बारकोड पर इंगित करें।';
 
   @override
   String get openCameraScanner => 'कैमरा स्कैनर खोलें';
@@ -103,7 +103,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get driverDetails => 'चालक का विवरण';
 
   @override
-  String get materialAndQuantity => 'सामग्री और मात्रा';
+  String get materialAndQuantity => 'गौण खनिज और मात्रा';
 
   @override
   String get destination => 'गंतव्य';
@@ -121,7 +121,8 @@ class AppLocalizationsHi extends AppLocalizations {
   String get confirmingReceipt => 'रसीद की पुष्टि कर रहा है...';
 
   @override
-  String get confirmAndReceiveMaterial => 'पुष्टि करें और सामग्री प्राप्त करें';
+  String get confirmAndReceiveMaterial =>
+      'पुष्टि करें और गौण खनिज प्राप्त करें';
 
   @override
   String get track => 'ट्रैक करें';
@@ -219,7 +220,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get vehicle => 'वाहन';
 
   @override
-  String get driver => 'ड्राइवर';
+  String get driver => 'चालक';
 
   @override
   String get quarrySeller => 'खदान';
@@ -243,16 +244,17 @@ class AppLocalizationsHi extends AppLocalizations {
   String get invoiceStatus => 'चालान की स्थिति';
 
   @override
-  String get createdDateAndTimeOfDigiTp => 'डिजीटीपी के निर्माण की तिथि और समय';
+  String get createdDateAndTimeOfDigiTp =>
+      'डिजीटीपी के निर्माण की तारीख और समय';
 
   @override
-  String get digiTpValidityDateAndTime => 'डिजीटीपी वैधता तिथि और समय';
+  String get digiTpValidityDateAndTime => 'डिजीटीपी वैधता तारीख और समय';
 
   @override
-  String get receivedDate => 'प्राप्त तिथि';
+  String get receivedDate => 'प्राप्त तारीख';
 
   @override
-  String get receiveDate => 'प्राप्त तिथि';
+  String get receiveDate => 'प्राप्त तारीख';
 
   @override
   String get profileName => 'नाम';
@@ -382,10 +384,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get scanAnotherCode => 'अन्य कोड स्कैन करें';
 
   @override
-  String get viewAllReceivedDeliveries => 'सभी प्राप्त वितरण देखें';
+  String get viewAllReceivedDeliveries => 'सभी प्राप्त डिजीटीपी वितरण देखें';
 
   @override
-  String get materialReceivedSuccess => 'सामग्री सफलतापूर्वक प्राप्त हुई!';
+  String get materialReceivedSuccess => 'गौण खनिज सफलतापूर्वक प्राप्त हुई!';
 
   @override
   String get govtOfMaharashtra => 'महाराष्ट्र सरकार';
@@ -431,7 +433,7 @@ class AppLocalizationsHi extends AppLocalizations {
       'एक मान्य 10-अंकीय भारतीय मोबाइल नंबर दर्ज करें।';
 
   @override
-  String get invalidOtpError => 'कृपया पूरा 5-अंकीय OTP दर्ज करें।';
+  String get invalidOtpError => 'कृपया पूरा 5-अंकीय ओटीपी दर्ज करें।';
 
   @override
   String get getOtpBtn => 'ओटीपी प्राप्त करें';
@@ -440,7 +442,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get loginBtn => 'लॉग इन करें';
 
   @override
-  String get newMemberMsg => 'नये सदस्य हैं? ';
+  String get newMemberMsg => 'नये उपयोगकर्ता हैं? ';
 
   @override
   String get signUpLink => 'साइन अप करें';
@@ -463,11 +465,11 @@ class AppLocalizationsHi extends AppLocalizations {
       'व्यक्तिगत उपयोग के लिए खनिज खरीदने वाले व्यक्ति के लिए।';
 
   @override
-  String get organization => 'संगठन';
+  String get organization => 'संस्था';
 
   @override
   String get organizationDesc =>
-      'प्रोजेक्ट्स और पैकेजों में काम करने वाले बिल्डर, ठेकेदार, सरकारी निकाय या किसी अन्य संगठन के लिए।';
+      'प्रोजेक्ट्स और पैकेजों में काम करने वाले बिल्डर, ठेकेदार, सरकारी निकाय या किसी अन्य संस्था के लिए।';
 
   @override
   String get alreadyHaveAccount => 'क्या आपके पास पहले से एक खाता है? ';
@@ -492,10 +494,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'हम इस नंबर पर 5 अंकों का सत्यापन कोड भेजेंगे।';
 
   @override
-  String get orgNameLabel => 'संगठन का नाम';
+  String get orgNameLabel => 'संस्था का नाम';
 
   @override
-  String get orgTypeLabel => 'संगठन का प्रकार';
+  String get orgTypeLabel => 'संस्था का प्रकार';
 
   @override
   String get gstinLabel => 'जीएसटीआईएन (GSTIN)';
@@ -549,7 +551,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get talukaLabel => 'तालुका';
 
   @override
-  String get talukaHint => 'उदा. हवेली';
+  String get talukaHint => 'तालुका चुनें';
 
   @override
   String get loading => 'लोड हो रहा है...';
@@ -561,10 +563,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get villageRuralLabel => 'गाँव / ग्रामीण क्षेत्र';
 
   @override
-  String get cityCorporationHint => 'उदा. पुणे शहर';
+  String get cityCorporationHint => 'शहर चुनें';
 
   @override
-  String get villageRuralHint => 'उदा. नारायणगांव';
+  String get villageRuralHint => 'गाँव चुनें';
 
   @override
   String get addressLabel => 'पता (घर / फ्लैट / सड़क / क्षेत्र)';
@@ -616,10 +618,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get aadhaarIdentityVerificationDesc =>
-      'अपना आधार ओटीपी सत्यापित करें या दस्तावेज़ फ़ोटो अपलोड करें';
+      'अपना आधार ओटीपी सत्यापित करें और दस्तावेज़ फ़ोटो अपलोड करें';
 
   @override
-  String get method1LiveOtp => 'विधि 1: ओटीपी सत्यापन';
+  String get method1LiveOtp => 'चरण 1: ओटीपी सत्यापन';
 
   @override
   String get twelveDigitAadhaarNumber => '12-अंकीय आधार संख्या *';
@@ -641,14 +643,14 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get method2UploadAadhaar =>
-      'विधि 2: आधार कार्ड दस्तावेज़ अपलोड करें (पीडीएफ / छवि)';
+      'चरण 2: आधार कार्ड दस्तावेज़ अपलोड करें (पीडीएफ / छवि)';
 
   @override
   String get uploadAadhaarDesc =>
       'महाखनिज दस्तावेज़ सर्वर के माध्यम से अपलोड करने के लिए दस्तावेज़ फ़ाइल चुनें';
 
   @override
-  String get chooseAadhaarPdfOrImage => 'आधार पीडीएफ या चित्र चुनें';
+  String get chooseAadhaarPdfOrImage => 'आधार पीडीएफ या छवि चुनें';
 
   @override
   String get uploadingToMahakhanijServer =>
@@ -680,7 +682,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get last30Days => 'पिछले 30 दिन';
 
   @override
-  String get quarterly => 'त्रैमासिक';
+  String get quarterly => 'तिमाही';
 
   @override
   String get fy2425 => 'वित्तीय वर्ष 24-25';
@@ -713,7 +715,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get byVolume => 'मात्रा के अनुसार';
 
   @override
-  String get noMaterialsFound => 'कोई सामग्री नहीं मिली';
+  String get noMaterialsFound => 'कोई गौण खनिज नहीं मिली';
 
   @override
   String get errorLoadingReport => 'रिपोर्ट लोड करने में त्रुटि: ';
@@ -741,7 +743,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get failedToLoadDigiTpList => 'डिजीटीपी सूची लोड करने में विफल';
 
   @override
-  String get orgKycVerification => 'संगठन केवाईसी (KYC) सत्यापन';
+  String get orgKycVerification => 'संस्था केवाईसी सत्यापन';
 
   @override
   String get optionalLabel => 'वैकल्पिक';
@@ -790,7 +792,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get resendBtn => 'ओटीपी पुनः भेजें';
 
   @override
-  String get digitpsNotReceived => 'डिजीटीपी\nप्राप्त नहीं';
+  String get digitpsNotReceived => 'प्राप्त न हुए डिजीटीपी';
 
   @override
   String get enterFullName => 'पूरा नाम दर्ज करें';
@@ -877,10 +879,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'एक वैध 10-अंकीय भारतीय मोबाइल नंबर दर्ज करें।';
 
   @override
-  String get orgNameRequired => 'संगठन का नाम आवश्यक है।';
+  String get orgNameRequired => 'संस्था का नाम आवश्यक है।';
 
   @override
-  String get gstinRequired => 'अपना संगठन GSTIN दर्ज करें।';
+  String get gstinRequired => 'अपना संस्था GSTIN दर्ज करें।';
 
   @override
   String get addressRequired => 'पता आवश्यक है।';
@@ -1144,7 +1146,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get roleGovernment => 'सरकारी';
 
   @override
-  String get roleOrganization => 'संगठन';
+  String get roleOrganization => 'संस्था';
 
   @override
   String get mineralStoneAgg20 => 'गिट्टी २० मिमी';
@@ -1228,10 +1230,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get invalidDigiTpNumber =>
-      'कृपया एक मान्य अंकीय डिजी-टीपी नंबर दर्ज करें';
+      'कृपया एक मान्य अंकीय डिजीटीपी नंबर दर्ज करें';
 
   @override
-  String get deliveryNotFound => 'वितरण नहीं मिला';
+  String get deliveryNotFound => 'डिलीवरी नहीं मिली।';
 
   @override
   String get langEnglish => 'English (EN)';
@@ -1269,7 +1271,7 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get verifyDigiTp => 'डिजी-टीपी सत्यापित करें';
+  String get verifyDigiTp => 'डिजीटीपी सत्यापित करें';
 
   @override
   String get removeBtn => 'निकालें';
@@ -1284,7 +1286,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get contactPersonNameRequired => 'संपर्क व्यक्ति का नाम आवश्यक है।';
 
   @override
-  String get orgPanRequired => 'संगठन का पैन नंबर आवश्यक है।';
+  String get orgPanRequired => 'संस्था का पैन नंबर आवश्यक है।';
 
   @override
   String get validPanRequired =>
@@ -1455,7 +1457,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get authContactPersonIdentity => 'अधिकृत संपर्क व्यक्ति पहचान';
 
   @override
-  String get nationalIdentityUidai => 'राष्ट्रीय पहचान (UIDAI)';
+  String get nationalIdentityUidai => 'राष्ट्रीय पहचान (आधार नंबर)';
 
   @override
   String get contactPersonAadhaar => 'संपर्क व्यक्ति आधार';
@@ -1499,14 +1501,14 @@ class AppLocalizationsHi extends AppLocalizations {
   String get pendingUpper => 'लंबित';
 
   @override
-  String get method1LivePanVerification => 'तरीका १: पैन सत्यापन';
+  String get method1LivePanVerification => 'चरण १: पैन सत्यापन';
 
   @override
   String get orgPanNumberRequired => 'संस्था पैन नंबर *';
 
   @override
   String get method2UploadPanCard =>
-      'तरीका २: पैन कार्ड दस्तावेज़ अपलोड करें (पीडीएफ / छवि)';
+      'चरण २: पैन कार्ड दस्तावेज़ अपलोड करें (पीडीएफ / छवि)';
 
   @override
   String get choosePanPdfOrImage => 'पैन पीडीएफ या छवि चुनें';
@@ -1609,4 +1611,81 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get dontAllow => 'अनुमति न दें';
+
+  @override
+  String get unsupportedFileFormat =>
+      'असमर्थित फ़ाइल प्रारूप। कृपया मान्य पीडीएफ या छवि फ़ाइल अपलोड करें।';
+
+  @override
+  String get verifyOrgPanBeforeRegistration =>
+      'कृपया पंजीकरण पूरा करने से पहले अपनी संस्था का पैन सत्यापित करें।';
+
+  @override
+  String get userNotAvailable =>
+      'उपयोगकर्ता उपलब्ध नहीं है। कृपया पंजीकरण करें या मोबाइल नंबर जांचें।';
+
+  @override
+  String get mobileAlreadyRegistered =>
+      'यह मोबाइल नंबर महाखनिज प्रणाली में पहले से पंजीकृत है।';
+
+  @override
+  String get recordAlreadyExists => 'प्रणाली में रिकॉर्ड पहले से मौजूद है।';
+
+  @override
+  String get fileSizeTooLarge =>
+      'फ़ाइल का आकार बहुत बड़ा है। कृपया 5MB से छोटी फ़ाइल चुनें।';
+
+  @override
+  String get connectionTimeout =>
+      'कनेक्शन का समय समाप्त हो गया। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get serverErrorTryAgain =>
+      'सर्वर त्रुटि। कृपया बाद में पुनः प्रयास करें।';
+
+  @override
+  String get somethingWentWrong => 'कुछ गलत हो गया। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get digitpAlreadyReceived => 'डिजीटीपी पहले ही प्राप्त हो चुका है।';
+
+  @override
+  String get projectRegisteredSuccess => 'परियोजना सफलतापूर्वक पंजीकृत हो गई!';
+
+  @override
+  String get projectRegisterFailed => 'परियोजना पंजीकृत करने में विफल।';
+
+  @override
+  String get deliverySiteRegisteredSuccess =>
+      'निजी वितरण स्थल सफलतापूर्वक पंजीकृत हो गया!';
+
+  @override
+  String get deliverySiteRegisterFailed => 'साइट पंजीकृत करने में विफल।';
+
+  @override
+  String get invalidResponseFromServer =>
+      'सर्वर से अमान्य प्रतिक्रिया प्राप्त हुई।';
+
+  @override
+  String get gstVerificationFailed =>
+      'जीएसटी सत्यापन विफल रहा। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get failedToFetchDashboardCounts =>
+      'डैशबोर्ड गणना प्राप्त करने में विफल।';
+
+  @override
+  String get errVehicleNoRequired => 'वाहन नंबर खाली नहीं हो सकता।';
+
+  @override
+  String get inventoryBalanceNotFound => 'इन्वेंट्री बैलेंस नहीं मिला।';
+
+  @override
+  String get aadhaarLabel => 'आधार';
+
+  @override
+  String get speedUnitKmH => 'किमी/घंटा';
+
+  @override
+  String get unitBrass => 'ब्रास';
 }

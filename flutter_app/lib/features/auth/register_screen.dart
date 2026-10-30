@@ -18,6 +18,7 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/location_dropdown_section.dart';
 import '../../core/utils/pan_input_formatter.dart';
 import '../../core/utils/document_permission_helper.dart';
+import '../../core/utils/api_error_localizer.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -298,8 +299,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       } else {
         final genStatusCode = genRes.statusCode.trim();
         final genRawMsg = genRes.message?.trim() ?? '';
-        final genStatusMsg = genRes.statusMessage.trim();
-        final genCombined = '${genRawMsg.toLowerCase()} ${genStatusMsg.toLowerCase()}';
 
         final isServerErrorOrTimeout =
             genStatusCode == '408' ||
@@ -308,24 +307,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             genStatusCode == '502' ||
             genStatusCode == '503' ||
             genStatusCode == '0' ||
-            genRawMsg.isEmpty ||
-            genCombined.contains('aadhaar server error') ||
-            genCombined.contains('timeout') ||
-            genCombined.contains('timed out') ||
-            genCombined.contains('server error') ||
-            genCombined.contains('internal') ||
-            genCombined.contains('gateway') ||
-            genCombined.contains('service unavailable') ||
-            genCombined.contains('unexpected');
+            genRawMsg.isEmpty;
 
-        if (genCombined.contains('already exists') || genCombined.contains('already registered')) {
-          _aadhaarError = l10n.aadhaarAlreadyRegistered;
-        } else if (isServerErrorOrTimeout) {
+         if (isServerErrorOrTimeout || genStatusCode == '429') {
           _aadhaarError = l10n.aadhaarServerError;
-        } else if (genRawMsg.toLowerCase().contains('verification_failed')) {
+        } else if (genStatusCode == '422') {
           _aadhaarError = l10n.invalidAadhaarNumber;
-        } else {
-          _aadhaarError = l10n.aadhaarServerError;
         }
       }
     });
@@ -384,8 +371,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       } else {
         final statusCode = verifyRes.statusCode.trim();
         final rawMsg = verifyRes.message?.trim() ?? '';
-        final statusMsg = verifyRes.statusMessage.trim();
-        final combined = '${rawMsg.toLowerCase()} ${statusMsg.toLowerCase()}';
 
         final isServerErrorOrTimeout =
             statusCode == '408' ||
@@ -394,23 +379,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             statusCode == '502' ||
             statusCode == '503' ||
             statusCode == '0' ||
-            rawMsg.isEmpty ||
-            combined.contains('aadhaar server error') ||
-            combined.contains('timeout') ||
-            combined.contains('timed out') ||
-            combined.contains('server error') ||
-            combined.contains('internal') ||
-            combined.contains('gateway') ||
-            combined.contains('service unavailable') ||
-            combined.contains('unexpected');
+            rawMsg.isEmpty;
 
-        final isExplicitInvalidOtp = !isServerErrorOrTimeout &&
-            (combined.contains('invalid otp') ||
-             combined.contains('incorrect otp') ||
-             combined.contains('otp does not match') ||
-             combined.contains('wrong otp') ||
-             combined.contains('otp mismatch') ||
-             combined.contains('invalid_otp'));
+        final isExplicitInvalidOtp = !isServerErrorOrTimeout && (statusCode == '422');
 
         if (isExplicitInvalidOtp) {
           _aadhaarOtpError = l10n.invalidOtpServer;
@@ -539,6 +510,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
       if (result == null || result.files.isEmpty) return;
       final file = result.files.first;
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      final ext = file.name.contains('.') ? file.name.split('.').last.toLowerCase() : '';
+      if (!['pdf', 'jpg', 'jpeg', 'png'].contains(ext)) {
+        final key = isPan ? 'panFile' : (isSignatoryAadhaar ? 'aadhaarFile' : 'kycFile');
+        setState(() {
+          _errors[key] = l10n.unsupportedFileFormat;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.unsupportedFileFormat),
+            backgroundColor: AppColors.danger700,
+          ),
+        );
+        return;
+      }
       await _setLocalDocumentFile(file.path ?? '', file.name, file.bytes, isPan: isPan, isSignatoryAadhaar: isSignatoryAadhaar);
     } catch (e) {
       if (DocumentPermissionHelper.isPermissionException(e)) {
@@ -564,10 +551,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         return;
       }
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       final key = isPan ? 'panFile' : (isSignatoryAadhaar ? 'aadhaarFile' : 'kycFile');
       String errorMessage = e.toString();
-      if (errorMessage.contains('413')) {
-        errorMessage = 'File size is too large. Please select a smaller file (under 5MB).';
+      if (errorMessage.contains('413') ||
+          errorMessage.contains('415') ||
+          errorMessage.toLowerCase().contains('unsupported file format')) {
+        errorMessage = l10n.unsupportedFileFormat;
       } else if (errorMessage.startsWith('Exception: ')) {
         errorMessage = errorMessage.substring(11);
       } else if (errorMessage.contains('DioException')) {
@@ -647,9 +637,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       setState(() {
         _isCheckingPan = false;
         _isPanVerified = false;
-        _panError = checkRes.statusMessage.isNotEmpty
-            ? checkRes.statusMessage
-            : l10n.panAlreadyRegistered;
+        _panError = ApiErrorLocalizer.localize(
+          context,
+          checkRes.statusMessage,
+          defaultMessage: l10n.panAlreadyRegistered,
+        );
       });
       return;
     }
@@ -675,21 +667,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       } else {
         _isPanVerified = false;
         final rawMsg = verifyRes.statusMessage.trim();
-        final lower = rawMsg.toLowerCase();
-        final isGenericOk = lower.isEmpty || lower == 'ok.' || lower == 'ok' || lower == 'success' || lower == '200';
-
-        String displayMsg;
-        if (isGenericOk ||
-            lower.contains('invalid pan') ||
-            lower.contains('invalid') ||
-            lower.contains('not found') ||
-            lower.contains('record_not_found') ||
-            lower.contains('does not exist')) {
-          displayMsg = l10n.invalidPanNumber;
-        } else {
-          displayMsg = rawMsg;
-        }
-        _panError = displayMsg;
+        _panError = ApiErrorLocalizer.localize(
+          context,
+          rawMsg,
+          defaultMessage: l10n.invalidPanNumber,
+        );
       }
     });
   }
@@ -697,6 +679,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   void _back() {
     setState(() {
       _errors.clear();
+      _aadhaarError = null;
+      _panError = null;
+      _aadhaarOtpError = null;
       if (_step <= 0) {
         context.pop();
       } else {
@@ -711,12 +696,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (found.isNotEmpty) {
       setState(() {
         _errors = found;
-        if (found.containsKey('aadhaar')) {
-          _aadhaarError = found['aadhaar'];
-        }
-        if (found.containsKey('pan')) {
-          _panError = found['pan'];
-        }
+        _aadhaarError = found['aadhaar'];
+        _panError = found['pan'];
       });
       return;
     }
@@ -724,6 +705,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (_step < 2) {
       setState(() {
         _errors.clear();
+        _aadhaarError = null;
+        _panError = null;
+        _aadhaarOtpError = null;
         _aadhaarController.text = _aadhaarController.text.replaceAll(' ', '').trim();
         _step++;
       });
@@ -740,7 +724,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (path == null) return null;
       final res = await repo.uploadAadhaarDocument(filePath: path, fileName: name ?? 'doc', bytes: bytes);
       if (res.isSuccess && res.responseData != null) return res.responseData;
-      throw Exception(res.statusMessage.isNotEmpty ? res.statusMessage : l10n.docUploadFailed);
+      if (res.statusCode == '413' ||
+          res.statusCode == '415' ||
+          res.statusMessage.toLowerCase().contains('unsupported file format') ||
+          res.statusMessage.toLowerCase().contains('valid pdf or image')) {
+        throw Exception(l10n.unsupportedFileFormat);
+      }
+      throw Exception(
+        res.statusMessage.isNotEmpty
+            ? ApiErrorLocalizer.localizeWithL10n(l10n, res.statusMessage, defaultMessage: l10n.docUploadFailed)
+            : l10n.docUploadFailed,
+      );
     }
 
     try {
@@ -836,9 +830,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response.statusMessage.isNotEmpty
-              ? response.statusMessage
-              : AppLocalizations.of(context)!.registrationFailed),
+          content: Text(ApiErrorLocalizer.localize(
+            context,
+            response.statusMessage,
+            defaultMessage: AppLocalizations.of(context)!.registrationFailed,
+          )),
           backgroundColor: const Color(0xFF2563EB),
         ),
       );
@@ -971,7 +967,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           } else if (pan.length != 10 || !RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(pan)) {
             found['pan'] = l10n.validPanRequired;
           } else if (!_isPanVerified) {
-            found['pan'] = l10n.verifyOrgPanBeforeSaving;
+            found['pan'] = l10n.verifyOrgPanBeforeRegistration;
           }
         }
 
@@ -1462,9 +1458,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ),
           ),
           onChanged: (val) {
-            if (_errors.containsKey('aadhaar')) {
-              setState(() => _errors.remove('aadhaar'));
-            }
+            setState(() {
+              if (_errors.containsKey('aadhaar')) _errors.remove('aadhaar');
+              _aadhaarError = null;
+            });
           },
         ),
         if (_errors.containsKey('aadhaar')) ...[
@@ -2248,9 +2245,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     if (!_isAadhaarVerified) ...[
                       const SizedBox(height: 2),
                       Text(
-                        isOrg
-                            ? 'Enter 12-digit Aadhaar number of authorized signatory to receive OTP'
-                            : l10n.enterTwelveDigitAadhaarToReceiveOtp,
+                        l10n.enterTwelveDigitAadhaarToReceiveOtp,
                         style: const TextStyle(fontSize: 11, color: AppColors.inkSecondary),
                       ),
                     ],
@@ -2290,13 +2285,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Aadhaar: ${_aadhaarVerifiedData?.aadharNumber ?? "XXXX-XXXX-${_aadhaarController.text.replaceAll(' ', '').trim().length >= 4 ? _aadhaarController.text.replaceAll(' ', '').trim().substring(_aadhaarController.text.replaceAll(' ', '').trim().length - 4) : 'XXXX'}"}',
+                          '${l10n.aadhaarLabel}: ${_aadhaarVerifiedData?.aadharNumber ?? "XXXX-XXXX-${_aadhaarController.text.replaceAll(' ', '').trim().length >= 4 ? _aadhaarController.text.replaceAll(' ', '').trim().substring(_aadhaarController.text.replaceAll(' ', '').trim().length - 4) : 'XXXX'}"}',
                           style: const TextStyle(fontSize: 12, color: Color(0xFF166534), fontFamily: 'monospace'),
                         ),
                         if (_aadhaarVerifiedData?.loc != null || _aadhaarVerifiedData?.dist != null) ...[
                           const SizedBox(height: 2),
                           Text(
-                            'Address: ${_aadhaarVerifiedData?.loc ?? ""}, ${_aadhaarVerifiedData?.dist ?? ""}, ${_aadhaarVerifiedData?.state ?? ""} - ${_aadhaarVerifiedData?.zip ?? ""}',
+                            '${l10n.profileAddress}: ${_aadhaarVerifiedData?.loc ?? ""}, ${_aadhaarVerifiedData?.dist ?? ""}, ${_aadhaarVerifiedData?.state ?? ""} - ${_aadhaarVerifiedData?.zip ?? ""}',
                             style: const TextStyle(fontSize: 11, color: Color(0xFF166534)),
                           ),
                         ],

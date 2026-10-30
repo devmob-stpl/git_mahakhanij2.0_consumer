@@ -6,6 +6,7 @@ import '../../shared/widgets/app_scaffold.dart';
 import '../../providers/consumer_report_provider.dart';
 import '../../providers/session_provider.dart';
 import '../../l10n/app_localizations.dart';
+import '../../core/utils/unit_localizer.dart';
 
 class TimeTab {
   final String label;
@@ -242,6 +243,7 @@ class _ConsumerReportsScreenState extends ConsumerState<ConsumerReportsScreen> {
                                 double.parse(pct.toStringAsFixed(1)),
                                 color,
                                 unit: item.materialUnit ?? '',
+                                localeName: loc.localeName,
                                 isLast: index == reportData.materialWiseData.length - 1,
                               );
                             }),
@@ -324,6 +326,7 @@ class _ConsumerReportsScreenState extends ConsumerState<ConsumerReportsScreen> {
   }
 
   Widget _buildTotalReceivedCard(double quantity, String unit, AppLocalizations loc) {
+    final localizedUnit = UnitLocalizer.localize(unit, loc.localeName);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -346,7 +349,7 @@ class _ConsumerReportsScreenState extends ConsumerState<ConsumerReportsScreen> {
             text: TextSpan(
               children: [
                 TextSpan(text: '${NumberFormat('#,##0.##').format(quantity)} ', style: const TextStyle(color: Color(0xFF0F172A), fontSize: 28, fontWeight: FontWeight.w800)),
-                TextSpan(text: unit, style: const TextStyle(color: Color(0xFF0369A1), fontSize: 13, fontWeight: FontWeight.w700)),
+                TextSpan(text: localizedUnit, style: const TextStyle(color: Color(0xFF0369A1), fontSize: 13, fontWeight: FontWeight.w700)),
               ],
             ),
           ),
@@ -374,20 +377,17 @@ class _ConsumerReportsScreenState extends ConsumerState<ConsumerReportsScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(text: '${NumberFormat('#,##0').format(count)} ', style: const TextStyle(color: Color(0xFF7E22CE), fontSize: 28, fontWeight: FontWeight.w800)),
-                TextSpan(text: loc.passes, style: const TextStyle(color: Color(0xFF9333EA), fontSize: 13, fontWeight: FontWeight.w700)),
-              ],
-            ),
+          Text(
+            NumberFormat('#,##0').format(count),
+            style: const TextStyle(color: Color(0xFF7E22CE), fontSize: 28, fontWeight: FontWeight.w800),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBreakdownItem(String label, int amount, double percentage, Color color, {String unit = 'Units', bool isLast = false}) {
+  Widget _buildBreakdownItem(String label, int amount, double percentage, Color color, {String unit = 'Units', bool isLast = false, String localeName = 'en'}) {
+    final localizedUnit = UnitLocalizer.localize(unit, localeName);
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 0 : 20),
       child: Column(
@@ -396,7 +396,7 @@ class _ConsumerReportsScreenState extends ConsumerState<ConsumerReportsScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.neutral900)),
-              Text('${NumberFormat('#,##0').format(amount)} $unit', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.neutral900)),
+              Text('${NumberFormat('#,##0').format(amount)} $localizedUnit', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.neutral900)),
             ],
           ),
           const SizedBox(height: 8),

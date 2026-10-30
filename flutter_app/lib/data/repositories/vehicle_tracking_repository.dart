@@ -1,6 +1,9 @@
 import 'package:dio/dio.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../core/network/dio_client.dart';
+import '../../core/network/network_checker.dart';
 import '../../core/network/release_json.dart';
+import '../../core/utils/api_error_localizer.dart';
 import '../../domain/vehicle_tracking_models.dart';
 
 abstract class VehicleTrackingRepository {
@@ -16,8 +19,8 @@ class VehicleTrackingRepositoryImpl implements VehicleTrackingRepository {
 
   VehicleTrackingRepositoryImpl({Dio? dio})
       : _dio = dio ??
-            Dio(
-              BaseOptions(
+            DioClient.createDio(
+              options: BaseOptions(
                 connectTimeout: const Duration(seconds: 15),
                 receiveTimeout: const Duration(seconds: 15),
               ),
@@ -31,9 +34,16 @@ class VehicleTrackingRepositoryImpl implements VehicleTrackingRepository {
   }) async {
     final cleanedVehicleNo = vehicleNo.trim();
     if (cleanedVehicleNo.isEmpty) {
-      return const VehicleTrackingApiResponse(
+      return VehicleTrackingApiResponse(
         statusCode: '400',
-        statusMessage: 'Vehicle number cannot be empty.',
+        statusMessage: ApiErrorLocalizer.currentLocalizations.errVehicleNoRequired,
+      );
+    }
+
+    if (!await NetworkChecker.checkOrNotify()) {
+      return VehicleTrackingApiResponse(
+        statusCode: 'NoInternet',
+        statusMessage: ApiErrorLocalizer.currentLocalizations.noInternetConnection,
       );
     }
 
@@ -69,9 +79,13 @@ class VehicleTrackingRepositoryImpl implements VehicleTrackingRepository {
         }
       }
 
+      final rawStatusMsg = locData?['statusMessage']?.toString() ?? 'Success';
       return VehicleTrackingApiResponse(
         statusCode: locData?['statusCode']?.toString() ?? '200',
-        statusMessage: locData?['statusMessage']?.toString() ?? 'Success',
+        statusMessage: ApiErrorLocalizer.localizeCurrent(
+          rawStatusMsg,
+          defaultMessage: rawStatusMsg,
+        ),
         responseData: locationList,
         responseData1: tripList,
       );
@@ -81,32 +95,34 @@ class VehicleTrackingRepositoryImpl implements VehicleTrackingRepository {
           e.type == DioExceptionType.sendTimeout) {
         return VehicleTrackingApiResponse(
           statusCode: '408',
-          statusMessage: 'Connection timed out while reaching tracking server for vehicle $cleanedVehicleNo. Please check your network and try again.',
+          statusMessage: ApiErrorLocalizer.currentLocalizations.connectionTimeout,
         );
       }
 
       if (e.response?.data != null) {
         final errData = asResponseMap(e.response!.data);
         if (errData != null) {
-          return VehicleTrackingApiResponse.fromJson(errData);
+          final parsed = VehicleTrackingApiResponse.fromJson(errData);
+          return VehicleTrackingApiResponse(
+            statusCode: parsed.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(
+              parsed.statusMessage,
+              defaultMessage: parsed.statusMessage,
+            ),
+            responseData: parsed.responseData,
+            responseData1: parsed.responseData1,
+          );
         }
-      }
-
-      String errorMsg = e.message ?? 'Server unreachable.';
-      if (errorMsg.contains('Failed host lookup') || errorMsg.contains('SocketException')) {
-        errorMsg = 'Network error: Unable to reach the tracking server. Please check your internet connection.';
-      } else {
-        errorMsg = 'Network error occurred while fetching tracking details: $errorMsg';
       }
 
       return VehicleTrackingApiResponse(
         statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: errorMsg,
+        statusMessage: ApiErrorLocalizer.currentLocalizations.noInternetConnection,
       );
-    } catch (e) {
+    } catch (_) {
       return VehicleTrackingApiResponse(
         statusCode: '500',
-        statusMessage: 'An unexpected error occurred: ${e.toString()}',
+        statusMessage: ApiErrorLocalizer.currentLocalizations.somethingWentWrong,
       );
     }
   }
