@@ -3088,6 +3088,84 @@ abstract class AppLocalizations {
   /// **'Don\'t Allow'**
   String get dontAllow;
 
+  /// No description provided for @citizenServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Citizen Services'**
+  String get citizenServices;
+
+  /// No description provided for @registerProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Register Project'**
+  String get registerProject;
+
+  /// No description provided for @findMineralPlaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Mineral Places'**
+  String get findMineralPlaces;
+
+  /// No description provided for @organizationServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization Services'**
+  String get organizationServices;
+
+  /// No description provided for @unauthorizedAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Access restricted to Organization accounts.'**
+  String get unauthorizedAccess;
+
+  /// No description provided for @projectsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Projects'**
+  String get projectsTab;
+
+  /// No description provided for @temporaryExcavation.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporary Excavation'**
+  String get temporaryExcavation;
+
+  /// No description provided for @mineralEnquiries.
+  ///
+  /// In en, this message translates to:
+  /// **'Mineral Enquiries'**
+  String get mineralEnquiries;
+
+  /// No description provided for @mineralsCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Mineral Catalog'**
+  String get mineralsCatalog;
+
+  /// No description provided for @siteInventory.
+  ///
+  /// In en, this message translates to:
+  /// **'Site Inventory'**
+  String get siteInventory;
+
+  /// No description provided for @materialTransfers.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfers'**
+  String get materialTransfers;
+
+  /// No description provided for @purchaseOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'Orders'**
+  String get purchaseOrders;
+
+  /// No description provided for @supervisors.
+  ///
+  /// In en, this message translates to:
+  /// **'Supervisors'**
+  String get supervisors;
+
   /// No description provided for @unsupportedFileFormat.
   ///
   /// In en, this message translates to:
@@ -3219,84 +3297,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Brass'**
   String get unitBrass;
-
-  /// No description provided for @citizenServices.
-  ///
-  /// In en, this message translates to:
-  /// **'Citizen Services'**
-  String get citizenServices;
-
-  /// No description provided for @registerProject.
-  ///
-  /// In en, this message translates to:
-  /// **'Register Project'**
-  String get registerProject;
-
-  /// No description provided for @findMineralPlaces.
-  ///
-  /// In en, this message translates to:
-  /// **'Find Mineral Places'**
-  String get findMineralPlaces;
-
-  /// No description provided for @organizationServices.
-  ///
-  /// In en, this message translates to:
-  /// **'Organization Services'**
-  String get organizationServices;
-
-  /// No description provided for @unauthorizedAccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Access restricted to Organization accounts.'**
-  String get unauthorizedAccess;
-
-  /// No description provided for @projectsTab.
-  ///
-  /// In en, this message translates to:
-  /// **'Projects'**
-  String get projectsTab;
-
-  /// No description provided for @temporaryExcavation.
-  ///
-  /// In en, this message translates to:
-  /// **'Temporary Excavation'**
-  String get temporaryExcavation;
-
-  /// No description provided for @mineralEnquiries.
-  ///
-  /// In en, this message translates to:
-  /// **'Mineral Enquiries'**
-  String get mineralEnquiries;
-
-  /// No description provided for @mineralsCatalog.
-  ///
-  /// In en, this message translates to:
-  /// **'Mineral Catalog'**
-  String get mineralsCatalog;
-
-  /// No description provided for @siteInventory.
-  ///
-  /// In en, this message translates to:
-  /// **'Site Inventory'**
-  String get siteInventory;
-
-  /// No description provided for @materialTransfers.
-  ///
-  /// In en, this message translates to:
-  /// **'Transfers'**
-  String get materialTransfers;
-
-  /// No description provided for @purchaseOrders.
-  ///
-  /// In en, this message translates to:
-  /// **'Orders'**
-  String get purchaseOrders;
-
-  /// No description provided for @supervisors.
-  ///
-  /// In en, this message translates to:
-  /// **'Supervisors'**
-  String get supervisors;
 }
 
 class _AppLocalizationsDelegate

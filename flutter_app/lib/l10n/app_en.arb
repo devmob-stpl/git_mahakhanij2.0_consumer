@@ -583,8 +583,7 @@
   "siteInventory": "Site Inventory",
   "materialTransfers": "Transfers",
   "purchaseOrders": "Orders",
-  "supervisors": "Supervisors"
-  "dontAllow": "Don't Allow",
+  "supervisors": "Supervisors",
   "unsupportedFileFormat": "Unsupported file format. Please upload a valid PDF or Image file.",
   "verifyOrgPanBeforeRegistration": "Please verify your Organization PAN before completing registration.",
   "userNotAvailable": "User not available. Please register or check mobile number.",
