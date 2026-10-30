@@ -1,7 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../core/network/dio_client.dart';
+import '../../core/network/network_checker.dart';
 import '../../core/network/release_json.dart';
+import '../../core/utils/api_error_localizer.dart';
 import '../../domain/consumer_project_models.dart';
 
 class SaveUpdateProjectResponse {
@@ -20,7 +23,8 @@ class SaveUpdateProjectResponse {
   factory SaveUpdateProjectResponse.fromJson(Map<String, dynamic> json) {
     return SaveUpdateProjectResponse(
       statusCode: json['statusCode']?.toString() ?? '500',
-      statusMessage: json['statusMessage']?.toString() ?? 'Operation failed',
+      statusMessage: json['statusMessage']?.toString() ??
+          ApiErrorLocalizer.currentLocalizations.somethingWentWrong,
       responseData: json['responseData'],
     );
   }
@@ -44,15 +48,20 @@ abstract class ConsumerProjectRepository {
 }
 
 class ConsumerProjectRepositoryImpl implements ConsumerProjectRepository {
-  final Dio _dio = Dio(
-    BaseOptions(
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 15),
-    ),
-  );
+  final Dio _dio;
+
+  ConsumerProjectRepositoryImpl({Dio? dio}) : _dio = dio ?? DioClient.createDio();
 
   @override
   Future<SaveUpdateProjectResponse> saveUpdateProject(Map<String, dynamic> projectData) async {
+    // Pre-flight internet connectivity check
+    if (!await NetworkChecker.checkOrNotify()) {
+      return SaveUpdateProjectResponse(
+        statusCode: 'NoInternet',
+        statusMessage: ApiErrorLocalizer.currentLocalizations.noInternetConnection,
+      );
+    }
+
     try {
       final response = await _dio.post(
         ApiEndpoints.saveConsumerProject,
@@ -62,24 +71,50 @@ class ConsumerProjectRepositoryImpl implements ConsumerProjectRepository {
       final data = asResponseMap(response.data);
 
       if (data != null) {
-        return SaveUpdateProjectResponse.fromJson(data);
+        final parsed = SaveUpdateProjectResponse.fromJson(data);
+        return SaveUpdateProjectResponse(
+          statusCode: parsed.statusCode,
+          statusMessage: ApiErrorLocalizer.localizeCurrent(
+            parsed.statusMessage,
+            defaultMessage: parsed.statusMessage,
+          ),
+          responseData: parsed.responseData,
+        );
       }
-      return const SaveUpdateProjectResponse(
+      return SaveUpdateProjectResponse(
         statusCode: '200',
-        statusMessage: 'Project saved successfully',
+        statusMessage: ApiErrorLocalizer.currentLocalizations.projectRegisteredSuccess,
       );
     } catch (e) {
-      if (e is DioException && e.response?.data != null) {
-        try {
-          final errData = asResponseMap(e.response!.data);
-          if (errData != null) {
-            return SaveUpdateProjectResponse.fromJson(errData);
-          }
-        } catch (_) {}
+      if (e is DioException) {
+        if (e.type == DioExceptionType.connectionError ||
+            e.type == DioExceptionType.connectionTimeout) {
+          NetworkChecker.showOfflineMessage();
+          return SaveUpdateProjectResponse(
+            statusCode: 'NoInternet',
+            statusMessage: ApiErrorLocalizer.currentLocalizations.noInternetConnection,
+          );
+        }
+        if (e.response?.data != null) {
+          try {
+            final errData = asResponseMap(e.response!.data);
+            if (errData != null) {
+              final parsed = SaveUpdateProjectResponse.fromJson(errData);
+              return SaveUpdateProjectResponse(
+                statusCode: parsed.statusCode,
+                statusMessage: ApiErrorLocalizer.localizeCurrent(
+                  parsed.statusMessage,
+                  defaultMessage: parsed.statusMessage,
+                ),
+                responseData: parsed.responseData,
+              );
+            }
+          } catch (_) {}
+        }
       }
       return SaveUpdateProjectResponse(
         statusCode: '500',
-        statusMessage: 'Failed to connect to server: ${e.toString()}',
+        statusMessage: ApiErrorLocalizer.currentLocalizations.projectRegisterFailed,
       );
     }
   }
@@ -93,6 +128,18 @@ class ConsumerProjectRepositoryImpl implements ConsumerProjectRepository {
     int noPage = 1,
     int rowsPerPage = 50,
   }) async {
+    // Pre-flight internet connectivity check
+    if (!await NetworkChecker.checkOrNotify()) {
+      return ConsumerProjectApiResponse(
+        statusCode: 'NoInternet',
+        statusMessage: ApiErrorLocalizer.currentLocalizations.noInternetConnection,
+        projects: [],
+        pageNo: 1,
+        pageCount: 1,
+        totalCount: '0',
+      );
+    }
+
     try {
       final url = ApiEndpoints.getConsumerProjectsUrl(
         userId: userId,
@@ -110,7 +157,17 @@ class ConsumerProjectRepositoryImpl implements ConsumerProjectRepository {
       if (data != null) {
         final apiResp = ConsumerProjectApiResponse.fromJson(data);
         if (apiResp.isSuccess && apiResp.projects.isNotEmpty) {
-          return apiResp;
+          return ConsumerProjectApiResponse(
+            statusCode: apiResp.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(
+              apiResp.statusMessage,
+              defaultMessage: apiResp.statusMessage,
+            ),
+            projects: apiResp.projects,
+            pageNo: apiResp.pageNo,
+            pageCount: apiResp.pageCount,
+            totalCount: apiResp.totalCount,
+          );
         }
       }
     } catch (_) {
@@ -121,7 +178,7 @@ class ConsumerProjectRepositoryImpl implements ConsumerProjectRepository {
   }
 
   static ConsumerProjectApiResponse _fallbackResponse(int userId) {
-    return ConsumerProjectApiResponse(
+    return const ConsumerProjectApiResponse(
       statusCode: '200',
       statusMessage: 'ConsumerController-getProjectDetails : Fetched Records Completed',
       pageNo: 1,
@@ -172,7 +229,7 @@ class ConsumerProjectRepositoryImpl implements ConsumerProjectRepository {
           remark: null,
           approvedQuantity: 0,
           getDocument: [
-            const ConsumerProjectDocument(
+            ConsumerProjectDocument(
               id: 659,
               entity: 'ConsumerProject',
               refId: 125,
@@ -235,7 +292,7 @@ class ConsumerProjectRepositoryImpl implements ConsumerProjectRepository {
           remark: null,
           approvedQuantity: 0,
           getDocument: [
-            const ConsumerProjectDocument(
+            ConsumerProjectDocument(
               id: 650,
               entity: 'ConsumerProject',
               refId: 124,
@@ -254,7 +311,7 @@ class ConsumerProjectRepositoryImpl implements ConsumerProjectRepository {
             ),
           ],
         ),
-        const ConsumerProjectItem(
+        ConsumerProjectItem(
           rowNumber: 0,
           id: 123,
           departmentId: 0,

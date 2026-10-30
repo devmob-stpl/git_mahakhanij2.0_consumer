@@ -13,6 +13,7 @@ import '../../shared/widgets/location_dropdown_section.dart';
 import '../../providers/operating_context_provider.dart';
 import '../../data/repositories/consumer_project_repository.dart';
 import '../../shared/widgets/map_location_picker_modal.dart';
+import '../../core/utils/api_error_localizer.dart';
 import 'package:mahakhanij_consumer/l10n/app_localizations.dart';
 
 class ConsumerProjectRegistrationScreen extends ConsumerStatefulWidget {
@@ -51,8 +52,8 @@ class _ConsumerProjectRegistrationScreenState extends ConsumerState<ConsumerProj
     super.initState();
     if (widget.existingProject != null) {
       _nameController.text = widget.existingProject!.name;
-      _line1Controller.text = widget.existingProject!.location?.line1 ?? '';
-      _pincodeController.text = widget.existingProject!.location?.pincode ?? '411045';
+      _line1Controller.text = widget.existingProject!.location.line1;
+      _pincodeController.text = widget.existingProject!.location.pincode;
       if (widget.existingProject!.geo != null) {
         _latitude = widget.existingProject!.geo!.latitude;
         _longitude = widget.existingProject!.geo!.longitude;
@@ -106,48 +107,73 @@ class _ConsumerProjectRegistrationScreenState extends ConsumerState<ConsumerProj
 
 
 
-    final response = await consumerProjectRepo.saveUpdateProject(payload);
+    try {
+      final response = await consumerProjectRepo.saveUpdateProject(payload);
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (response.isSuccess) {
-      final newProj = Project(
-        id: 'cons-site-${DateTime.now().millisecondsSinceEpoch}',
-        organizationId: curUser?.id ?? 'user-con-001',
-        name: _nameController.text.trim(),
-        code: generatedCode,
-        description: 'Private Consumer Delivery Site',
-        status: 'ACTIVE',
-        startDate: DateTime.now().toIso8601String().split('T')[0],
-        location: Address(
-          line1: _line1Controller.text.trim(),
-          village: _villageOrCity,
-          taluka: _taluka,
-          district: _district,
-          pincode: _pincodeController.text.trim(),
-        ),
-        geo: (_latitude != null && _longitude != null)
-            ? GeoPoint(latitude: _latitude!, longitude: _longitude!)
-            : null,
-      );
+      final l10n = AppLocalizations.of(context);
+      if (response.isSuccess) {
+        final newProj = Project(
+          id: 'cons-site-${DateTime.now().millisecondsSinceEpoch}',
+          organizationId: curUser?.id ?? 'user-con-001',
+          name: _nameController.text.trim(),
+          code: generatedCode,
+          description: 'Private Consumer Delivery Site',
+          status: 'ACTIVE',
+          startDate: DateTime.now().toIso8601String().split('T')[0],
+          location: Address(
+            line1: _line1Controller.text.trim(),
+            village: _villageOrCity,
+            taluka: _taluka,
+            district: _district,
+            pincode: _pincodeController.text.trim(),
+          ),
+          geo: (_latitude != null && _longitude != null)
+              ? GeoPoint(latitude: _latitude!, longitude: _longitude!)
+              : null,
+        );
 
-      await orgRepo.createProject(newProj);
-      opNotifier.selectProject(newProj);
-      ref.read(consumerProjectsProvider.notifier).refresh();
+        await orgRepo.createProject(newProj);
+        if (!mounted) return;
+        opNotifier.selectProject(newProj);
+        ref.read(consumerProjectsProvider.notifier).refresh();
 
+        setState(() => _isLoading = false);
+        final defaultSuccess = l10n?.deliverySiteRegisteredSuccess ?? 'Private delivery site registered!';
+        final successMsg = response.statusMessage.isNotEmpty
+            ? ApiErrorLocalizer.localize(context, response.statusMessage, defaultMessage: defaultSuccess)
+            : defaultSuccess;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(successMsg),
+            backgroundColor: const Color(0xFF2563EB),
+          ),
+        );
+        context.pop();
+      } else {
+        setState(() => _isLoading = false);
+        final defaultFail = l10n?.deliverySiteRegisterFailed ?? 'Failed to register site.';
+        final errorMsg = response.statusMessage.isNotEmpty
+            ? ApiErrorLocalizer.localize(context, response.statusMessage, defaultMessage: defaultFail)
+            : defaultFail;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
+      final l10n = AppLocalizations.of(context);
+      final defaultFail = l10n?.deliverySiteRegisterFailed ?? 'Failed to register site.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response.statusMessage.isNotEmpty ? response.statusMessage : 'Private delivery site registered!'),
-          backgroundColor: const Color(0xFF2563EB),
-        ),
-      );
-      context.pop();
-    } else {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response.statusMessage.isNotEmpty ? response.statusMessage : 'Failed to register site.'),
+          content: Text(
+            ApiErrorLocalizer.localize(context, e.toString(), defaultMessage: defaultFail),
+          ),
           backgroundColor: Colors.red,
         ),
       );

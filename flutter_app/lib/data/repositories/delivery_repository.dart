@@ -3,6 +3,7 @@ import '../../domain/delivery.dart';
 import '../../domain/inventory.dart';
 import '../../domain/common.dart';
 import '../../core/config/app_config.dart';
+import '../../core/utils/api_error_localizer.dart';
 import '../mock_db.dart';
 
 final deliveryRepositoryProvider = Provider<DeliveryRepository>((ref) {
@@ -73,7 +74,7 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
   }) async {
     await Future.delayed(Duration(milliseconds: AppConfig.mockLatencyMs));
     final index = _db.deliveries.indexWhere((d) => d.id == deliveryId);
-    if (index == -1) throw Exception('Delivery not found');
+    if (index == -1) throw Exception(ApiErrorLocalizer.currentLocalizations.deliveryNotFound);
 
     final current = _db.deliveries[index];
     final permitted = current.transportPermit.permittedQuantity.value;

@@ -27,10 +27,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcome => 'Welcome';
 
   @override
-  String get digitpDeliveries => 'DigiTPs\nIssued';
+  String get digitpDeliveries => 'Issued DigiTPs';
 
   @override
-  String get receivedMaterial => 'DigiTPs\nReceived';
+  String get receivedMaterial => 'Received DigiTPs';
 
   @override
   String get inTransitVehicles => 'Vehicles\nIn Transit';
@@ -67,7 +67,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pointCameraDescription =>
-      'Point camera at the driver\'s QR code or barcode to extract permit details and confirm material receipt.';
+      'Point camera at the driver\'s QR code or barcode to extract permit details and confirm mineral receipt.';
 
   @override
   String get openCameraScanner => 'Open Camera Scanner';
@@ -384,10 +384,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scanAnotherCode => 'Scan Another Code';
 
   @override
-  String get viewAllReceivedDeliveries => 'View All Received Deliveries';
+  String get viewAllReceivedDeliveries => 'View All Received DigiTP Deliveries';
 
   @override
-  String get materialReceivedSuccess => 'Material Received Successfully!';
+  String get materialReceivedSuccess => 'Mineral Received Successfully!';
 
   @override
   String get govtOfMaharashtra => 'Government of Maharashtra';
@@ -550,7 +550,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get talukaLabel => 'Taluka';
 
   @override
-  String get talukaHint => 'e.g. Haveli';
+  String get talukaHint => 'Select Taluka';
 
   @override
   String get loading => 'Loading...';
@@ -562,10 +562,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get villageRuralLabel => 'Village / Rural Area';
 
   @override
-  String get cityCorporationHint => 'e.g. Pune City';
+  String get cityCorporationHint => 'Select City';
 
   @override
-  String get villageRuralHint => 'e.g. Narayangaon';
+  String get villageRuralHint => 'Select Village';
 
   @override
   String get addressLabel => 'Address (House / Flat / Street / Area)';
@@ -618,10 +618,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aadhaarIdentityVerificationDesc =>
-      'Verify your Aadhaar OTP or upload document photo';
+      'Verify your Aadhaar OTP and upload document photo';
 
   @override
-  String get method1LiveOtp => 'Method 1: OTP Verification';
+  String get method1LiveOtp => 'Step 1: OTP Verification';
 
   @override
   String get twelveDigitAadhaarNumber => '12-Digit Aadhaar Number *';
@@ -643,7 +643,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get method2UploadAadhaar =>
-      'Method 2: Upload Aadhaar Card Document (PDF / Image)';
+      'Step 2: Upload Aadhaar Card Document (PDF / Image)';
 
   @override
   String get uploadAadhaarDesc =>
@@ -792,7 +792,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resendBtn => 'Resend OTP';
 
   @override
-  String get digitpsNotReceived => 'DigiTPs\nNot Received';
+  String get digitpsNotReceived => 'Not Received DigiTPs';
 
   @override
   String get enterFullName => 'Enter Full Name';
@@ -1227,7 +1227,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Please enter a valid numeric DigiTP number';
 
   @override
-  String get deliveryNotFound => 'Delivery not found';
+  String get deliveryNotFound => 'Delivery not found.';
 
   @override
   String get langEnglish => 'English (EN)';
@@ -1496,14 +1496,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pendingUpper => 'PENDING';
 
   @override
-  String get method1LivePanVerification => 'Method 1: PAN Verification';
+  String get method1LivePanVerification => 'Step 1: PAN Verification';
 
   @override
   String get orgPanNumberRequired => 'Organization PAN Number *';
 
   @override
   String get method2UploadPanCard =>
-      'Method 2: Upload PAN Card Document (PDF / Image)';
+      'Step 2: Upload PAN Card Document (PDF / Image)';
 
   @override
   String get choosePanPdfOrImage => 'Choose PAN PDF or image';
@@ -1604,6 +1604,81 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dontAllow => 'Don\'t Allow';
+
+  @override
+  String get unsupportedFileFormat =>
+      'Unsupported file format. Please upload a valid PDF or Image file.';
+
+  @override
+  String get verifyOrgPanBeforeRegistration =>
+      'Please verify your Organization PAN before completing registration.';
+
+  @override
+  String get userNotAvailable =>
+      'User not available. Please register or check mobile number.';
+
+  @override
+  String get mobileAlreadyRegistered =>
+      'This mobile number is already registered in Mahakhanij system.';
+
+  @override
+  String get recordAlreadyExists => 'Record already exists in the system.';
+
+  @override
+  String get fileSizeTooLarge =>
+      'File size is too large. Please select a file under 5MB.';
+
+  @override
+  String get connectionTimeout => 'Connection timed out. Please try again.';
+
+  @override
+  String get serverErrorTryAgain => 'Server error. Please try again later.';
+
+  @override
+  String get somethingWentWrong => 'Something went wrong. Please try again.';
+
+  @override
+  String get digitpAlreadyReceived => 'DigiTP is already received.';
+
+  @override
+  String get projectRegisteredSuccess => 'Project registered successfully!';
+
+  @override
+  String get projectRegisterFailed => 'Failed to register project.';
+
+  @override
+  String get deliverySiteRegisteredSuccess =>
+      'Private delivery site registered successfully!';
+
+  @override
+  String get deliverySiteRegisterFailed => 'Failed to register site.';
+
+  @override
+  String get invalidResponseFromServer =>
+      'Invalid response received from server.';
+
+  @override
+  String get gstVerificationFailed =>
+      'GST verification failed. Please try again.';
+
+  @override
+  String get failedToFetchDashboardCounts =>
+      'Failed to fetch dashboard counts.';
+
+  @override
+  String get errVehicleNoRequired => 'Vehicle number cannot be empty.';
+
+  @override
+  String get inventoryBalanceNotFound => 'Inventory balance not found.';
+
+  @override
+  String get aadhaarLabel => 'Aadhaar';
+
+  @override
+  String get speedUnitKmH => 'km/h';
+
+  @override
+  String get unitBrass => 'Brass';
 
   @override
   String get citizenServices => 'Citizen Services';

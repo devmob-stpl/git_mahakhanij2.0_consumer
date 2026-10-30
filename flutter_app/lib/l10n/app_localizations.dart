@@ -139,13 +139,13 @@ abstract class AppLocalizations {
   /// No description provided for @digitpDeliveries.
   ///
   /// In en, this message translates to:
-  /// **'DigiTPs\nIssued'**
+  /// **'Issued DigiTPs'**
   String get digitpDeliveries;
 
   /// No description provided for @receivedMaterial.
   ///
   /// In en, this message translates to:
-  /// **'DigiTPs\nReceived'**
+  /// **'Received DigiTPs'**
   String get receivedMaterial;
 
   /// No description provided for @inTransitVehicles.
@@ -217,7 +217,7 @@ abstract class AppLocalizations {
   /// No description provided for @pointCameraDescription.
   ///
   /// In en, this message translates to:
-  /// **'Point camera at the driver\'s QR code or barcode to extract permit details and confirm material receipt.'**
+  /// **'Point camera at the driver\'s QR code or barcode to extract permit details and confirm mineral receipt.'**
   String get pointCameraDescription;
 
   /// No description provided for @openCameraScanner.
@@ -829,13 +829,13 @@ abstract class AppLocalizations {
   /// No description provided for @viewAllReceivedDeliveries.
   ///
   /// In en, this message translates to:
-  /// **'View All Received Deliveries'**
+  /// **'View All Received DigiTP Deliveries'**
   String get viewAllReceivedDeliveries;
 
   /// No description provided for @materialReceivedSuccess.
   ///
   /// In en, this message translates to:
-  /// **'Material Received Successfully!'**
+  /// **'Mineral Received Successfully!'**
   String get materialReceivedSuccess;
 
   /// No description provided for @govtOfMaharashtra.
@@ -1141,7 +1141,7 @@ abstract class AppLocalizations {
   /// No description provided for @talukaHint.
   ///
   /// In en, this message translates to:
-  /// **'e.g. Haveli'**
+  /// **'Select Taluka'**
   String get talukaHint;
 
   /// No description provided for @loading.
@@ -1165,13 +1165,13 @@ abstract class AppLocalizations {
   /// No description provided for @cityCorporationHint.
   ///
   /// In en, this message translates to:
-  /// **'e.g. Pune City'**
+  /// **'Select City'**
   String get cityCorporationHint;
 
   /// No description provided for @villageRuralHint.
   ///
   /// In en, this message translates to:
-  /// **'e.g. Narayangaon'**
+  /// **'Select Village'**
   String get villageRuralHint;
 
   /// No description provided for @addressLabel.
@@ -1273,13 +1273,13 @@ abstract class AppLocalizations {
   /// No description provided for @aadhaarIdentityVerificationDesc.
   ///
   /// In en, this message translates to:
-  /// **'Verify your Aadhaar OTP or upload document photo'**
+  /// **'Verify your Aadhaar OTP and upload document photo'**
   String get aadhaarIdentityVerificationDesc;
 
   /// No description provided for @method1LiveOtp.
   ///
   /// In en, this message translates to:
-  /// **'Method 1: OTP Verification'**
+  /// **'Step 1: OTP Verification'**
   String get method1LiveOtp;
 
   /// No description provided for @twelveDigitAadhaarNumber.
@@ -1321,7 +1321,7 @@ abstract class AppLocalizations {
   /// No description provided for @method2UploadAadhaar.
   ///
   /// In en, this message translates to:
-  /// **'Method 2: Upload Aadhaar Card Document (PDF / Image)'**
+  /// **'Step 2: Upload Aadhaar Card Document (PDF / Image)'**
   String get method2UploadAadhaar;
 
   /// No description provided for @uploadAadhaarDesc.
@@ -1603,7 +1603,7 @@ abstract class AppLocalizations {
   /// No description provided for @digitpsNotReceived.
   ///
   /// In en, this message translates to:
-  /// **'DigiTPs\nNot Received'**
+  /// **'Not Received DigiTPs'**
   String get digitpsNotReceived;
 
   /// No description provided for @enterFullName.
@@ -2407,7 +2407,7 @@ abstract class AppLocalizations {
   /// No description provided for @deliveryNotFound.
   ///
   /// In en, this message translates to:
-  /// **'Delivery not found'**
+  /// **'Delivery not found.'**
   String get deliveryNotFound;
 
   /// No description provided for @langEnglish.
@@ -2905,7 +2905,7 @@ abstract class AppLocalizations {
   /// No description provided for @method1LivePanVerification.
   ///
   /// In en, this message translates to:
-  /// **'Method 1: PAN Verification'**
+  /// **'Step 1: PAN Verification'**
   String get method1LivePanVerification;
 
   /// No description provided for @orgPanNumberRequired.
@@ -2917,7 +2917,7 @@ abstract class AppLocalizations {
   /// No description provided for @method2UploadPanCard.
   ///
   /// In en, this message translates to:
-  /// **'Method 2: Upload PAN Card Document (PDF / Image)'**
+  /// **'Step 2: Upload PAN Card Document (PDF / Image)'**
   String get method2UploadPanCard;
 
   /// No description provided for @choosePanPdfOrImage.
@@ -3087,6 +3087,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Don\'t Allow'**
   String get dontAllow;
+
+  /// No description provided for @unsupportedFileFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported file format. Please upload a valid PDF or Image file.'**
+  String get unsupportedFileFormat;
+
+  /// No description provided for @verifyOrgPanBeforeRegistration.
+  ///
+  /// In en, this message translates to:
+  /// **'Please verify your Organization PAN before completing registration.'**
+  String get verifyOrgPanBeforeRegistration;
+
+  /// No description provided for @userNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'User not available. Please register or check mobile number.'**
+  String get userNotAvailable;
+
+  /// No description provided for @mobileAlreadyRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'This mobile number is already registered in Mahakhanij system.'**
+  String get mobileAlreadyRegistered;
+
+  /// No description provided for @recordAlreadyExists.
+  ///
+  /// In en, this message translates to:
+  /// **'Record already exists in the system.'**
+  String get recordAlreadyExists;
+
+  /// No description provided for @fileSizeTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'File size is too large. Please select a file under 5MB.'**
+  String get fileSizeTooLarge;
+
+  /// No description provided for @connectionTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection timed out. Please try again.'**
+  String get connectionTimeout;
+
+  /// No description provided for @serverErrorTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Server error. Please try again later.'**
+  String get serverErrorTryAgain;
+
+  /// No description provided for @somethingWentWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get somethingWentWrong;
+
+  /// No description provided for @digitpAlreadyReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'DigiTP is already received.'**
+  String get digitpAlreadyReceived;
+
+  /// No description provided for @projectRegisteredSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Project registered successfully!'**
+  String get projectRegisteredSuccess;
+
+  /// No description provided for @projectRegisterFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to register project.'**
+  String get projectRegisterFailed;
+
+  /// No description provided for @deliverySiteRegisteredSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Private delivery site registered successfully!'**
+  String get deliverySiteRegisteredSuccess;
+
+  /// No description provided for @deliverySiteRegisterFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to register site.'**
+  String get deliverySiteRegisterFailed;
+
+  /// No description provided for @invalidResponseFromServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid response received from server.'**
+  String get invalidResponseFromServer;
+
+  /// No description provided for @gstVerificationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'GST verification failed. Please try again.'**
+  String get gstVerificationFailed;
+
+  /// No description provided for @failedToFetchDashboardCounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to fetch dashboard counts.'**
+  String get failedToFetchDashboardCounts;
+
+  /// No description provided for @errVehicleNoRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle number cannot be empty.'**
+  String get errVehicleNoRequired;
+
+  /// No description provided for @inventoryBalanceNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory balance not found.'**
+  String get inventoryBalanceNotFound;
+
+  /// No description provided for @aadhaarLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar'**
+  String get aadhaarLabel;
+
+  /// No description provided for @speedUnitKmH.
+  ///
+  /// In en, this message translates to:
+  /// **'km/h'**
+  String get speedUnitKmH;
+
+  /// No description provided for @unitBrass.
+  ///
+  /// In en, this message translates to:
+  /// **'Brass'**
+  String get unitBrass;
 
   /// No description provided for @citizenServices.
   ///

@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import '../../core/network/dio_client.dart';
+import '../../core/network/network_checker.dart';
 import '../../core/network/release_json.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/api_endpoints.dart';
@@ -27,12 +29,16 @@ abstract class LocationRepository {
 }
 
 class LocationRepositoryImpl implements LocationRepository {
-  final Dio _dio = Dio(
-    BaseOptions(
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 15),
-    ),
-  );
+  final Dio _dio;
+
+  LocationRepositoryImpl({Dio? dio})
+      : _dio = dio ??
+            DioClient.createDio(
+              options: BaseOptions(
+                connectTimeout: const Duration(seconds: 15),
+                receiveTimeout: const Duration(seconds: 15),
+              ),
+            );
 
   List<StateModel>? _cachedStates;
   final Map<int, List<DistrictModel>> _cachedDistricts = {};
@@ -43,6 +49,10 @@ class LocationRepositoryImpl implements LocationRepository {
   Future<List<StateModel>> getStates() async {
     if (_cachedStates != null && _cachedStates!.isNotEmpty) {
       return _cachedStates!;
+    }
+
+    if (!await NetworkChecker.checkOrNotify()) {
+      return [];
     }
 
     try {
@@ -72,6 +82,10 @@ class LocationRepositoryImpl implements LocationRepository {
       return _cachedDistricts[stateId]!;
     }
 
+    if (!await NetworkChecker.checkOrNotify()) {
+      return [];
+    }
+
     try {
       final url = ApiEndpoints.getDistrictsUrl(stateId);
       final response = await _dio.get(url);
@@ -97,6 +111,10 @@ class LocationRepositoryImpl implements LocationRepository {
   Future<List<TalukaModel>> getTalukas(int districtId) async {
     if (_cachedTalukas.containsKey(districtId)) {
       return _cachedTalukas[districtId]!;
+    }
+
+    if (!await NetworkChecker.checkOrNotify()) {
+      return [];
     }
 
     try {
@@ -130,6 +148,10 @@ class LocationRepositoryImpl implements LocationRepository {
     final cacheKey = '$districtId-$talukaId-$isTown';
     if (_cachedCensus.containsKey(cacheKey)) {
       return _cachedCensus[cacheKey]!;
+    }
+
+    if (!await NetworkChecker.checkOrNotify()) {
+      return [];
     }
 
     try {

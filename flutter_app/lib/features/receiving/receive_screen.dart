@@ -6,9 +6,11 @@ import '../../core/constants/app_colors.dart';
 import '../../core/services/location_service.dart';
 import '../../core/services/scan_processing_service.dart';
 import '../../core/utils/date_formatter.dart';
+import '../../core/utils/api_error_localizer.dart';
 import '../../domain/consumer_digitp_models.dart';
 import '../../domain/scan_result.dart';
 import '../../l10n/app_localizations.dart';
+import '../../core/utils/unit_localizer.dart';
 import '../../providers/consumer_dashboard_count_provider.dart';
 import '../../providers/consumer_digitp_provider.dart';
 import '../../providers/session_provider.dart';
@@ -93,13 +95,14 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
       );
 
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
 
       if (response.isAlreadyReceived) {
         setState(() {
           _alreadyReceived = true;
           _statusMessage = response.statusMessage.isNotEmpty
-              ? response.statusMessage
-              : 'Invoice is already received.';
+              ? ApiErrorLocalizer.localize(context, response.statusMessage, defaultMessage: l10n.digitpAlreadyReceived)
+              : l10n.digitpAlreadyReceived;
           _scannedItem = response.responseData ?? ConsumerDigiTpItem(invoiceNo: invoiceNo);
           _step = _ReceiveStep.scanned;
         });
@@ -115,8 +118,8 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
           _scannedItem = item;
           _alreadyReceived = isItemReceived;
           _statusMessage = isItemReceived
-              ? 'Invoice is already received.'
-              : (response.statusMessage.isNotEmpty ? response.statusMessage : null);
+              ? l10n.digitpAlreadyReceived
+              : (response.statusMessage.isNotEmpty ? ApiErrorLocalizer.localize(context, response.statusMessage) : null);
           _step = _ReceiveStep.scanned;
         });
         return;
@@ -124,8 +127,8 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
 
       throw Exception(
         response.statusMessage.isNotEmpty
-            ? response.statusMessage
-            : 'Unable to fetch DigiTP details.',
+            ? ApiErrorLocalizer.localize(context, response.statusMessage, defaultMessage: l10n.failedToLoadDigiTpList)
+            : l10n.failedToLoadDigiTpList,
       );
     } catch (e, stackTrace) {
       debugPrint('Process scan failed: $e');
@@ -138,7 +141,11 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
       });
 
       await _showErrorDialog(
-        e is FormatException ? e.message : e.toString().replaceAll('Exception: ', ''),
+        ApiErrorLocalizer.localize(
+          context,
+          e is FormatException ? e.message : e.toString(),
+          defaultMessage: AppLocalizations.of(context)!.failedToLoadDigiTpList,
+        ),
       );
     }
   }
@@ -253,81 +260,96 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
       }
     }
 
-    final repo = ref.read(consumerDigiTpRepositoryProvider);
-    final request = ReceiveInvoiceRequest(
-      invoiceNo: _scannedItem!.invoiceNo,
-      consumerId: resolvedConsumerId,
-      rVehicleLat: locationRes.latitude,
-      rVehicleLong: locationRes.longitude,
-    );
-
-    final response = await repo.receiveInvoice(request: request);
-
-    if (!mounted) return;
-
-    setState(() => _isSubmitting = false);
-
-    if (response.isSuccess) {
-      // HTTP 200 Success
-      setState(() {
-        _alreadyReceived = true;
-        _scannedItem = ConsumerDigiTpItem(
-          invoiceNo: _scannedItem!.invoiceNo,
-          plotId: _scannedItem!.plotId,
-          plotName: _scannedItem!.plotName,
-          ownerId: _scannedItem!.ownerId,
-          ownerName: _scannedItem!.ownerName,
-          ownerMobileNo: _scannedItem!.ownerMobileNo,
-          vehicleId: _scannedItem!.vehicleId,
-          vehicleNo: _scannedItem!.vehicleNo,
-          validityFrom: _scannedItem!.validityFrom,
-          validityUpto: _scannedItem!.validityUpto,
-          distance: _scannedItem!.distance,
-          destination: _scannedItem!.destination,
-          timeStamp: _scannedItem!.timeStamp,
-          userId: _scannedItem!.userId,
-          quantity: _scannedItem!.quantity,
-          createdBy: _scannedItem!.createdBy,
-          materialId: _scannedItem!.materialId,
-          materialType: _scannedItem!.materialType,
-          mineralUnit: _scannedItem!.mineralUnit,
-          projectId: _scannedItem!.projectId,
-          projectName: _scannedItem!.projectName,
-          driverMobNo: _scannedItem!.driverMobNo,
-          driverName: _scannedItem!.driverName,
-          consumerId: _scannedItem!.consumerId,
-          invoiceStatusId: 1,
-          invoiceStatus: 'Received',
-        );
-        _step = _ReceiveStep.completed;
-      });
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response.statusMessage.isNotEmpty
-              ? response.statusMessage
-              : 'Invoice received successfully.'),
-          backgroundColor: const Color(0xFF2563EB),
-        ),
+    try {
+      final repo = ref.read(consumerDigiTpRepositoryProvider);
+      final request = ReceiveInvoiceRequest(
+        invoiceNo: _scannedItem!.invoiceNo,
+        consumerId: resolvedConsumerId,
+        rVehicleLat: locationRes.latitude,
+        rVehicleLong: locationRes.longitude,
       );
 
-      // Invalidate DigiTP lists & dashboard count providers
-      ref.invalidate(consumerDigiTpListProvider(2));
-      ref.invalidate(consumerDigiTpListProvider(3));
-      ref.invalidate(consumerDashboardCountProvider);
-    } else if (response.isAlreadyReceived) {
-      // HTTP 409 Conflict: Already Received
-      setState(() {
-        _alreadyReceived = true;
-        _statusMessage = 'DigiTP is already received.';
-      });
-      await _showErrorDialog('DigiTP is already received.');
-    } else {
+      final response = await repo.receiveInvoice(request: request);
+
+      if (!mounted) return;
+
+      setState(() => _isSubmitting = false);
+      final l10n = AppLocalizations.of(context)!;
+
+      if (response.isSuccess) {
+        // HTTP 200 Success
+        setState(() {
+          _alreadyReceived = true;
+          _scannedItem = ConsumerDigiTpItem(
+            invoiceNo: _scannedItem!.invoiceNo,
+            plotId: _scannedItem!.plotId,
+            plotName: _scannedItem!.plotName,
+            ownerId: _scannedItem!.ownerId,
+            ownerName: _scannedItem!.ownerName,
+            ownerMobileNo: _scannedItem!.ownerMobileNo,
+            vehicleId: _scannedItem!.vehicleId,
+            vehicleNo: _scannedItem!.vehicleNo,
+            validityFrom: _scannedItem!.validityFrom,
+            validityUpto: _scannedItem!.validityUpto,
+            distance: _scannedItem!.distance,
+            destination: _scannedItem!.destination,
+            timeStamp: _scannedItem!.timeStamp,
+            userId: _scannedItem!.userId,
+            quantity: _scannedItem!.quantity,
+            createdBy: _scannedItem!.createdBy,
+            materialId: _scannedItem!.materialId,
+            materialType: _scannedItem!.materialType,
+            mineralUnit: _scannedItem!.mineralUnit,
+            projectId: _scannedItem!.projectId,
+            projectName: _scannedItem!.projectName,
+            driverMobNo: _scannedItem!.driverMobNo,
+            driverName: _scannedItem!.driverName,
+            consumerId: _scannedItem!.consumerId,
+            invoiceStatusId: 1,
+            invoiceStatus: 'Received',
+          );
+          _step = _ReceiveStep.completed;
+        });
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              response.statusMessage.isNotEmpty
+                  ? ApiErrorLocalizer.localize(context, response.statusMessage, defaultMessage: l10n.materialReceivedSuccess)
+                  : l10n.materialReceivedSuccess,
+            ),
+            backgroundColor: const Color(0xFF2563EB),
+          ),
+        );
+
+        // Invalidate DigiTP lists & dashboard count providers
+        ref.invalidate(consumerDigiTpListProvider(2));
+        ref.invalidate(consumerDigiTpListProvider(3));
+        ref.invalidate(consumerDashboardCountProvider);
+      } else if (response.isAlreadyReceived) {
+        // HTTP 409 Conflict: Already Received
+        setState(() {
+          _alreadyReceived = true;
+          _statusMessage = l10n.digitpAlreadyReceived;
+        });
+        await _showErrorDialog(l10n.digitpAlreadyReceived);
+      } else {
+        await _showErrorDialog(
+          response.statusMessage.isNotEmpty
+              ? ApiErrorLocalizer.localize(context, response.statusMessage, defaultMessage: l10n.somethingWentWrong)
+              : l10n.somethingWentWrong,
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
       await _showErrorDialog(
-        response.statusMessage.isNotEmpty
-            ? response.statusMessage
-            : 'Failed to receive DigiTP. Please try again.',
+        ApiErrorLocalizer.localize(
+          context,
+          e.toString(),
+          defaultMessage: AppLocalizations.of(context)!.serverErrorTryAgain,
+        ),
       );
     }
   }
@@ -492,7 +514,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          _statusMessage ?? 'Invoice is already received.',
+                          _statusMessage ?? l10n.digitpAlreadyReceived,
                           style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF92400E)),
                         ),
                       ),
@@ -569,7 +591,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                     const SizedBox(height: 10),
                     _buildDetailRow(
                       label: l10n.materialAndQuantity,
-                      value: '${_scannedItem!.materialType ?? "Mineral"} (${_scannedItem!.quantity ?? 0} ${_scannedItem!.mineralUnit ?? "Brass"})',
+                      value: '${_scannedItem!.materialType ?? "Mineral"} (${_scannedItem!.quantity ?? 0} ${UnitLocalizer.localize(_scannedItem!.mineralUnit ?? "Brass", l10n.localeName)})',
                     ),
                     const SizedBox(height: 10),
                     _buildDetailRow(

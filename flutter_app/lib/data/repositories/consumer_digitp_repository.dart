@@ -1,7 +1,10 @@
 import 'package:dio/dio.dart';
 import '../../domain/consumer_digitp_models.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../core/network/dio_client.dart';
+import '../../core/network/network_checker.dart';
 import '../../core/network/release_json.dart';
+import '../../core/utils/api_error_localizer.dart';
 
 abstract class ConsumerDigiTpRepository {
   Future<ConsumerDigiTpApiResponse> getConsumerDigiTpList({
@@ -20,18 +23,23 @@ abstract class ConsumerDigiTpRepository {
 }
 
 class ConsumerDigiTpRepositoryImpl implements ConsumerDigiTpRepository {
-  final Dio _dio = Dio(
-    BaseOptions(
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 15),
-    ),
-  );
+  final Dio _dio;
+
+  ConsumerDigiTpRepositoryImpl({Dio? dio}) : _dio = dio ?? DioClient.createDio();
 
   @override
   Future<ConsumerDigiTpApiResponse> getConsumerDigiTpList({
     required int consumerId,
     required int status,
   }) async {
+    // Pre-flight internet connectivity check
+    if (!await NetworkChecker.checkOrNotify()) {
+      return ConsumerDigiTpApiResponse(
+        statusCode: 'NoInternet',
+        statusMessage: ApiErrorLocalizer.currentLocalizations.noInternetConnection,
+      );
+    }
+
     try {
       final url = ApiEndpoints.getConsumerDigiTpListUrl(consumerId: consumerId, status: status);
       final response = await _dio.get(url);
@@ -39,28 +47,54 @@ class ConsumerDigiTpRepositoryImpl implements ConsumerDigiTpRepository {
       final data = asResponseMap(response.data);
 
       if (data != null) {
-        return ConsumerDigiTpApiResponse.fromJson(data);
+        final parsed = ConsumerDigiTpApiResponse.fromJson(data);
+        return ConsumerDigiTpApiResponse(
+          statusCode: parsed.statusCode,
+          statusMessage: ApiErrorLocalizer.localizeCurrent(
+            parsed.statusMessage,
+            defaultMessage: parsed.statusMessage,
+          ),
+          responseData: parsed.responseData,
+          responseData1: parsed.responseData1,
+        );
       }
 
-      return const ConsumerDigiTpApiResponse(
+      return ConsumerDigiTpApiResponse(
         statusCode: '500',
-        statusMessage: 'Invalid response format received from server.',
+        statusMessage: ApiErrorLocalizer.currentLocalizations.invalidResponseFromServer,
       );
     } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout) {
+        NetworkChecker.showOfflineMessage();
+        return ConsumerDigiTpApiResponse(
+          statusCode: 'NoInternet',
+          statusMessage: ApiErrorLocalizer.currentLocalizations.noInternetConnection,
+        );
+      }
       if (e.response?.data != null) {
         final errData = asResponseMap(e.response!.data);
         if (errData != null) {
-          return ConsumerDigiTpApiResponse.fromJson(errData);
+          final parsed = ConsumerDigiTpApiResponse.fromJson(errData);
+          return ConsumerDigiTpApiResponse(
+            statusCode: parsed.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(
+              parsed.statusMessage,
+              defaultMessage: parsed.statusMessage,
+            ),
+            responseData: parsed.responseData,
+            responseData1: parsed.responseData1,
+          );
         }
       }
       return ConsumerDigiTpApiResponse(
         statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: 'Unable to connect to DigiTP server. ${e.message ?? ''}',
+        statusMessage: ApiErrorLocalizer.currentLocalizations.noInternetConnection,
       );
-    } catch (e) {
+    } catch (_) {
       return ConsumerDigiTpApiResponse(
         statusCode: '500',
-        statusMessage: 'An error occurred while fetching DigiTP list: ${e.toString()}',
+        statusMessage: ApiErrorLocalizer.currentLocalizations.somethingWentWrong,
       );
     }
   }
@@ -70,6 +104,14 @@ class ConsumerDigiTpRepositoryImpl implements ConsumerDigiTpRepository {
     required String invoiceNo,
     required int consumerId,
   }) async {
+    // Pre-flight internet connectivity check
+    if (!await NetworkChecker.checkOrNotify()) {
+      return GetConsumerInvoiceDetailsResponse(
+        statusCode: 'NoInternet',
+        statusMessage: ApiErrorLocalizer.currentLocalizations.noInternetConnection,
+      );
+    }
+
     try {
       final url = ApiEndpoints.getConsumerInvoiceDetailsUrl(invoiceNo: invoiceNo, consumerId: consumerId);
       final response = await _dio.get(url);
@@ -79,8 +121,25 @@ class ConsumerDigiTpRepositoryImpl implements ConsumerDigiTpRepository {
       if (data != null) {
         final parsedRes = GetConsumerInvoiceDetailsResponse.fromJson(data);
         if (parsedRes.isSuccess || parsedRes.isAlreadyReceived || parsedRes.statusCode == '404') {
-          return parsedRes;
+          return GetConsumerInvoiceDetailsResponse(
+            statusCode: parsedRes.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(
+              parsedRes.statusMessage,
+              defaultMessage: parsedRes.statusMessage,
+            ),
+            responseData: parsedRes.responseData,
+            responseData1: parsedRes.responseData1,
+          );
         }
+      }
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout) {
+        NetworkChecker.showOfflineMessage();
+        return GetConsumerInvoiceDetailsResponse(
+          statusCode: 'NoInternet',
+          statusMessage: ApiErrorLocalizer.currentLocalizations.noInternetConnection,
+        );
       }
     } catch (_) {}
 
@@ -113,6 +172,14 @@ class ConsumerDigiTpRepositoryImpl implements ConsumerDigiTpRepository {
   Future<ReceiveInvoiceResponse> receiveInvoice({
     required ReceiveInvoiceRequest request,
   }) async {
+    // Pre-flight internet connectivity check
+    if (!await NetworkChecker.checkOrNotify()) {
+      return ReceiveInvoiceResponse(
+        statusCode: 'NoInternet',
+        statusMessage: ApiErrorLocalizer.currentLocalizations.noInternetConnection,
+      );
+    }
+
     try {
       final url = ApiEndpoints.receiveInvoice;
       final response = await _dio.post(
@@ -125,14 +192,31 @@ class ConsumerDigiTpRepositoryImpl implements ConsumerDigiTpRepository {
       if (data != null) {
         final parsedRes = ReceiveInvoiceResponse.fromJson(data);
         if (parsedRes.isSuccess || parsedRes.isAlreadyReceived) {
-          return parsedRes;
+          return ReceiveInvoiceResponse(
+            statusCode: parsedRes.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(
+              parsedRes.statusMessage,
+              defaultMessage: parsedRes.statusMessage,
+            ),
+            responseData: parsedRes.responseData,
+            responseData1: parsedRes.responseData1,
+          );
         }
+      }
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout) {
+        NetworkChecker.showOfflineMessage();
+        return ReceiveInvoiceResponse(
+          statusCode: 'NoInternet',
+          statusMessage: ApiErrorLocalizer.currentLocalizations.noInternetConnection,
+        );
       }
     } catch (_) {}
 
-    return const ReceiveInvoiceResponse(
+    return ReceiveInvoiceResponse(
       statusCode: '200',
-      statusMessage: 'Invoice received successfully.',
+      statusMessage: ApiErrorLocalizer.currentLocalizations.materialReceivedSuccess,
     );
   }
 }

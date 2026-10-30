@@ -9,9 +9,11 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/date_formatter.dart';
+import '../../core/utils/api_error_localizer.dart';
 import '../../domain/vehicle_tracking_models.dart';
 import '../../providers/vehicle_tracking_provider.dart';
 import '../../providers/session_provider.dart';
+import '../../core/utils/unit_localizer.dart';
 
 class LiveVehicleTrackingScreen extends ConsumerStatefulWidget {
   final String deliveryId;
@@ -498,7 +500,7 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
             ),
             const SizedBox(height: 8),
             Text(
-              errorMessage,
+              ApiErrorLocalizer.localize(context, errorMessage, defaultMessage: l10n.serverErrorTryAgain),
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 12, color: Color(0xFF7F1D1D)),
             ),
@@ -558,7 +560,7 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
             const SizedBox(height: 6),
             Text(
               statusMsg.isNotEmpty
-                  ? statusMsg
+                  ? ApiErrorLocalizer.localize(context, statusMsg)
                   : 'The GPS device for this vehicle is currently offline or has no reported coordinates.',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary),
@@ -580,7 +582,8 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
   }
 
   Widget _buildMapCanvas(VehicleLocationData location, VehicleTripData? trip) {
-    final speedText = location.speed != null ? '${location.speed} km/h' : '0 km/h';
+    final speedUnit = AppLocalizations.of(context)?.speedUnitKmH ?? 'km/h';
+    final speedText = location.speed != null ? '${location.speed} $speedUnit' : '0 $speedUnit';
     final locationStr = location.locationName ?? '';
 
     LatLng? currLatLng;
@@ -744,7 +747,7 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
               Text(
                 '${location.vehTypeName ?? AppLocalizations.of(context)!.vehicle} · '
                     '${trip?.materialType ?? '-'} · '
-                    '${trip?.quantity ?? location.capacity ?? '0'} ${trip?.mineralUnit ?? 'Brass'}',
+                    '${trip?.quantity ?? location.capacity ?? '0'} ${UnitLocalizer.localize(trip?.mineralUnit ?? 'Brass', AppLocalizations.of(context)!.localeName)}',
                 style: const TextStyle(fontSize: 12, color: AppColors.inkSecondary),
               ),
             ],
@@ -785,7 +788,7 @@ class _LiveVehicleTrackingScreenState extends ConsumerState<LiveVehicleTrackingS
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${AppLocalizations.of(context)!.speed}: ${location.speed ?? 0} km/h · ${AppLocalizations.of(context)!.lastUpdated}: ${AppDateFormatter.formatDateTime(location.deviceDatetime)}',
+                  '${AppLocalizations.of(context)!.speed}: ${location.speed ?? 0} ${AppLocalizations.of(context)!.speedUnitKmH} · ${AppLocalizations.of(context)!.lastUpdated}: ${AppDateFormatter.formatDateTime(location.deviceDatetime)}',
                   style: const TextStyle(fontSize: 11, color: Color(0xFF2563EB)),
                 ),
 

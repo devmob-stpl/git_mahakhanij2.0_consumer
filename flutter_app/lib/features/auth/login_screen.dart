@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/utils/api_error_localizer.dart';
 import '../../providers/session_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -113,9 +114,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } else {
       setState(() {
         _isLoading = false;
-        _error = response.statusMessage.isNotEmpty
-            ? response.statusMessage
-            : 'User Not Available';
+        _error = ApiErrorLocalizer.localize(
+          context,
+          response.statusMessage,
+          defaultMessage: AppLocalizations.of(context)!.userNotAvailable,
+        );
       });
     }
   }
@@ -148,9 +151,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } else {
       setState(() {
         _isLoading = false;
-        _error = (response.statusMessage.isNotEmpty && !response.statusMessage.startsWith('Login Failed'))
-            ? response.statusMessage
-            : AppLocalizations.of(context)!.invalidOtpServer;
+        _error = ApiErrorLocalizer.localize(
+          context,
+          response.statusMessage,
+          defaultMessage: AppLocalizations.of(context)!.invalidOtpServer,
+        );
         for (final c in _digitControllers) {
           c.clear();
         }
@@ -186,7 +191,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } else {
       setState(() {
         _isLoading = false;
-        _error = response.statusMessage;
+        _error = ApiErrorLocalizer.localize(
+          context,
+          response.statusMessage,
+          defaultMessage: AppLocalizations.of(context)!.loginFailedMsg,
+        );
       });
     }
   }

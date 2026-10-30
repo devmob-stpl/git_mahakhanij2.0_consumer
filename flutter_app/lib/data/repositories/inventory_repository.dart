@@ -1,6 +1,7 @@
 import '../../domain/inventory.dart';
 import '../../domain/common.dart';
 import '../../core/config/app_config.dart';
+import '../../core/utils/api_error_localizer.dart';
 import '../mock_db.dart';
 
 abstract class InventoryRepository {
@@ -42,7 +43,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
   }) async {
     await Future.delayed(Duration(milliseconds: AppConfig.mockLatencyMs));
     final balanceIndex = _db.inventoryBalances.indexWhere((b) => b.id == balanceId);
-    if (balanceIndex == -1) throw Exception('Inventory balance not found');
+    if (balanceIndex == -1) throw Exception(ApiErrorLocalizer.currentLocalizations.inventoryBalanceNotFound);
 
     final balance = _db.inventoryBalances[balanceIndex];
     final updatedAvailable = balance.currentAvailableBalance.value - quantityValue;

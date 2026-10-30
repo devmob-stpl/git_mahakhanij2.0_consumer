@@ -211,7 +211,6 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: InputDecoration(
                         labelText: loc.enterInvoiceManually,
-                        hintText: 'e.g. 491',
                         isDense: true,
                       ),
                     ),

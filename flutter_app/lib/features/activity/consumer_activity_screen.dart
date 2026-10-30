@@ -12,6 +12,7 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/digitp_modal.dart';
 import '../../l10n/app_localizations.dart';
+import '../../core/utils/unit_localizer.dart';
 import '../../providers/session_provider.dart';
 
 enum ActivityChip { all, notReceived, live, delivered, enquiries }
@@ -314,11 +315,34 @@ class _ConsumerActivityScreenState extends ConsumerState<ConsumerActivityScreen>
         statusLabel.toLowerCase() == 'received' ||
         statusLabel == loc.delivered;
 
-    final badgeBg = isDelivered ? const Color(0xFFF0FDF4) : const Color(0xFFF7F0FD);
-    final badgeBorder = isDelivered ? const Color(0xFFBBF7D0) : const Color(0xFFEBD9FB);
-    final badgeFg = isDelivered ? const Color(0xFF15803D) : const Color(0xFF7E22CE);
+    final isNotReceived = activeStatus == 1 ||
+        statusLabel == loc.statusNotReceived ||
+        statusLabel == loc.notReceived ||
+        normalizedStatus.contains('NOT RECEIVED') ||
+        statusLabel.toLowerCase().contains('not received') ||
+        statusLabel.contains('नाही') ||
+        statusLabel.contains('नहीं') ||
+        statusLabel.contains('न झालेले');
 
-    final qtyStr = '${item.quantity ?? 0} ${item.mineralUnit ?? 'Brass'}';
+    final Color badgeBg;
+    final Color badgeBorder;
+    final Color badgeFg;
+
+    if (isDelivered) {
+      badgeBg = const Color(0xFFF0FDF4);
+      badgeBorder = const Color(0xFFBBF7D0);
+      badgeFg = const Color(0xFF15803D);
+    } else if (isNotReceived) {
+      badgeBg = const Color(0xFFFEF2F2);
+      badgeBorder = const Color(0xFFFCA5A5);
+      badgeFg = const Color(0xFFDC2626);
+    } else {
+      badgeBg = const Color(0xFFF7F0FD);
+      badgeBorder = const Color(0xFFEBD9FB);
+      badgeFg = const Color(0xFF7E22CE);
+    }
+
+    final qtyStr = '${item.quantity ?? 0} ${UnitLocalizer.localize(item.mineralUnit ?? 'Brass', loc.localeName)}';
     final mineralStr = item.materialType ?? 'Mineral';
     final vehicleNoStr = item.vehicleNo ?? loc.vehicleNA;
     final destStr = item.destination ?? loc.destinationNA;

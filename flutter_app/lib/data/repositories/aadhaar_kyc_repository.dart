@@ -1,9 +1,13 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
+import '../../core/network/dio_client.dart';
+import '../../core/network/network_checker.dart';
 import '../../core/network/release_json.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../domain/aadhaar_kyc_models.dart';
+import '../../l10n/app_localizations.dart';
+import '../../core/utils/api_error_localizer.dart';
 
 abstract class AadhaarKycRepository {
   Future<AadhaarExistResponse> checkAadhaarExists(String aadhaarNo, {String? mobileNo});
@@ -22,15 +26,30 @@ abstract class AadhaarKycRepository {
 }
 
 class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
-  final Dio _dio = Dio(
-    BaseOptions(
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
-    ),
-  );
+  final Dio _dio;
+
+  AadhaarKycRepositoryImpl({Dio? dio})
+      : _dio = dio ??
+            DioClient.createDio(
+              options: BaseOptions(
+                connectTimeout: const Duration(seconds: 30),
+                receiveTimeout: const Duration(seconds: 30),
+              ),
+            );
+
+  AppLocalizations get _l10n => ApiErrorLocalizer.currentLocalizations;
 
   @override
   Future<AadhaarExistResponse> checkAadhaarExists(String aadhaarNo, {String? mobileNo}) async {
+    if (!await NetworkChecker.checkOrNotify()) {
+      return AadhaarExistResponse(
+        statusCode: 'NoInternet',
+        statusMessage: _l10n.noInternetConnection,
+        exists: false,
+        id: 0,
+      );
+    }
+
     try {
       final url = ApiEndpoints.getCheckAadhaarExistsUrl(aadhaarNo, mobileNo: mobileNo);
       final response = await _dio.get(url);
@@ -38,12 +57,18 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
       final data = asResponseMap(response.data);
 
       if (data != null) {
-        return AadhaarExistResponse.fromJson(data);
+        final parsed = AadhaarExistResponse.fromJson(data);
+        return AadhaarExistResponse(
+          statusCode: parsed.statusCode,
+          statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.aadhaarServerError),
+          exists: parsed.exists,
+          id: parsed.id,
+        );
       }
 
-      return const AadhaarExistResponse(
+      return AadhaarExistResponse(
         statusCode: '500',
-        statusMessage: 'Aadhaar server error. Please try again.',
+        statusMessage: _l10n.aadhaarServerError,
         exists: false,
         id: 0,
       );
@@ -55,9 +80,9 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
           e.response?.statusCode == 408 ||
           e.response?.statusCode == 504 ||
           (e.response?.statusCode != null && e.response!.statusCode! >= 500)) {
-        return const AadhaarExistResponse(
+        return AadhaarExistResponse(
           statusCode: '408',
-          statusMessage: 'Aadhaar server error. Please try again.',
+          statusMessage: _l10n.connectionTimeout,
           exists: false,
           id: 0,
         );
@@ -65,19 +90,25 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
       if (e.response?.data != null) {
         final errData = asResponseMap(e.response!.data);
         if (errData != null) {
-          return AadhaarExistResponse.fromJson(errData);
+          final parsed = AadhaarExistResponse.fromJson(errData);
+          return AadhaarExistResponse(
+            statusCode: parsed.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.aadhaarServerError),
+            exists: parsed.exists,
+            id: parsed.id,
+          );
         }
       }
-      return const AadhaarExistResponse(
+      return AadhaarExistResponse(
         statusCode: '500',
-        statusMessage: 'Aadhaar server error. Please try again.',
+        statusMessage: _l10n.aadhaarServerError,
         exists: false,
         id: 0,
       );
     } catch (e) {
-      return const AadhaarExistResponse(
+      return AadhaarExistResponse(
         statusCode: '500',
-        statusMessage: 'Aadhaar server error. Please try again.',
+        statusMessage: _l10n.aadhaarServerError,
         exists: false,
         id: 0,
       );
@@ -86,6 +117,15 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
 
   @override
   Future<GenerateAadhaarOtpResponse> generateAadhaarOtp(String aadhaarNo, {int createdBy = 0}) async {
+    if (!await NetworkChecker.checkOrNotify()) {
+      return GenerateAadhaarOtpResponse(
+        statusCode: 'NoInternet',
+        statusMessage: _l10n.noInternetConnection,
+        message: _l10n.noInternetConnection,
+        isSuccess: false,
+      );
+    }
+
     try {
       final url = ApiEndpoints.generateAadhaarOtp;
       final response = await _dio.post(
@@ -99,13 +139,20 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
       final data = asResponseMap(response.data);
 
       if (data != null) {
-        return GenerateAadhaarOtpResponse.fromJson(data);
+        final parsed = GenerateAadhaarOtpResponse.fromJson(data);
+        return GenerateAadhaarOtpResponse(
+          statusCode: parsed.statusCode,
+          statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.aadhaarServerError),
+          message: ApiErrorLocalizer.localizeCurrent(parsed.message, defaultMessage: _l10n.aadhaarServerError),
+          isSuccess: parsed.isSuccess,
+          clientId: parsed.clientId,
+        );
       }
 
-      return const GenerateAadhaarOtpResponse(
+      return GenerateAadhaarOtpResponse(
         statusCode: '500',
-        statusMessage: 'Aadhaar server error. Please try again.',
-        message: 'Aadhaar server error. Please try again.',
+        statusMessage: _l10n.aadhaarServerError,
+        message: _l10n.aadhaarServerError,
         isSuccess: false,
       );
     } on DioException catch (e) {
@@ -116,30 +163,37 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
           e.response?.statusCode == 408 ||
           e.response?.statusCode == 504 ||
           (e.response?.statusCode != null && e.response!.statusCode! >= 500)) {
-        return const GenerateAadhaarOtpResponse(
+        return GenerateAadhaarOtpResponse(
           statusCode: '408',
-          statusMessage: 'Aadhaar server error. Please try again.',
-          message: 'Aadhaar server error. Please try again.',
+          statusMessage: _l10n.connectionTimeout,
+          message: _l10n.connectionTimeout,
           isSuccess: false,
         );
       }
       if (e.response?.data != null) {
         final errData = asResponseMap(e.response!.data);
         if (errData != null) {
-          return GenerateAadhaarOtpResponse.fromJson(errData);
+          final parsed = GenerateAadhaarOtpResponse.fromJson(errData);
+          return GenerateAadhaarOtpResponse(
+            statusCode: parsed.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.aadhaarServerError),
+            message: ApiErrorLocalizer.localizeCurrent(parsed.message, defaultMessage: _l10n.aadhaarServerError),
+            isSuccess: parsed.isSuccess,
+            clientId: parsed.clientId,
+          );
         }
       }
-      return const GenerateAadhaarOtpResponse(
+      return GenerateAadhaarOtpResponse(
         statusCode: '500',
-        statusMessage: 'Aadhaar server error. Please try again.',
-        message: 'Aadhaar server error. Please try again.',
+        statusMessage: _l10n.aadhaarServerError,
+        message: _l10n.aadhaarServerError,
         isSuccess: false,
       );
     } catch (e) {
-      return const GenerateAadhaarOtpResponse(
+      return GenerateAadhaarOtpResponse(
         statusCode: '500',
-        statusMessage: 'Aadhaar server error. Please try again.',
-        message: 'Aadhaar server error. Please try again.',
+        statusMessage: _l10n.aadhaarServerError,
+        message: _l10n.aadhaarServerError,
         isSuccess: false,
       );
     }
@@ -152,6 +206,15 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
     required String mobileNumber,
     int createdBy = 0,
   }) async {
+    if (!await NetworkChecker.checkOrNotify()) {
+      return VerifyAadhaarOtpResponse(
+        statusCode: 'NoInternet',
+        statusMessage: _l10n.noInternetConnection,
+        message: _l10n.noInternetConnection,
+        isSuccess: false,
+      );
+    }
+
     try {
       final url = ApiEndpoints.verifyAadhaarOtp;
       final response = await _dio.post(
@@ -167,13 +230,29 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
       final data = asResponseMap(response.data);
 
       if (data != null) {
-        return VerifyAadhaarOtpResponse.fromJson(data);
+        final parsed = VerifyAadhaarOtpResponse.fromJson(data);
+        return VerifyAadhaarOtpResponse(
+          statusCode: parsed.statusCode,
+          statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.aadhaarServerError),
+          message: ApiErrorLocalizer.localizeCurrent(parsed.message, defaultMessage: _l10n.aadhaarServerError),
+          isSuccess: parsed.isSuccess,
+          id: parsed.id,
+          fullName: parsed.fullName,
+          aadharNumber: parsed.aadharNumber,
+          dob: parsed.dob,
+          gender: parsed.gender,
+          country: parsed.country,
+          dist: parsed.dist,
+          state: parsed.state,
+          loc: parsed.loc,
+          zip: parsed.zip,
+        );
       }
 
-      return const VerifyAadhaarOtpResponse(
+      return VerifyAadhaarOtpResponse(
         statusCode: '500',
-        statusMessage: 'Aadhaar server error. Please try again.',
-        message: 'Aadhaar server error. Please try again.',
+        statusMessage: _l10n.aadhaarServerError,
+        message: _l10n.aadhaarServerError,
         isSuccess: false,
       );
     } on DioException catch (e) {
@@ -184,30 +263,46 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
           e.response?.statusCode == 408 ||
           e.response?.statusCode == 504 ||
           (e.response?.statusCode != null && e.response!.statusCode! >= 500)) {
-        return const VerifyAadhaarOtpResponse(
+        return VerifyAadhaarOtpResponse(
           statusCode: '408',
-          statusMessage: 'Aadhaar server error. Please try again.',
-          message: 'Aadhaar server error. Please try again.',
+          statusMessage: _l10n.connectionTimeout,
+          message: _l10n.connectionTimeout,
           isSuccess: false,
         );
       }
       if (e.response?.data != null) {
         final errData = asResponseMap(e.response!.data);
         if (errData != null) {
-          return VerifyAadhaarOtpResponse.fromJson(errData);
+          final parsed = VerifyAadhaarOtpResponse.fromJson(errData);
+          return VerifyAadhaarOtpResponse(
+            statusCode: parsed.statusCode,
+            statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.aadhaarServerError),
+            message: ApiErrorLocalizer.localizeCurrent(parsed.message, defaultMessage: _l10n.aadhaarServerError),
+            isSuccess: parsed.isSuccess,
+            id: parsed.id,
+            fullName: parsed.fullName,
+            aadharNumber: parsed.aadharNumber,
+            dob: parsed.dob,
+            gender: parsed.gender,
+            country: parsed.country,
+            dist: parsed.dist,
+            state: parsed.state,
+            loc: parsed.loc,
+            zip: parsed.zip,
+          );
         }
       }
-      return const VerifyAadhaarOtpResponse(
+      return VerifyAadhaarOtpResponse(
         statusCode: '500',
-        statusMessage: 'Aadhaar server error. Please try again.',
-        message: 'Aadhaar server error. Please try again.',
+        statusMessage: _l10n.aadhaarServerError,
+        message: _l10n.aadhaarServerError,
         isSuccess: false,
       );
     } catch (e) {
-      return const VerifyAadhaarOtpResponse(
+      return VerifyAadhaarOtpResponse(
         statusCode: '500',
-        statusMessage: 'Aadhaar server error. Please try again.',
-        message: 'Aadhaar server error. Please try again.',
+        statusMessage: _l10n.aadhaarServerError,
+        message: _l10n.aadhaarServerError,
         isSuccess: false,
       );
     }
@@ -219,6 +314,14 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
     String? fileName,
     List<int>? bytes,
   }) async {
+    if (!await NetworkChecker.checkOrNotify()) {
+      return AadhaarDocumentUploadResponse(
+        statusCode: 'NoInternet',
+        statusMessage: _l10n.noInternetConnection,
+        isSuccess: false,
+      );
+    }
+
     try {
       final url = ApiEndpoints.uploadPhoto;
       final String name = fileName ?? (filePath.isNotEmpty ? filePath.split('/').last.split('\\').last : 'document.pdf');
@@ -245,25 +348,25 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
       final data = asResponseMap(response.data);
 
       if (data != null) {
-        return AadhaarDocumentUploadResponse.fromJson(data);
+        final parsed = AadhaarDocumentUploadResponse.fromJson(data);
+        return AadhaarDocumentUploadResponse(
+          statusCode: parsed.statusCode,
+          statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.docUploadFailed),
+          isSuccess: parsed.isSuccess,
+          responseData: parsed.responseData,
+        );
       }
 
-      return const AadhaarDocumentUploadResponse(
+      return AadhaarDocumentUploadResponse(
         statusCode: '500',
-        statusMessage: 'Unexpected format returned from document upload API.',
+        statusMessage: _l10n.invalidResponseFromServer,
         isSuccess: false,
       );
     } on DioException catch (e) {
-      if (e.response?.statusCode == 413) {
-        return const AadhaarDocumentUploadResponse(
-          statusCode: '413',
-          statusMessage: 'Unsupported file format. Please upload a valid PDF or Image file.',
-          isSuccess: false,
-        );
-      } else if (e.response?.statusCode == 415) {
-        return const AadhaarDocumentUploadResponse(
-          statusCode: '415',
-          statusMessage: '',
+      if (e.response?.statusCode == 413 || e.response?.statusCode == 415) {
+        return AadhaarDocumentUploadResponse(
+          statusCode: e.response!.statusCode.toString(),
+          statusMessage: _l10n.unsupportedFileFormat,
           isSuccess: false,
         );
       }
@@ -272,19 +375,25 @@ class AadhaarKycRepositoryImpl implements AadhaarKycRepository {
         try {
           final errData = asResponseMap(e.response!.data);
           if (errData != null) {
-            return AadhaarDocumentUploadResponse.fromJson(errData);
+            final parsed = AadhaarDocumentUploadResponse.fromJson(errData);
+            return AadhaarDocumentUploadResponse(
+              statusCode: parsed.statusCode,
+              statusMessage: ApiErrorLocalizer.localizeCurrent(parsed.statusMessage, defaultMessage: _l10n.docUploadFailed),
+              isSuccess: parsed.isSuccess,
+              responseData: parsed.responseData,
+            );
           }
         } catch (_) {}
       }
       return AadhaarDocumentUploadResponse(
         statusCode: e.response?.statusCode?.toString() ?? '500',
-        statusMessage: e.message ?? 'Document upload failed. Please try again.',
+        statusMessage: ApiErrorLocalizer.localizeCurrent(e.message, defaultMessage: _l10n.docUploadFailed),
         isSuccess: false,
       );
     } catch (e) {
       return AadhaarDocumentUploadResponse(
         statusCode: '500',
-        statusMessage: 'Error uploading Aadhaar document: ${e.toString()}',
+        statusMessage: _l10n.docUploadFailed,
         isSuccess: false,
       );
     }

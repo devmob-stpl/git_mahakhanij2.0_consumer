@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/utils/api_error_localizer.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../providers/session_provider.dart';
 import '../../l10n/app_localizations.dart';
@@ -89,15 +90,17 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         if (signUpResponse.isSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.msgRegSuccessSignIn),
-              backgroundColor: Color(0xFF2563EB),
+              backgroundColor: const Color(0xFF2563EB),
             ),
           );
           context.go('/login', extra: widget.mobileNumber);
         } else {
           setState(() {
-            _error = signUpResponse.statusMessage.isNotEmpty
-                ? signUpResponse.statusMessage
-                : 'Registration failed. Invalid OTP or details.';
+            _error = ApiErrorLocalizer.localize(
+              context,
+              signUpResponse.statusMessage,
+              defaultMessage: AppLocalizations.of(context)!.registrationFailed,
+            );
             for (final c in _digitControllers) {
               c.clear();
             }
@@ -122,9 +125,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       } else {
         setState(() {
           final loc = AppLocalizations.of(context)!;
-          _error = (response.statusMessage.isNotEmpty && !response.statusMessage.startsWith('Login Failed'))
-              ? response.statusMessage
-              : loc.invalidOtpServer;
+          _error = ApiErrorLocalizer.localize(
+            context,
+            response.statusMessage,
+            defaultMessage: loc.invalidOtpServer,
+          );
           for (final c in _digitControllers) {
             c.clear();
           }
@@ -159,7 +164,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         _startTimer();
       } else {
         setState(() {
-          _error = response.statusMessage;
+          _error = ApiErrorLocalizer.localize(
+            context,
+            response.statusMessage,
+            defaultMessage: AppLocalizations.of(context)!.loginFailedMsg,
+          );
         });
       }
     }
