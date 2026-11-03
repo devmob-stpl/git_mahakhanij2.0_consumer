@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/app_config.dart';
+import 'api_logging_interceptor.dart';
 import 'network_checker.dart';
 
 /// Interceptor that verifies mobile network or internet connectivity before making every API call.
@@ -8,7 +10,8 @@ import 'network_checker.dart';
 /// an appropriate error message in the currently selected language.
 class ConnectivityInterceptor extends Interceptor {
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  void onRequest(
+      RequestOptions options, RequestInterceptorHandler handler) async {
     final isOnline = await NetworkChecker.isConnected(options.uri.host);
     if (!isOnline) {
       NetworkChecker.showOfflineMessage();
@@ -55,7 +58,8 @@ class DioClient {
           return handler.next(options);
         },
         onError: (DioException error, handler) async {
-          if (error.response?.statusCode == 401 || error.response?.statusCode == 403) {
+          if (error.response?.statusCode == 401 ||
+              error.response?.statusCode == 403) {
             await _secureStorage.delete(key: 'auth_user');
             await _secureStorage.delete(key: 'auth_token');
           }
@@ -63,11 +67,20 @@ class DioClient {
         },
       ),
     );
+
+    // Keep ApiLoggingInterceptor at the end of the interceptor chain
+    // so it logs the final request (including Authorization and custom headers).
+    if (kDebugMode && AppConfig.enableHttpLogging) {
+      dio.interceptors.removeWhere((i) => i is ApiLoggingInterceptor);
+      dio.interceptors.add(ApiLoggingInterceptor());
+    }
   }
 
   /// Creates a standard Dio instance configured with [ConnectivityInterceptor]
-  /// to ensure connectivity is checked before every API request.
-  static Dio createDio({BaseOptions? options, List<Interceptor>? extraInterceptors}) {
+  /// to ensure connectivity is checked before every API request, and adds
+  /// [ApiLoggingInterceptor] in debug mode with sensitive information masked.
+  static Dio createDio(
+      {BaseOptions? options, List<Interceptor>? extraInterceptors}) {
     final instance = Dio(
       options ??
           BaseOptions(
@@ -78,6 +91,9 @@ class DioClient {
     instance.interceptors.add(ConnectivityInterceptor());
     if (extraInterceptors != null && extraInterceptors.isNotEmpty) {
       instance.interceptors.addAll(extraInterceptors);
+    }
+    if (kDebugMode && AppConfig.enableHttpLogging) {
+      instance.interceptors.add(ApiLoggingInterceptor());
     }
     return instance;
   }

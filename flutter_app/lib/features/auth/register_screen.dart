@@ -1560,7 +1560,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         const SizedBox(height: 16),
 
         // Mobile Number
-        _buildFieldLabel(l10n.mobileNumber),
+        _buildFieldLabel(l10n.mobileNumberRequiredLabel),
         const SizedBox(height: 6),
         TextField(
           controller: _mobileController,

@@ -17,4 +17,9 @@ class AppConfig {
 
   /// Simulated network latency (in milliseconds) for mock repository
   static const int mockLatencyMs = 350;
+
+  /// Toggle to enable or disable HTTP API debug logging in debug builds.
+  /// Note: HTTP logging is strictly disabled in production builds (kReleaseMode)
+  /// regardless of this setting.
+  static const bool enableHttpLogging = true;
 }

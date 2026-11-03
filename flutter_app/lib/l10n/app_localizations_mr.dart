@@ -256,7 +256,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get profileName => 'नाव';
 
   @override
-  String get profileMobile => 'मोबाईल क्र.';
+  String get profileMobile => 'मोबाईल नं.';
 
   @override
   String get profileEmail => 'ईमेल';
@@ -481,10 +481,10 @@ class AppLocalizationsMr extends AppLocalizations {
   String get fullName => 'पूर्ण नाव';
 
   @override
-  String get mobileNumber => 'मोबाईल क्रमांक';
+  String get mobileNumber => 'मोबाईल नंबर';
 
   @override
-  String get tenDigitNumber => '10-अंकी क्रमांक';
+  String get tenDigitNumber => '10-अंकी नंबर';
 
   @override
   String get weWillSendVerification =>
@@ -595,7 +595,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get aadhaarEkycInfoTitle => 'आधार ई-केवायसी माहिती';
 
   @override
-  String get aadhaarNumberLabel => 'आधार क्रमांक';
+  String get aadhaarNumberLabel => 'आधार नंबर';
 
   @override
   String get aadhaarVerificationLabel => 'आधार पडताळणी';
@@ -620,10 +620,10 @@ class AppLocalizationsMr extends AppLocalizations {
   String get method1LiveOtp => 'टप्पा 1:ओटीपी पडताळणी';
 
   @override
-  String get twelveDigitAadhaarNumber => '12-अंकी आधार क्रमांक *';
+  String get twelveDigitAadhaarNumber => '12-अंकी आधार नंबर *';
 
   @override
-  String get enterTwelveDigitAadhaar => '12 अंकी आधार क्रमांक प्रविष्ट करा';
+  String get enterTwelveDigitAadhaar => '12 अंकी आधार नंबर प्रविष्ट करा';
 
   @override
   String get sendOtpBtn => 'ओटीपी पाठवा';
@@ -900,7 +900,7 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get aadhaarVerificationRequired =>
-      'कृपया पुढे जाण्यासाठी तुमचा आधार क्रमांक सत्यापित करा.';
+      'कृपया पुढे जाण्यासाठी तुमचा आधार नंबर सत्यापित करा.';
 
   @override
   String get surveyNumberRequired => 'सर्वेक्षण क्रमांक आवश्यक आहे.';
@@ -1304,11 +1304,11 @@ class AppLocalizationsMr extends AppLocalizations {
   String get contactPersonNameRequiredLabel => 'संपर्क व्यक्तीचे नाव *';
 
   @override
-  String get mobileNumberRequiredLabel => 'मोबाईल क्र. *';
+  String get mobileNumberRequiredLabel => 'मोबाईल नं. *';
 
   @override
   String get contactPersonAadhaarOptionalLabel =>
-      'संपर्क व्यक्ती आधार क्र. (पर्यायी)';
+      'संपर्क व्यक्ती आधार नं. (पर्यायी)';
 
   @override
   String get enterOrgNameHint => 'संस्था / कंपनी / फर्मचे नाव प्रविष्ट करा';
@@ -1323,33 +1323,32 @@ class AppLocalizationsMr extends AppLocalizations {
   String get enterContactPersonNameHint => 'संपर्क व्यक्तीचे नाव प्रविष्ट करा';
 
   @override
-  String get enterTenDigitMobileHint => '१० अंकी मोबाईल क्रमांक प्रविष्ट करा';
+  String get enterTenDigitMobileHint => '१० अंकी मोबाईल नंबर प्रविष्ट करा';
 
   @override
-  String get enterTwelveDigitAadhaarHint => '१२ अंकी आधार क्रमांक प्रविष्ट करा';
+  String get enterTwelveDigitAadhaarHint => '१२ अंकी आधार नंबर प्रविष्ट करा';
 
   @override
   String get emailRequired => 'ईमेल आयडी आवश्यक आहे.';
 
   @override
-  String get enterValidAadhaarNumber =>
-      'वैध १२ अंकी आधार क्रमांक प्रविष्ट करा.';
+  String get enterValidAadhaarNumber => 'वैध १२ अंकी आधार नंबर प्रविष्ट करा.';
 
   @override
   String get aadhaarCannotStartWithZeroOrOne =>
-      'आधार क्रमांक ० किंवा १ ने सुरू होऊ शकत नाही.';
+      'आधार नंबर ० किंवा १ ने सुरू होऊ शकत नाही.';
 
   @override
   String get aadhaarAlreadyRegistered =>
-      'हा आधार कार्ड क्रमांक महाखनिज प्रणालीमध्ये आधीपासूनच नोंदणीकृत आहे.';
+      'हा आधार कार्ड नंबर महाखनिज प्रणालीमध्ये आधीपासूनच नोंदणीकृत आहे.';
 
   @override
   String get invalidAadhaarNumber =>
-      'अवैध आधार क्रमांक प्रविष्ट केला आहे. कृपया तपासा आणि पुन्हा प्रयत्न करा.';
+      'अवैध आधार नंबर प्रविष्ट केला आहे. कृपया तपासा आणि पुन्हा प्रयत्न करा.';
 
   @override
   String get aadhaarSendOtpFailed =>
-      'आधार नोंदणीकृत मोबाईल क्रमांकावर ओटीपी पाठवण्यात अयशस्वी.';
+      'आधार नोंदणीकृत मोबाईल नंबरवर ओटीपी पाठवण्यात अयशस्वी.';
 
   @override
   String get contactPersonAadhaarVerificationTitle =>
@@ -1372,7 +1371,7 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get otpSentToAadhaarMobileNotice =>
-      'तुमच्या आधार नोंदणीकृत मोबाईल क्रमांकावर ओटीपी पाठवला जाईल';
+      'तुमच्या आधार नोंदणीकृत मोबाईल नंबरवर ओटीपी पाठवला जाईल';
 
   @override
   String get resendOtpBtn => 'ओटीपी पुन्हा पाठवा';
@@ -1384,7 +1383,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get enterValidAadhaarOtp => 'वैध ६ अंकी आधार ओटीपी प्रविष्ट करा.';
 
   @override
-  String get panNoOptionalLabel => 'पॅन क्र. (पर्यायी)';
+  String get panNoOptionalLabel => 'पॅन नं. (पर्यायी)';
 
   @override
   String get enterTenDigitPan => '१० अंकी पॅन प्रविष्ट करा';
@@ -1403,11 +1402,11 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get panAlreadyRegistered =>
-      'हा पॅन क्रमांक महाखनिज प्रणालीमध्ये आधीपासूनच नोंदणीकृत आहे.';
+      'हा पॅन नंबर महाखनिज प्रणालीमध्ये आधीपासूनच नोंदणीकृत आहे.';
 
   @override
   String get invalidPanNumber =>
-      'अवैध पॅन क्रमांक प्रविष्ट केला आहे. कृपया तपासा आणि पुन्हा प्रयत्न करा.';
+      'अवैध पॅन नंबर प्रविष्ट केला आहे. कृपया तपासा आणि पुन्हा प्रयत्न करा.';
 
   @override
   String get panVerificationFailed =>
@@ -1656,7 +1655,7 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get mobileAlreadyRegistered =>
-      'हा मोबाईल क्रमांक महाखनिज प्रणालीमध्ये आधीपासूनच नोंदणीकृत आहे.';
+      'हा मोबाईल नंबर महाखनिज प्रणालीमध्ये आधीपासूनच नोंदणीकृत आहे.';
 
   @override
   String get recordAlreadyExists =>
