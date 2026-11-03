@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,6 +20,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isLoggingOut = false;
+  bool _isDeletingAccount = false;
 
   Future<void> _handleLogout() async {
     setState(() {
@@ -72,6 +76,65 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               defaultMessage: AppLocalizations.of(context)!.logoutFailedMsg,
             ),
           ),
+          backgroundColor: AppColors.danger600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleDeleteAccount() async {
+    setState(() {
+      _isDeletingAccount = true;
+    });
+
+    try {
+      final response = await ref.read(sessionProvider.notifier).deleteAccount();
+
+      debugPrint("_handleDeleteAccount response $response");
+      debugPrint("DELETE SUCCESS: ${response.isSuccess}");
+      debugPrint("DELETE STATUS CODE: ${response.statusCode}");
+      debugPrint("DELETE STATUS MESSAGE: ${response.statusMessage}");
+      debugPrint("DELETE RESPONSE DATA: ${response.responseData}");
+
+      if (!mounted) return;
+
+      if (response.isSuccess) {
+        final successMsg = (response.responseData != null && response.responseData.toString().trim().isNotEmpty)
+            ? response.responseData.toString().trim()
+            : response.statusMessage;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(successMsg.isNotEmpty ? successMsg : 'Account deleted successfully'),
+            backgroundColor: AppColors.danger600,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        context.go('/login');
+      } else {
+        setState(() {
+          _isDeletingAccount = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.statusMessage.isNotEmpty
+                ? response.statusMessage
+                : 'Failed to delete account.'),
+            backgroundColor: AppColors.danger600,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isDeletingAccount = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting account: ${e.toString()}'),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -152,7 +215,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: _isLoggingOut ? null : _handleLogout,
+                onPressed: (_isLoggingOut || _isDeletingAccount) ? null : _handleLogout,
                 child: _isLoggingOut
                     ? const SizedBox(
                         width: 20,
@@ -179,7 +242,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
+
+          if (Platform.isIOS) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: (_isLoggingOut || _isDeletingAccount) ? null : _showDeleteAccountDialog,
+                  icon: _isDeletingAccount
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.red,
+                          ),
+                        )
+                      : const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                  label: Text(
+                    _isDeletingAccount ? 'Deleting Account...' : 'Delete Account',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+
           ],
         ),
       ),
@@ -202,4 +296,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     );
   }
+
+  void _showDeleteAccountDialog() {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('Delete Account?'),
+        content: const Padding(
+          padding: EdgeInsets.only(top: 8),
+          child: Text(
+            'Are you sure you want to delete your account? This action cannot be undone.',
+          ),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () {
+              Navigator.pop(context);
+              _handleDeleteAccount();
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
 }

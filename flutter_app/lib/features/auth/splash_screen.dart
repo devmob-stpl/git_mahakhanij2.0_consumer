@@ -17,10 +17,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
+
+    print('TEST: SPLASH SCREEN OPENED');
+
     _checkSessionAndNavigate();
   }
 
   Future<void> _checkSessionAndNavigate() async {
+    debugPrint('SPLASH: function started');
+
     // Brief splash screen delay for brand logo display
     await Future.delayed(const Duration(milliseconds: 1800));
 
@@ -28,6 +33,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
     // Validate the user's login status on every app launch
     final isAuthenticated = await ref.read(sessionProvider.notifier).validateSession();
+
+    debugPrint('user: $isAuthenticated');
+    print('User result: $isAuthenticated');
 
     if (!mounted) return;
 
@@ -78,30 +86,30 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                             fit: BoxFit.contain,
                           ),
                           const SizedBox(height: 12),
-                          Text(
-                            l10n.govtOfMaharashtra,
+                          const Text(
+                            'महाराष्ट्र शासन',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF1E293B),
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            l10n.revenueDepartment,
+                          const Text(
+                            'महसूल विभाग',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF0F172A),
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            l10n.minorMineralTransportSystem,
+                          const Text(
+                            'गौणखनिज वाहतूक प्रणाली',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF334155),
@@ -118,7 +126,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                         text: const TextSpan(
                           children: [
                             TextSpan(
-                              text: 'Mahakhanij ',
+                              text: 'महाखनिज ',
                               style: TextStyle(
                                 fontSize: 32,
                                 fontWeight: FontWeight.bold,

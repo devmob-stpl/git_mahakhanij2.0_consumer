@@ -467,9 +467,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         width: 150,
                         height: 44,
                         child: ElevatedButton(
+                          // onPressed: _isLoading
+                          //     ? null :
+                          // (_isOtpSent ? _handleVerifyOtp : _handleSendOtp),
                           onPressed: _isLoading
                               ? null
-                              : (_isOtpSent ? _handleVerifyOtp : _handleSendOtp),
+                              : () {
+                            debugPrint("Login button touch");
+
+                            if (_isOtpSent) {
+                              _handleVerifyOtp();
+                            } else {
+                              _handleSendOtp();
+                            }
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryBlue,
                             foregroundColor: Colors.white,

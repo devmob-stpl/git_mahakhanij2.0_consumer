@@ -20,6 +20,9 @@ void main() async {
     ),
   );
 
+  print("TEST PRINT FROM MAIN");
+  debugPrint("TEST DEBUG PRINT FROM MAIN");
+
   runApp(
     const ProviderScope(
       child: MahakhanijApp(),

@@ -24,8 +24,23 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+		<string>mailto</string>
+		<string>http</string>
+		<string>https</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to scan QR codes for DigiTP delivery and upload KYC documents.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This app needs access to location to verify the delivery drop-off location.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to location to verify the delivery drop-off location.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs photo library access to upload KYC documents.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -56,30 +71,13 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>NSCameraUsageDescription</key>
-	<string>This app needs camera access to scan QR codes for DigiTP delivery and upload KYC documents.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs access to location to verify the delivery drop-off location.</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>This app needs access to location to verify the delivery drop-off location.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs photo library access to upload KYC documents.</string>
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>tel</string>
-		<string>mailto</string>
-		<string>http</string>
-		<string>https</string>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
 </dict>
 </plist>

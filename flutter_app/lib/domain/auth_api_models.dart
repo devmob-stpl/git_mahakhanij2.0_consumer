@@ -317,6 +317,49 @@ class LogoutApiResponse {
   };
 }
 
+class DeleteAccountApiResponse {
+  final String statusCode;
+  final String statusMessage;
+  final dynamic responseData;
+  final dynamic responseData1;
+
+  const DeleteAccountApiResponse({
+    required this.statusCode,
+    required this.statusMessage,
+    this.responseData,
+    this.responseData1,
+  });
+
+  bool get isSuccess =>
+      statusCode == '200' || statusCode == '200.0';
+
+  factory DeleteAccountApiResponse.fromJson(
+      Map<String, dynamic> json,
+      ) {
+    return DeleteAccountApiResponse(
+      statusCode: (
+          json['statusCode'] ?? json['status'] ?? '500'
+      ).toString(),
+
+      statusMessage: (
+          json['statusMessage'] ??
+              json['title'] ??
+              'Delete account failed'
+      ).toString(),
+
+      responseData: json['responseData'],
+      responseData1: json['responseData1'] ?? json['errors'],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'statusCode': statusCode,
+    'statusMessage': statusMessage,
+    'responseData': responseData,
+    'responseData1': responseData1,
+  };
+}
+
 class ExistenceCheckResult {
   final String statusCode;
   final String statusMessage;

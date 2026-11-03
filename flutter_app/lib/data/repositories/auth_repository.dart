@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:dio/dio.dart';
@@ -28,6 +29,12 @@ abstract class AuthRepository {
   Future<void> saveSession(User user, [String? token]);
   Future<void> clearSession();
   Future<LogoutApiResponse> logoutUser(String userId);
+  Future<DeleteAccountApiResponse> deleteConsumerAccount({
+    dynamic userId,
+    dynamic consumerId,
+    String? mobileNo,
+    String? remark,
+  });
   Future<ExistenceCheckResult> checkGstExists({
     required String gstNo,
     required String mobileNo,
@@ -165,6 +172,81 @@ class AuthRepositoryImpl implements AuthRepository {
       return LogoutApiResponse(
         statusCode: '500',
         statusMessage: _l10n.logoutFailedMsg,
+      );
+    }
+  }
+
+  @override
+  Future<DeleteAccountApiResponse> deleteConsumerAccount({
+    dynamic userId,
+    dynamic consumerId,
+    String? mobileNo,
+    String? remark,
+  }) async {
+    try {
+      final url = ApiEndpoints.deleteConsumer;
+
+      final user = await getCurrentUser();
+      final token = await getAuthToken();
+
+      final UserIdInt = int.tryParse(
+        (userId ?? user?.id)?.toString() ?? '0',
+      );
+
+      final payload = {
+        'userId': UserIdInt,
+        'isDeleted': true,
+        'remark': remark ?? 'Account deleted by consumer',
+      };
+
+      debugPrint('DELETE ACCOUNT PAYLOAD: $payload');
+
+      final response = await _dio.put(
+        url,
+        data: payload,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'UserId': '${user?.id}',
+          },
+        ),
+      );
+
+      debugPrint('DELETE ACCOUNT HTTP STATUS: ${response.statusCode}');
+      debugPrint('DELETE ACCOUNT RESPONSE DATA: ${response.data}');
+
+      final data = asResponseMap(response.data);
+
+      if (data != null) {
+        return DeleteAccountApiResponse.fromJson(data);
+      }
+
+      return DeleteAccountApiResponse(
+        statusCode: '500',
+        statusMessage: 'Invalid response from server.',
+      );
+    } on DioException catch (e) {
+      debugPrint('DELETE ACCOUNT DIO ERROR: ${e.message}');
+      debugPrint('DELETE ACCOUNT ERROR DATA: ${e.response?.data}');
+
+      final errData = e.response?.data;
+      final errorMap = asResponseMap(errData);
+
+      if (errorMap != null) {
+        return DeleteAccountApiResponse.fromJson(errorMap);
+      }
+
+      return DeleteAccountApiResponse(
+        statusCode: e.response?.statusCode?.toString() ?? '500',
+        statusMessage: e.message ?? 'Failed to delete account.',
+      );
+    } catch (e, stackTrace) {
+      debugPrint('DELETE ACCOUNT ERROR: $e');
+      debugPrintStack(stackTrace: stackTrace);
+
+      return const DeleteAccountApiResponse(
+        statusCode: '500',
+        statusMessage: 'Something went wrong while deleting account.',
       );
     }
   }

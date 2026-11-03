@@ -122,12 +122,53 @@ class SessionNotifier extends StateNotifier<SessionState> {
     } catch (e) {
       await _authRepository.clearSession();
       state = const SessionState(currentUser: null, isLoading: false);
-      return LogoutApiResponse(
+      return const LogoutApiResponse(
         statusCode: '200',
         statusMessage: 'Logged out successfully (Offline)',
       );
     }
   }
+
+  Future<DeleteAccountApiResponse> deleteAccount({
+    dynamic userId,
+    dynamic consumerId,
+    String? mobileNo,
+    String? remark,
+  }) async {
+    state = state.copyWith(isLoading: true);
+
+    try {
+      final response = await _authRepository.deleteConsumerAccount(
+        userId: userId,
+        consumerId: consumerId,
+        mobileNo: mobileNo,
+        remark: remark ?? 'Account deleted by consumer',
+      );
+
+      if (response.isSuccess) {
+        await _authRepository.clearSession();
+
+        state = const SessionState(
+          currentUser: null,
+          isLoading: false,
+        );
+      } else {
+        state = state.copyWith(isLoading: false);
+      }
+
+      return response;
+    } catch (e) {
+      state = state.copyWith(isLoading: false);
+
+      return const DeleteAccountApiResponse(
+        statusCode: '500',
+        statusMessage: 'Failed to delete account.',
+      );
+    }
+  }
+
+
+
 }
 
 final sessionProvider = StateNotifierProvider<SessionNotifier, SessionState>((ref) {

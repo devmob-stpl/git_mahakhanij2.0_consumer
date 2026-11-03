@@ -204,5 +204,19 @@ class ApiEndpoints {
   static String getConsumerPlotsUrl(int consumerId) => '$consumerPlots?consumerId=$consumerId';
   
   static String get consumerInvoiceReport => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/consumer-invoice-report';
+
+  static String get deleteConsumer => '$mineralProjectBaseUrl/mineral-project/sand-policy-Login/delete-consumer';
+  static String getDeleteConsumerUrl({dynamic consumerId, dynamic userId, String? mobileNo}) {
+    String url = '$deleteConsumer?consumerId=${consumerId ?? ''}';
+    if (userId != null && userId.toString().isNotEmpty) {
+      url += '&userId=$userId';
+    }
+    if (mobileNo != null && mobileNo.isNotEmpty) {
+      url += '&mobileNo=$mobileNo';
+    }
+    return url;
+  }
+  
+  
 }
 

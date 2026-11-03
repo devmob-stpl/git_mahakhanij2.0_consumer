@@ -1,6 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/app_config.dart';
+import 'api_logging_interceptor.dart';
 import 'network_checker.dart';
 
 /// Interceptor that verifies mobile network or internet connectivity before making every API call.
@@ -8,7 +11,8 @@ import 'network_checker.dart';
 /// an appropriate error message in the currently selected language.
 class ConnectivityInterceptor extends Interceptor {
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  void onRequest(
+      RequestOptions options, RequestInterceptorHandler handler) async {
     final isOnline = await NetworkChecker.isConnected(options.uri.host);
     if (!isOnline) {
       NetworkChecker.showOfflineMessage();

@@ -1,10 +1,13 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/constants/app_colors.dart';
 import '../../domain/scan_result.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class DigitpScanScreen extends StatefulWidget {
   final String? simulatedPayload;
@@ -21,10 +24,23 @@ class DigitpScanScreen extends StatefulWidget {
 }
 
 class _DigitpScanScreenState extends State<DigitpScanScreen> {
-  final MobileScannerController _controller = MobileScannerController();
+  final MobileScannerController _controller = MobileScannerController(autoStart:false);
   final TextEditingController _manualController = TextEditingController();
   bool _isProcessingScan = false;
   bool _showManualInput = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    debugPrint('user');
+    print('User result');
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startScannerWithPermission();
+    });
+
+  }
 
   Future<void> _onDetect(BarcodeCapture capture) async {
     if (_isProcessingScan) {
@@ -99,6 +115,49 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
     Navigator.of(context).pop(result);
   }
 
+  Future<void> _startScannerWithPermission() async {
+    var status = await Permission.camera.status;
+
+    if (status.isDenied) {
+      status = await Permission.camera.request();
+    }
+
+    if (!mounted) return;
+
+    if (status.isGranted) {
+      await _controller.start();
+    } else {
+      _showCameraPermissionDialog();
+    }
+  }
+
+  void _showCameraPermissionDialog() {
+    showCupertinoDialog<void>(
+      context: context,
+      builder: (dialogContext) => CupertinoAlertDialog(
+        title: const Text('Camera Access Required'),
+        content: const Text(
+          'This app needs camera access to scan QR codes for '
+              'DigiTP delivery and upload KYC documents.',
+        ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text("Cancel"),
+          ),
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              await openAppSettings();
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -112,7 +171,7 @@ class _DigitpScanScreenState extends State<DigitpScanScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(loc.scanDigiTp),
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.white,
         foregroundColor: Colors.white,
       ),
       backgroundColor: Colors.black,
